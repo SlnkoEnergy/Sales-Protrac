@@ -1,24 +1,25 @@
 import Header from "@/components/layout/Header";
-import Chart from "@/components/ui/lineChart";
-import LineChart from "@/components/ui/lineChart";
 import BrowserVisitorPieChart from "@/components/ui/piechart";
-import ChartAreaInteractive from "@/components/ui/interactiveChart"
-import ChartAreaInteractiveRadar from "@/components/ui/ChartAreaInteractiveRadar";
 import SearchBar from "@/components/layout/SearchBar";
-import DashboardStats from "@/components/DashBoardStats";
+import DashboardStats from "@/modules/dashboard/components/DashBoardStats";
+import ConversionRateChart from "@/components/ui/conversionRateChart";
 
 export default function Dashboard() {
   return (
     <>
-    <div>
-    <Header />
-    <SearchBar />
-     <DashboardStats />
-    <BrowserVisitorPieChart />
-    <ChartAreaInteractive/>
-    <Chart />
-    <ChartAreaInteractiveRadar /> 
-    </div>
+      <div>
+        <Header />
+        <SearchBar />
+        <DashboardStats />
+        <div className="flex flex-col xl:flex-row gap-40 px-6  py-4 w-full h-[400px]">
+          <div className="flex-1 h-full">
+            <ConversionRateChart />
+          </div>
+          <div className="flex-1 h-full">
+            <BrowserVisitorPieChart />
+          </div>
+        </div>
+      </div>
     </>
   );
 }
