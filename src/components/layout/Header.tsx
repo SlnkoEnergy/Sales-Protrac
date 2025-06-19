@@ -4,7 +4,7 @@ import slnkoLogo from "../../assets/slnko_white_logo.png";
 
 export default function Header() {
   return (
-    <div className="bg-[#1F487C] w-screen h-16 flex items-center justify-between px-6 shadow-md fixed top-0 left-0 z-50">
+    <div className="bg-[#1F487C]  w-full h-16 flex items-center justify-between px-6 shadow-md sticky top-0 z-50">
       {/* Left section: Logo & Title */}
       <div className="flex items-center gap-4">
         <img src={slnkoLogo} alt="Slnko Logo" className="h-15" />
