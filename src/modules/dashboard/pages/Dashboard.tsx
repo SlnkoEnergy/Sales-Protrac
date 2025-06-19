@@ -5,17 +5,19 @@ import LineChart from "@/components/ui/lineChart";
 import BrowserVisitorPieChart from "@/components/ui/piechart";
 import ChartAreaInteractive from "@/components/ui/interactiveChart"
 import ChartAreaInteractiveRadar from "@/components/ui/ChartAreaInteractiveRadar";
+import SearchBar from "@/components/layout/SearchBar";
 
 export default function Dashboard() {
   return (
     <>
     <div>
     <Header />
-    <HomeChart />
+    <SearchBar />
+     <HomeChart />
     <BrowserVisitorPieChart />
     <ChartAreaInteractive/>
     <Chart />
-    <ChartAreaInteractiveRadar />
+    <ChartAreaInteractiveRadar /> 
     </div>
     </>
   );
