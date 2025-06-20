@@ -1,13 +1,17 @@
 import axios from "axios";
 
-// ✅ Log the env variable before using it
-console.log("✅ ENV Loaded URL:", import.meta.env.VITE_API_URL);
-
 const Axios = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
+// Set token in `x-auth-token` header
+Axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers["x-auth-token"] = token;
+  }
+  return config;
+});
 export default Axios;

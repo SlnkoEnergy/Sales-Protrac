@@ -1,16 +1,12 @@
 import Header from "@/components/layout/Header";
-import BrowserVisitorPieChart from "@/components/ui/piechart";
 import SearchBar from "@/components/layout/SearchBar";
-
 import TeamAvailability from "@/modules/dashboard/components/TeamAvailability";
-import ChartPieDonutText from "@/modules/dashboard/components/leadStatus";
+import LeadStatusWidget from "@/modules/dashboard/components/LeadStatusWidget";
 import FunnelChart from "@/components/ui/funnelChart";
-// import LeadsStatusCard from "@/components/ui/leadStatus";
-
 import DashboardStats from "@/modules/dashboard/components/DashBoardStats";
 import ConversionRateChart from "@/modules/dashboard/components/conversionRateChart";
-import ChartAreaInteractiveRadar from "@/modules/dashboard/components/ChartAreaInteractiveRadar";
-import ChartAreaInteractive from "@/components/ui/interactiveChart";
+import ChartAreaInteractive from "@/modules/dashboard/components/interactiveChart";
+import LeadSourceWidget from "@/modules/dashboard/components/LeadSourceWidget";
 
 export default function Dashboard() {
   return (
@@ -21,9 +17,9 @@ export default function Dashboard() {
         <DashboardStats />
         <div className="grid grid-cols-2 gap-4">
           <ConversionRateChart />
-          <BrowserVisitorPieChart />
+          <LeadSourceWidget />
           <TeamAvailability />
-          <ChartPieDonutText />
+          <LeadStatusWidget />
           <FunnelChart />
           <ChartAreaInteractive />
         </div>

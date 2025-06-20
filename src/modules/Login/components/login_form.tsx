@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { AuthLogin } from "@/services/auth"; // Adjust this path to your actual file location
+import { AuthLogin, getUserById } from "@/services/auth";
 import { useNavigate } from "react-router-dom";
 
 type LoginFormInputs = {
@@ -12,10 +12,7 @@ type LoginFormInputs = {
   password: string;
 };
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"form">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<"form">) {
   const {
     register,
     handleSubmit,
@@ -25,26 +22,39 @@ export function LoginForm({
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
-const onSubmit = async (data: LoginFormInputs) => {
-  setErrorMessage("");
+  const onSubmit = async (data: LoginFormInputs) => {
+    setErrorMessage("");
 
-  try {
-    const result = await AuthLogin({ payload: data });
+    try {
+      // 1. Login request
+      const result = await AuthLogin({ payload: data });
 
-    // Store auth token and userId
-    localStorage.setItem("token", result.token);
-    localStorage.setItem("userId", result.userId);
+      if (!result?.token || !result?.userId) {
+        throw new Error("Missing token or userId from login response");
+      }
 
-    console.log("Login successful:", result);
+      // 2. Save token and userId
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("userId", result.userId);
 
-    // Navigate to dashboard or homepage
-    navigate("/");
-  } catch (error: any) {
-    const message =
-      error?.response?.data?.message || error?.message || "Login failed";
-    setErrorMessage(message);
-  }
-};
+      // 3. Fetch user info
+      const userData = await getUserById(result.userId);
+      console.log("Fetched user object: ", userData);
+
+      // ✅ 4. Save user (no ID check)
+      localStorage.setItem("user", JSON.stringify(userData.user));
+
+      console.log("Login success. User:", userData.user);
+
+      // 5. Navigate
+      navigate("/");
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      const message =
+        error?.response?.data?.message || error?.message || "Login failed";
+      setErrorMessage(message);
+    }
+  };
 
   return (
     <form

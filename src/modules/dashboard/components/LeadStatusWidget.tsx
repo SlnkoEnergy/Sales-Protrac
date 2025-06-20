@@ -3,7 +3,7 @@
 import * as React from "react";
 import { PieChart, Pie, Cell, Label } from "recharts";
 import { DateRange } from "react-date-range";
-import { format, subDays, subMonths, subYears, startOfDay } from "date-fns";
+import { subDays, subMonths, subYears, startOfDay } from "date-fns";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -12,7 +12,16 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
+  CardDescription,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
 import { getLeadSummary } from "@/services/leads/dashboard";
 
 const filters = [
@@ -26,7 +35,7 @@ const filters = [
   { label: "Custom", range: null },
 ];
 
-export default function LeadsStatusCard() {
+export default function LeadStatusWidget() {
   const [selectedFilter, setSelectedFilter] = React.useState("Today");
   const [dateRange, setDateRange] = React.useState([
     {
@@ -90,24 +99,27 @@ export default function LeadsStatusCard() {
   const total = leadData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <Card className="w-full h-full rounded-2xl relative">
+    <Card className="w-full h-full rounded-2xl border p-4 relative">
       <CardHeader className="flex flex-row justify-between items-center pb-0">
-        <CardTitle className="text-base">Leads Status</CardTitle>
+        <CardTitle className="text-lg font-semibold text-gray-800">
+          Leads Status
+        </CardTitle>
         <div className="relative">
-          <select
-            className="text-sm text-blue-600 font-medium cursor-pointer bg-transparent border-none focus:outline-none"
-            value={selectedFilter}
-            onChange={(e) => handleFilterChange(e.target.value)}
-          >
-            {filters.map((f) => (
-              <option key={f.label} value={f.label}>
-                {f.label}
-              </option>
-            ))}
-          </select>
+          <Select value={selectedFilter} onValueChange={handleFilterChange}>
+            <SelectTrigger className="w-[130px] h-9 text-sm focus:outline-none ring-1 ring-gray-300">
+              <SelectValue placeholder="Select Range" />
+            </SelectTrigger>
+            <SelectContent>
+              {filters.map((f) => (
+                <SelectItem key={f.label} value={f.label}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {showPicker && (
-            <div className="absolute right-0 z-10 mt-2" ref={pickerRef}>
+            <div className="absolute right-0 z-50 mt-2 shadow-xl" ref={pickerRef}>
               <DateRange
                 editableDateInputs
                 onChange={(item) => setDateRange([item.selection])}
@@ -120,8 +132,8 @@ export default function LeadsStatusCard() {
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col items-center justify-center h-full pt-2">
-        {/* Chart */}
+      <CardContent className="grid grid-cols-5 items-center justify-center pt-4">
+        <div className="col-span-3">
         <PieChart width={280} height={280}>
           <Pie
             data={leadData}
@@ -137,7 +149,7 @@ export default function LeadsStatusCard() {
             <Label
               position="center"
               content={({ viewBox }) => {
-                const { cx, cy } = viewBox;
+                const { cx, cy }: any = viewBox;
                 return (
                   <>
                     <text
@@ -162,11 +174,14 @@ export default function LeadsStatusCard() {
             />
           </Pie>
         </PieChart>
+        </div>
 
-        {/* Legend */}
-        <div className="mt-6 w-full px-6 space-y-3 text-sm">
+        <div className="text-sm flex flex-col gap-2 col-span-2">
           {leadData.map((item, index) => (
-            <div key={index} className="flex justify-between items-center">
+            <div
+              key={index}
+              className="grid grid-cols-2 gap-4"
+            >
               <div className="flex items-center gap-2">
                 <span
                   className="w-3 h-3 rounded-full inline-block"
@@ -174,7 +189,7 @@ export default function LeadsStatusCard() {
                 />
                 <span className="text-gray-600">{item.name}</span>
               </div>
-              <span className="text-gray-800 font-medium">{item.value} Leads</span>
+              <CardDescription className="text-gray-800 font-medium">{item.value} Leads</CardDescription>
             </div>
           ))}
         </div>

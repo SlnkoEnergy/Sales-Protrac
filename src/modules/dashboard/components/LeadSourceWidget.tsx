@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pie, PieChart, Cell, ResponsiveContainer } from "recharts";
 import {
   Card,
@@ -8,19 +8,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getTopLeadSources } from "@/services/leads/dashboard.js"; // ✅ Adjust the path if needed
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getTopLeadSources } from "@/services/leads/dashboard.js";
 
 const RADIAN = Math.PI / 180;
 
-// Color palette
 const COLORS = [
-  "#3B82F6",
-  "#10B981",
-  "#F59E0B",
-  "#6366F1",
-  "#9CA3AF",
-  "#EC4899",
-  "#F87171",
+  "#3B82F6", // Blue
+  "#10B981", // Green
+  "#F59E0B", // Amber
+  "#6366F1", // Indigo
+  "#9CA3AF", // Gray
+  "#EC4899", // Pink
+  "#F87171", // Red
 ];
 
 const renderCustomizedLabel = ({
@@ -43,19 +43,22 @@ const renderCustomizedLabel = ({
       textAnchor="middle"
       dominantBaseline="central"
       fontSize={12}
+      fontWeight="600"
+      pointerEvents="none"
+      style={{ userSelect: "none" }}
     >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
 };
 
-export default function BrowserVisitorPieChart() {
+export default function LeadSourceWidget() {
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const fetchLeadSources = async () => {
       try {
-        const data = await getTopLeadSources(); // should return array of { source, percentage }
+        const data = await getTopLeadSources();
 
         if (!Array.isArray(data)) {
           console.warn("Unexpected API response format:", data);
@@ -80,13 +83,15 @@ export default function BrowserVisitorPieChart() {
   }, []);
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-start pb-0">
-        <CardTitle className="text-2xl">Top Lead Sources</CardTitle>
+    <Card className="flex flex-col p-6">
+      <CardHeader className="items-start pb-2">
+        <CardTitle className="text-2xl font-semibold text-[#1f487c]">
+          Top Lead Sources
+        </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-col items-center">
-        <div className="w-full h-[250px]">
+      <CardContent className="flex flex-col items-center gap-6">
+        <div className="w-full h-[250px] max-w-md">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -95,9 +100,12 @@ export default function BrowserVisitorPieChart() {
                 nameKey="browser"
                 cx="50%"
                 cy="50%"
-                outerRadius="80%"
+                outerRadius={100}
                 labelLine={false}
                 label={renderCustomizedLabel}
+                cursor="pointer"
+                animationDuration={800}
+                animationEasing="ease-in-out"
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -108,19 +116,33 @@ export default function BrowserVisitorPieChart() {
         </div>
 
         {chartData.length > 0 ? (
-          <div className="flex flex-col gap-2 mt-4 text-sm">
+          <div className="flex flex-wrap justify-center gap-4 max-w-md">
             {chartData.map((entry) => (
-              <div key={entry.browser} className="flex items-center gap-2">
-                <div
-                  className="w-5 h-5 rounded"
-                  style={{ backgroundColor: entry.fill }}
-                ></div>
-                <span>{entry.browser}</span>
-              </div>
+              <Tooltip key={entry.browser}>
+                <TooltipTrigger asChild>
+                  <div
+                    className="flex items-center gap-2 cursor-pointer select-none"
+                    aria-label={`${entry.browser}: ${(entry.visitors * 100).toFixed(1)}%`}
+                  >
+                    <div
+                      className="w-6 h-6 rounded shadow-md border border-gray-300 dark:border-gray-700"
+                      style={{ backgroundColor: entry.fill }}
+                    />
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      {entry.browser}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center" className="text-xs">
+                  {`${entry.browser}: ${(entry.visitors * 100).toFixed(1)}%`}
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         ) : (
-          <div className="mt-4 text-sm text-gray-500">No data available</div>
+          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            No data available
+          </div>
         )}
       </CardContent>
     </Card>
