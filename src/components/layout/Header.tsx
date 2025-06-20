@@ -7,7 +7,6 @@ import { toast } from "sonner";
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
   const navigate = useNavigate();
-
   const toggleDrawer = () => setShowDrawer(!showDrawer);
 
   const handleLogout = () => {
@@ -34,19 +33,19 @@ export default function Header() {
       <div className="hidden sm:flex gap-8 items-center text-white">
         <div className="flex items-center gap-1">
           <Home size={18} />
-          <span>Dashboard</span>
+          <span onClick={()=> navigate('/')} className="cursor-pointer">Dashboard</span>
         </div>
         <div className="flex items-center gap-1">
           <Home size={18} />
-          <span>Leads</span>
+          <span className="cursor-pointer" onClick={()=> navigate('/leads')} >Leads</span>
         </div>
         <div className="flex items-center gap-1">
           <ClipboardList size={18} />
-          <span>Tasks</span>
+          <span className="cursor-pointer">Tasks</span>
         </div>
         <div className="flex items-center gap-1">
           <Home size={18} />
-          <span>Meetings</span>
+          <span className="cursor-pointer">Meetings</span>
         </div>
       </div>
 

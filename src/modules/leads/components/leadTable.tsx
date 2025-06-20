@@ -41,7 +41,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@radix-ui/react-dropdown-menu";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 export type Lead = {
   id: string;
   status: "initial" | "followUp" | "warm" | "won" | "dead";
@@ -57,122 +57,6 @@ export type Lead = {
   email: string;
 };
 
-const columns: ColumnDef<Lead>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("status")}</div>
-    ),
-  },
-  {
-    accessorKey: "id",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Lead Id <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => <div>{row.getValue("id")}</div>,
-  },
-  {
-    accessorKey: "c_name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Name <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => <div>{row.getValue("c_name")}</div>,
-  },
-  {
-    accessorKey: "mobile",
-    header: "Mobile",
-    cell: ({ row }) => <div>{row.getValue("mobile")}</div>,
-  },
-  {
-    accessorKey: "state",
-    header: "State",
-    cell: ({ row }) => <div>{row.getValue("state")}</div>,
-  },
-  {
-    accessorKey: "scheme",
-    header: "Scheme",
-    cell: ({ row }) => <div>{row.getValue("scheme")}</div>,
-  },
-  {
-    accessorKey: "capacity",
-    header: "Capacity (MW)",
-    cell: ({ row }) => <div>{row.getValue("capacity")}</div>,
-  },
-  {
-    accessorKey: "distance",
-    header: "Distance (KM)",
-    cell: ({ row }) => <div>{row.getValue("distance")}</div>,
-  },
-  {
-    accessorKey: "entry_date",
-    header: "Date",
-    cell: ({ row }) => <div>{row.getValue("entry_date")}</div>,
-  },
-  {
-    accessorKey: "submitted_by",
-    header: "Lead Owner",
-    cell: ({ row }) => <div>{row.getValue("submitted_by")}</div>,
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const lead = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(lead.id)}
-            >
-              Copy Lead ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View Customer</DropdownMenuItem>
-            <DropdownMenuItem>View Owner</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
-
 export function DataTable() {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage");
@@ -187,9 +71,131 @@ export function DataTable() {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const navigate = useNavigate();
   const [selectedStages, setSelectedStages] = React.useState<string>(
     stageFromUrl || ""
   );
+  const columns: ColumnDef<Lead>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <div className="capitalize">{row.getValue("status")}</div>
+      ),
+    },
+    {
+      accessorKey: "id",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Lead Id <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => <div>{row.getValue("id")}</div>,
+    },
+    {
+      accessorKey: "c_name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Name <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => <div>{row.getValue("c_name")}</div>,
+    },
+    {
+      accessorKey: "mobile",
+      header: "Mobile",
+      cell: ({ row }) => <div>{row.getValue("mobile")}</div>,
+    },
+    {
+      accessorKey: "state",
+      header: "State",
+      cell: ({ row }) => <div>{row.getValue("state")}</div>,
+    },
+    {
+      accessorKey: "scheme",
+      header: "Scheme",
+      cell: ({ row }) => <div>{row.getValue("scheme")}</div>,
+    },
+    {
+      accessorKey: "capacity",
+      header: "Capacity (MW)",
+      cell: ({ row }) => <div>{row.getValue("capacity")}</div>,
+    },
+    {
+      accessorKey: "distance",
+      header: "Distance (KM)",
+      cell: ({ row }) => <div>{row.getValue("distance")}</div>,
+    },
+    {
+      accessorKey: "entry_date",
+      header: "Date",
+      cell: ({ row }) => <div>{row.getValue("entry_date")}</div>,
+    },
+    {
+      accessorKey: "submitted_by",
+      header: "Lead Owner",
+      cell: ({ row }) => <div>{row.getValue("submitted_by")}</div>,
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const lead = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(lead.id)}
+              >
+                Copy Lead ID
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => navigate(`/leadProfile?leadId=${lead.id}&status=${lead.status}`)}
+              >
+                View Customer
+              </DropdownMenuItem>
+
+              <DropdownMenuItem>View Owner</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -247,7 +253,7 @@ export function DataTable() {
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination, // ✅ include this
+    onPaginationChange: setPagination, 
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -262,7 +268,7 @@ export function DataTable() {
           value={search}
           onChange={(event) => {
             const value = event.target.value;
-            setSearch(value); // update local search state
+            setSearch(value); 
             table.getColumn("name")?.setFilterValue(value);
             setSearchParams((prev) => {
               const updated = new URLSearchParams(prev);
@@ -366,62 +372,55 @@ export function DataTable() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md h-full border">
-        <div className="w-full h-full overflow-x-auto">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-          </Table>
-        </div>
+     <div className="rounded-md border max-h-180 overflow-y-auto">
+  <Table>
+    <TableHeader>
+      {table.getHeaderGroups().map((headerGroup) => (
+        <TableRow key={headerGroup.id}>
+          {headerGroup.headers.map((header) => (
+            <TableHead className="text-left" key={header.id}>
+              {header.isPlaceholder
+                ? null
+                : flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+            </TableHead>
+          ))}
+        </TableRow>
+      ))}
+    </TableHeader>
 
-        {/* Scrollable Table Body */}
-        <div className="w-full max-h-180 overflow-y-auto">
-          <Table>
-            <TableBody>
-              {table.getPaginationRowModel().rows?.length ? (
-                table.getPaginationRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+    <TableBody>
+      {table.getPaginationRowModel().rows?.length ? (
+        table.getPaginationRowModel().rows.map((row) => (
+          <TableRow
+          className="cursor-pointer"
+            key={row.id}
+            data-state={row.getIsSelected() && "selected"}
+            onClick={() => navigate(`/leadProfile?leadId=${row.original.id}&status=${row.original.status}`)}
+          >
+            {row.getVisibleCells().map((cell) => (
+              <TableCell className="text-left" key={cell.id}>
+                {flexRender(
+                  cell.column.columnDef.cell,
+                  cell.getContext()
+                )}
+              </TableCell>
+            ))}
+          </TableRow>
+        ))
+      ) : (
+        <TableRow>
+          <TableCell colSpan={columns.length} className="h-24 text-center">
+            No results.
+          </TableCell>
+        </TableRow>
+      )}
+    </TableBody>
+  </Table>
+</div>
+
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
