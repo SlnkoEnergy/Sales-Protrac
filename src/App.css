@@ -40,16 +40,4 @@
 .read-the-docs {
   color: #888;
 }
-:root {
-  --chart-1: 190 85% 50%;
-  --chart-2: 340 70% 55%;
-  --chart-3: 45 100% 51%;
-  --chart-4: 120 60% 50%;
-  --chart-5: 280 65% 60%;
 
-  --color-chrome: hsl(var(--chart-1));
-  --color-safari: hsl(var(--chart-2));
-  --color-firefox: hsl(var(--chart-3));
-  --color-edge: hsl(var(--chart-4));
-  --color-other: hsl(var(--chart-5));
-}
