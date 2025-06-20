@@ -8,7 +8,6 @@ export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const navigate = useNavigate();
-
   const toggleDrawer = () => setShowDrawer(!showDrawer);
 
   const handleLogout = () => {
@@ -46,10 +45,22 @@ export default function Header() {
       </div>
 
       <div className="hidden sm:flex gap-8 items-center text-white">
-        <div className="flex items-center gap-1"><Home size={18} /><span>Dashboard</span></div>
-        <div className="flex items-center gap-1"><Home size={18} /><span>Leads</span></div>
-        <div className="flex items-center gap-1"><ClipboardList size={18} /><span>Tasks</span></div>
-        <div className="flex items-center gap-1"><Home size={18} /><span>Meetings</span></div>
+        <div className="flex items-center gap-1">
+          <Home size={18} />
+          <span onClick={()=> navigate('/')} className="cursor-pointer">Dashboard</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Home size={18} />
+          <span className="cursor-pointer" onClick={()=> navigate('/leads')} >Leads</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <ClipboardList size={18} />
+          <span className="cursor-pointer">Tasks</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Home size={18} />
+          <span className="cursor-pointer">Meetings</span>
+        </div>
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white">
