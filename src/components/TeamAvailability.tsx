@@ -10,22 +10,29 @@ interface TeamMember {
 
 const teamData: TeamMember[] = [
   {
-    name: "Amitabh Bachchan",
-    email: "amitabh@kbc.com",
+    name: "Person 1",
+    email: "person@1.com",
     avatar: avatar,
     assigned: 50,
     completed: 20,
   },
   {
-    name: "Ram Kapoor",
-    email: "ram@kapoor.com",
+    name: "Person 2",
+    email: "person@2.com",
     avatar: avatar,
     assigned: 10,
     completed: 7,
   },
   {
-    name: "Jaya Bachchan",
-    email: "jaya@amitabh.com",
+    name: "Person 3",
+    email: "Person@3.com",
+    avatar: avatar,
+    assigned: 20,
+    completed: 11,
+  },
+   {
+    name: "Person 4",
+    email: "person@4.com",
     avatar: avatar,
     assigned: 20,
     completed: 11,
