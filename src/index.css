@@ -120,9 +120,12 @@ body {
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  *,
+  *::before,
+  *::after {
+    @apply border-border ring-0 outline-none focus-visible:ring-0 focus:ring-0 focus:outline-none active:ring-0;
   }
+
   body {
     @apply bg-background text-foreground;
   }

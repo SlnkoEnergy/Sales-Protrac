@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
 import { PieChart, Pie, Cell, Label } from "recharts";
 import { DateRange } from "react-date-range";
 import { format, subDays, subMonths, subYears, startOfDay } from "date-fns";
@@ -14,13 +13,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-
-const leadData = [
-  { name: "Closed Leads", value: 60, color: "#0084FF" },
-  { name: "Warm Leads", value: 20, color: "#4CD964" },
-  { name: "Lost", value: 5, color: "#FF3B30" },
-  { name: "Yet to Start", value: 5, color: "#FF9500" },
-];
+import { getLeadSummary } from "@/services/leads/dashboard";
 
 const filters = [
   { label: "Today", range: () => [startOfDay(new Date()), new Date()] },
@@ -43,20 +36,41 @@ export default function LeadsStatusCard() {
     },
   ]);
   const [showPicker, setShowPicker] = React.useState(false);
+  const [leadData, setLeadData] = React.useState([]);
   const pickerRef = React.useRef<HTMLDivElement | null>(null);
 
-  // 🔘 Click outside to close
+  const fetchLeadStatus = async () => {
+    try {
+      const data = await getLeadSummary();
+
+      const mapped = [
+        { name: "Initial Leads", value: data.initial_leads, color: "#FF9500" },
+        { name: "Follow Up Leads", value: data.followup_leads, color: "#FFD700" },
+        { name: "Warm Leads", value: data.warm_leads, color: "#4CD964" },
+        { name: "Closed Leads", value: data.won_leads, color: "#0084FF" },
+        { name: "Dead Leads", value: data.dead_leads, color: "#FF3B30" },
+      ];
+
+      setLeadData(mapped);
+    } catch (err) {
+      console.error("Error fetching lead summary", err);
+      setLeadData([]);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchLeadStatus();
+  }, [dateRange]);
+
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
         setShowPicker(false);
       }
     };
-
     if (showPicker) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -79,7 +93,6 @@ export default function LeadsStatusCard() {
     <Card className="w-full h-full rounded-2xl relative">
       <CardHeader className="flex flex-row justify-between items-center pb-0">
         <CardTitle className="text-base">Leads Status</CardTitle>
-
         <div className="relative">
           <select
             className="text-sm text-blue-600 font-medium cursor-pointer bg-transparent border-none focus:outline-none"
@@ -96,11 +109,8 @@ export default function LeadsStatusCard() {
           {showPicker && (
             <div className="absolute right-0 z-10 mt-2" ref={pickerRef}>
               <DateRange
-                editableDateInputs={true}
-                onChange={(item) => {
-                  const selection = item.selection;
-                  setDateRange([selection]);
-                }}
+                editableDateInputs
+                onChange={(item) => setDateRange([item.selection])}
                 moveRangeOnFirstSelection={false}
                 ranges={dateRange}
                 maxDate={new Date()}
