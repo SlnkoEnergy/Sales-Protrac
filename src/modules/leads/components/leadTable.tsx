@@ -43,6 +43,7 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { useNavigate, useSearchParams } from "react-router-dom";
 export type Lead = {
+  _id:string,
   id: string;
   status: "initial" | "followUp" | "warm" | "won" | "dead";
   leadId: string;
@@ -63,11 +64,13 @@ export function DataTable() {
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [search, setSearch] = React.useState("");
+const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -183,7 +186,7 @@ export function DataTable() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => navigate(`/leadProfile?leadId=${lead.id}&status=${lead.status}`)}
+                onClick={() => navigate(`/leadProfile?id=${lead._id}&status=${lead.status}`)}
               >
                 View Customer
               </DropdownMenuItem>
@@ -215,6 +218,29 @@ export function DataTable() {
 
     fetchLeads();
   }, [selectedStages, page, pageSize, search]);
+
+
+React.useEffect(() => {
+  const handler = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 300); 
+
+  return () => clearTimeout(handler);
+}, [search]);
+
+React.useEffect(() => {
+  table.getColumn("name")?.setFilterValue(debouncedSearch);
+  setSearchParams((prev) => {
+    const updated = new URLSearchParams(prev);
+    if (debouncedSearch) {
+      updated.set("search", debouncedSearch);
+    } else {
+      updated.delete("search");
+    }
+    return updated;
+  });
+}, [debouncedSearch]);
+
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
@@ -264,25 +290,11 @@ export function DataTable() {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter name, LeadId, Mobile, State, Scheme, Lead Owner..."
-          value={search}
-          onChange={(event) => {
-            const value = event.target.value;
-            setSearch(value); 
-            table.getColumn("name")?.setFilterValue(value);
-            setSearchParams((prev) => {
-              const updated = new URLSearchParams(prev);
-              if (value) {
-                updated.set("search", value);
-              } else {
-                updated.delete("search");
-              }
-              return updated;
-            });
-          }}
-          className="max-w-sm"
-        />
-
+  placeholder="Filter name, LeadId, Mobile, State, Scheme, Lead Owner..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="max-w-sm"
+/>
         <div className="flex items-center px-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -398,7 +410,7 @@ export function DataTable() {
           className="cursor-pointer"
             key={row.id}
             data-state={row.getIsSelected() && "selected"}
-            onClick={() => navigate(`/leadProfile?leadId=${row.original.id}&status=${row.original.status}`)}
+            onClick={() => navigate(`/leadProfile?id=${row.original._id}&status=${row.original.status}`)}
           >
             {row.getVisibleCells().map((cell) => (
               <TableCell className="text-left" key={cell.id}>
@@ -431,6 +443,7 @@ export function DataTable() {
         >
           Previous
         </Button>
+        <span>Page {page} of page 10</span>
         <Button
           variant="outline"
           size="sm"
