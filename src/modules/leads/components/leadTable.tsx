@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -12,11 +12,11 @@ import {
   SortingState,
   useReactTable,
   VisibilityState,
-} from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+} from "@tanstack/react-table";
+import { ArrowUpDown, Check, ChevronDown, MoreHorizontal } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -25,8 +25,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -34,24 +34,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
-import {getLeads} from "@/services/leads/leadService"
-
+import { getLeads } from "@/services/leads/leadService";
+import {
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@radix-ui/react-dropdown-menu";
+import { useSearchParams } from "react-router-dom";
 export type Lead = {
-  id: string
-  status: "initial" | "followUp" | "warm" | "won" | "dead"
-  leadId: string
-  c_name: string
-  mobile: string
-  state: string
-  scheme: string
-  capacity: string
-  distance: string
-  entry_date: string
-  submitted_by: string
-  email: string
-}
+  id: string;
+  status: "initial" | "followUp" | "warm" | "won" | "dead";
+  leadId: string;
+  c_name: string;
+  mobile: string;
+  state: string;
+  scheme: string;
+  capacity: string;
+  distance: string;
+  entry_date: string;
+  submitted_by: string;
+  email: string;
+};
 
 const columns: ColumnDef<Lead>[] = [
   {
@@ -143,7 +147,7 @@ const columns: ColumnDef<Lead>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const lead = row.original
+      const lead = row.original;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -154,7 +158,9 @@ const columns: ColumnDef<Lead>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(lead.id)}>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(lead.id)}
+            >
               Copy Lead ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -162,30 +168,70 @@ const columns: ColumnDef<Lead>[] = [
             <DropdownMenuItem>View Owner</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
 export function DataTable() {
-  const [data, setData] = React.useState<Lead[]>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
-
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stageFromUrl = searchParams.get("stage");
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
+  const [search, setSearch] = React.useState("");
+  const [data, setData] = React.useState<Lead[]>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [selectedStages, setSelectedStages] = React.useState<string>(
+    stageFromUrl || ""
+  );
   React.useEffect(() => {
-    async function fetchLeads() {
+    const fetchLeads = async () => {
       try {
-        const leads = await getLeads();
-        setData(leads.leads); // You correctly access `leads.leads`
-      } catch (error) {
-        console.error("Failed to fetch leads:", error);
+        const params = {
+          stage: selectedStages,
+          page,
+          limit: pageSize,
+          search: search,
+        };
+        console.log("params:", params);
+        const res = await getLeads(params);
+        setData(res.leads);
+      } catch (err) {
+        console.error("Error fetching leads:", err);
       }
-    }
+    };
 
     fetchLeads();
-  }, []);
+  }, [selectedStages, page, pageSize, search]);
+
+  const handlePageChange = (direction: "prev" | "next") => {
+    const newPage = direction === "next" ? page + 1 : page - 1;
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("page", newPage.toString());
+      return params;
+    });
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("pageSize", newLimit.toString());
+      params.set("page", "1");
+      return params;
+    });
+  };
+
+  const [pagination, setPagination] = React.useState({
+    pageIndex: page - 1,
+    pageSize: pageSize,
+  });
 
   const table = useReactTable({
     data,
@@ -195,57 +241,104 @@ export function DataTable() {
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination, // ✅ include this
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-  })
+  });
 
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter name..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
+          placeholder="Filter name, LeadId, Mobile, State, Scheme, Lead Owner..."
+          value={search}
+          onChange={(event) => {
+            const value = event.target.value;
+            setSearch(value); // update local search state
+            table.getColumn("name")?.setFilterValue(value);
+            setSearchParams((prev) => {
+              const updated = new URLSearchParams(prev);
+              if (value) {
+                updated.set("search", value);
+              } else {
+                updated.delete("search");
+              }
+              return updated;
+            });
+          }}
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-4">
-              Filter Status <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {["initial", "followUp", "warm", "won", "dead"].map((status) => (
-              <DropdownMenuCheckboxItem
-                key={status}
-                checked={table
-                  .getColumn("status")
-                  ?.getFilterValue()
-                  ?.includes?.(status)}
-                onCheckedChange={(checked) => {
-                  const prev = (table.getColumn("status")?.getFilterValue() as string[]) || []
-                  table.getColumn("status")?.setFilterValue(
-                    checked
-                      ? [...prev, status]
-                      : prev.filter((s) => s !== status)
-                  )
+
+        <div className="flex items-center px-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-4">
+                Filter Status <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {/* Clear Filter Option */}
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedStages("");
+                  setSearchParams((prev) => {
+                    const updated = new URLSearchParams(prev);
+                    updated.delete("stage");
+                    return updated;
+                  });
+                  table.getColumn("status")?.setFilterValue(undefined);
+                }}
+                className="flex items-center justify-between text-red-500"
+              >
+                Clear Filter
+              </DropdownMenuItem>
+
+              <DropdownMenuRadioGroup
+                value={selectedStages}
+                onValueChange={(value) => {
+                  setSelectedStages(value);
+                  setSearchParams({ stage: value });
+                  table.getColumn("status")?.setFilterValue([value]);
                 }}
               >
-                {status}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                {["initial", "followup", "warm", "won", "dead"].map(
+                  (status) => (
+                    <DropdownMenuRadioItem
+                      key={status}
+                      value={status}
+                      className="flex items-center justify-between"
+                    >
+                      {status}
+                      {selectedStages === status && (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </DropdownMenuRadioItem>
+                  )
+                )}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
+          <div className="flex items-center gap-2 mx-4">
+            <label htmlFor="limit">Rows per page:</label>
+            <Input
+              id="limit"
+              type="number"
+              min="1"
+              value={pageSize}
+              onChange={(e) => handleLimitChange(Number(e.target.value))}
+              className="w-20"
+            />
+          </div>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -268,70 +361,85 @@ export function DataTable() {
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>
-                )
+                );
               })}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+      <div className="rounded-md h-full border">
+        <div className="w-full h-full overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+          </Table>
+        </div>
+
+        {/* Scrollable Table Body */}
+        <div className="w-full max-h-180 overflow-y-auto">
+          <Table>
+            <TableBody>
+              {table.getPaginationRowModel().rows?.length ? (
+                table.getPaginationRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
+          onClick={() => handlePageChange("prev")}
+          disabled={page === 1}
         >
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
+          onClick={() => handlePageChange("next")}
         >
           Next
         </Button>
       </div>
     </div>
-  )
+  );
 }
