@@ -11,7 +11,6 @@ import LeadSourceWidget from "@/modules/dashboard/components/LeadSourceWidget";
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       <SearchBar />
       <div className="p-6 flex flex-col gap-4">
         <DashboardStats />

@@ -10,15 +10,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, Mail, MapPin, Pencil, Phone, Trash } from "lucide-react";
+import { ChevronLeft, Mail, MapPin, Phone } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getLeadbyId } from "@/services/leads/leadService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import NotesCard from "../components/NotesCard";
+import TasksCard from "../components/TaskCard";
 
 export type Lead = {
   id: string;
@@ -87,7 +87,7 @@ export default function LeadProfile() {
         </div>
       </div>
       <div className="flex gap-4">
-        <Card className="min-w-[350px]">
+        <Card className="min-w-[450px]">
           <CardHeader className="flex justify-center flex-col items-center">
             <Avatar className="h-14 w-14">
               <AvatarImage src="https://github.com/shadcn.png" />
@@ -162,72 +162,10 @@ export default function LeadProfile() {
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
           </TabsList>
           <TabsContent value="notes">
-            <Card>
-              <CardHeader className="flex flex-row w-full items-center justify-between">
-                <CardTitle className="text-lg font-medium">
-                  Internal Notes
-                </CardTitle>
-                <Button variant="outline" size="sm">
-                  + Add Notes
-                </Button>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <Input placeholder="Add Note" />
-                <ScrollArea className="h-24">
-                  <div className="flex items-start gap-3 mt-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://github.com/vercel.png" />
-                      <AvatarFallback>AS</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm">
-                        Failure to setup admin accounts in the system
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        5 mins ago by Adam Sebatta
-                      </p>
-                    </div>
-                    <div className="ml-auto flex gap-1">
-                      <Pencil className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                      <Trash className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                    </div>
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <NotesCard />
           </TabsContent>
           <TabsContent value="tasks">
-            <Card>
-              <CardHeader className="flex flex-row w-full items-center justify-between">
-                <CardTitle className="text-lg font-medium">Tasks</CardTitle>
-                <Button variant="outline" size="sm">
-                  + Add task
-                </Button>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <Input placeholder="Add Note" />
-                <ScrollArea className="h-24">
-                  <div className="flex items-start gap-3 mt-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="https://github.com/vercel.png" />
-                      <AvatarFallback>AS</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm">
-                        Failure to setup admin accounts in the system
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        5 mins ago by Adam Sebatta
-                      </p>
-                    </div>
-                    <div className="ml-auto flex gap-1">
-                      <Pencil className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                      <Trash className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                    </div>
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <TasksCard />
           </TabsContent>
         </Tabs>
       </div>
