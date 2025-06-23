@@ -1,11 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Dashboard from "../src/modules/dashboard/pages/Dashboard";
-import Leads from "../src/modules/leads/pages/leads";
-import LoginPage from "../src/modules/Login/pages/login_page";
-import LeadProfile from "../src/modules/leads/pages/leadProfile"
+import Dashboard from "@/modules/dashboard/pages/Dashboard";
+import Leads from "@/modules/leads/pages/leads";
+import LoginPage from "@/modules/Login/pages/login_page";
+import LeadProfile from "@/modules/leads/pages/leadProfile";
+import Tasks from "@/modules/task/pages/TaskDashboard"
+import AddTask from "@/components/task/AddTask"
+import ViewTask from "@/components/task/ViewTask"
 import PrivateRoute from "../utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner"; 
 import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
+import Layout from "../src/components/layout/Layout";
+
+
 function App() {
   return (
     <>
@@ -13,32 +19,25 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+
           <Route
             path="/"
             element={
               <PrivateRoute>
-                <Dashboard />
+                <Layout />
               </PrivateRoute>
             }
-          />
-          <Route
-            path="/leads"
-            element={
-              <PrivateRoute>
-                <Leads />
-              </PrivateRoute>
-            }
-          />
-           <Route
-            path="/leadProfile"
-            element={
-              <PrivateRoute>
-                <LeadProfile />
-              </PrivateRoute>
-            }
-          />
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="leads" element={<Leads />} />
+            <Route path="leadProfile" element={<LeadProfile />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="addtask" element={<AddTask />} />
+            <Route path="viewtask" element={<ViewTask />} />
+          </Route>
         </Routes>
       </Router>
+
       <Toaster richColors position="top-center" />
       </DateFilterProvider>
     </>

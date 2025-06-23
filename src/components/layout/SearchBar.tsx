@@ -5,9 +5,11 @@ import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"
 import { DateRange } from "react-date-range";
 import { useEffect, useRef } from "react";
 import { format } from "date-fns";
-
+import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+
+  
 
 export default function SearchBar() {
   const {
@@ -42,7 +44,7 @@ export default function SearchBar() {
     dateRange[0].endDate,
     "MMM d, yyyy"
   )}`;
-
+  const navigate = useNavigate();
   return (
     <div className="bg-[#e5e5e5] w-screen px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       {/* Search Input */}
@@ -105,7 +107,7 @@ export default function SearchBar() {
 
         {/* Action buttons */}
         <span className="cursor-pointer text-black hover:underline">+ Add Lead</span>
-        <span className="cursor-pointer text-black hover:underline">+ Add Task</span>
+        <span className="cursor-pointer text-black hover:underline" onClick={()=> navigate('/addtask')}>+ Add Task</span>
       </div>
 
       {/* Show Date Picker if Custom is selected */}
@@ -124,5 +126,5 @@ export default function SearchBar() {
         </div>
       )}
     </div>
-  );
+  )
 }

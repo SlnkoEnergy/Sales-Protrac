@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { AuthLogin, getUserById } from "@/services/auth";
 import { useNavigate } from "react-router-dom";
+import { CardTitle } from "@/components/ui/card";
 
 type LoginFormInputs = {
   email: string;
@@ -62,8 +63,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
       className={cn("flex flex-col gap-6", className)}
       {...props}
     >
-      <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl text-start font-bold text-[#1f487c]">
+      <div className="flex flex-col text-center text-2xl font-bold text-[#1f487c]"><h1>Sales Protrac</h1></div>
+      <div className="flex flex-col gap-2 text-center">        
+        <h1 className="text-2xl text-start font-semibold text-[#1f487c]">
           Login to your account
         </h1>
         <p className="text-muted-foreground text-sm text-balance">
