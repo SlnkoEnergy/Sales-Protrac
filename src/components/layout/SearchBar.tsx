@@ -1,6 +1,8 @@
 import { Search, Filter } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function SearchBar() {
+  const navigate = useNavigate();
   return (
     <div className=" bg-[#e5e5e5] w-screen px-4 py-3 flex justify-between items-center shadow-sm">
       {/* Search Input */}
@@ -39,7 +41,7 @@ export default function SearchBar() {
 
         {/* Action buttons */}
         <span className="cursor-pointer text-black hover:underline">+ Add Lead</span>
-        <span className="cursor-pointer text-black hover:underline">+ Add Task</span>
+        <span className="cursor-pointer text-black hover:underline" onClick={()=> navigate('/addtask')}>+ Add Task</span>
       </div>
     </div>
   );

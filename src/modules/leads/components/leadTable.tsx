@@ -13,7 +13,13 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Check, ChevronDown, ChevronLeft, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  MoreHorizontal,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -210,7 +216,6 @@ export function DataTable() {
           limit: pageSize,
           search: search,
         };
-        console.log("params:", params);
         const res = await getLeads(params);
         setData(res.leads);
       } catch (err) {
@@ -288,10 +293,19 @@ export function DataTable() {
 
   return (
     <div className="w-full">
-      <Button variant="outline" size="sm" onClick={() => window.location.href = "/"}>
-  <ChevronLeft />
-</Button>
-
+      <div className="flex flex-cols-2 justify-between">
+        <Button
+        variant="default"
+        size="sm"
+        onClick={() => (window.location.href = "/")}
+        className="cursor-pointer"
+      >
+        <ChevronLeft />
+      </Button>
+      <Button variant="destructive" className="cursor-pointer">
+        Export to CSV
+      </Button>
+      </div>
 
       <div className="flex items-center py-4">
         <Input

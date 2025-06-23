@@ -69,7 +69,7 @@ export default function LeadProfile() {
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex gap-3 items-center">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="outline" className="cursor-pointer" size="sm" onClick={() => navigate(-1)}>
             <ChevronLeft />
           </Button>
           <CardTitle className="text-xl font-semibold">

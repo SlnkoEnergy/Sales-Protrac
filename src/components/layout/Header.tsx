@@ -55,7 +55,7 @@ export default function Header() {
         </div>
         <div className="flex items-center gap-1">
           <ClipboardList size={18} />
-          <span className="cursor-pointer">Tasks</span>
+          <span className="cursor-pointer" onClick={()=> navigate('/tasks')}>Tasks</span>
         </div>
         <div className="flex items-center gap-1">
           <Home size={18} />

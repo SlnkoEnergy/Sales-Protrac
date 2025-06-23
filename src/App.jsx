@@ -3,6 +3,9 @@ import Dashboard from "@/modules/dashboard/pages/Dashboard";
 import Leads from "@/modules/leads/pages/leads";
 import LoginPage from "@/modules/Login/pages/login_page";
 import LeadProfile from "@/modules/leads/pages/leadProfile";
+import Tasks from "@/modules/task/pages/TaskDashboard"
+import AddTask from "@/components/task/AddTask"
+import ViewTask from "@/components/task/ViewTask"
 import PrivateRoute from "../utils/PrivateRoutes";
 import Layout from "../src/components/layout/Layout";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,6 +28,9 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="leads" element={<Leads />} />
             <Route path="leadProfile" element={<LeadProfile />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="addtask" element={<AddTask />} />
+            <Route path="viewtask" element={<ViewTask />} />
           </Route>
         </Routes>
       </Router>
