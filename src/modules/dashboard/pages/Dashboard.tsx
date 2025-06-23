@@ -2,7 +2,7 @@ import Header from "@/components/layout/Header";
 import SearchBar from "@/components/layout/SearchBar";
 import TeamAvailability from "@/modules/dashboard/components/TeamAvailability";
 import LeadStatusWidget from "@/modules/dashboard/components/LeadStatusWidget";
-import FunnelChart from "@/components/ui/funnelChart";
+import FunnelChart from "@/modules/dashboard/components/funnelChart";
 import DashboardStats from "@/modules/dashboard/components/DashBoardStats";
 import ConversionRateChart from "@/modules/dashboard/components/conversionRateChart";
 import ChartAreaInteractive from "@/modules/dashboard/components/interactiveChart";

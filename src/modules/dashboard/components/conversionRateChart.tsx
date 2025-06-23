@@ -18,16 +18,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-import { format, subDays } from "date-fns";
-import { getLeadConversion } from "@/services/leads/dashboard"; // ✅ Your API call
+import { format } from "date-fns";
+import { getLeadConversion } from "@/services/leads/dashboard";
+import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"; // ✅ Global filter
 
 const chartConfig = {
   total_leads: {
@@ -41,28 +34,19 @@ const chartConfig = {
 };
 
 export default function ConversionRateChart() {
-  const [selectedRange, setSelectedRange] = React.useState("14d");
+  const { dateRange } = useDateFilter(); // ✅ Global date range
   const [chartData, setChartData] = React.useState([]);
 
-  const calculateDateRange = (range: string) => {
-    const endDate = new Date();
-    let startDate = new Date();
-    if (range === "7d") startDate = subDays(endDate, 7);
-    else if (range === "14d") startDate = subDays(endDate, 14);
-    else if (range === "30d") startDate = subDays(endDate, 30);
-    return {
-      start: format(startDate, "yyyy-MM-dd"),
-      end: format(endDate, "yyyy-MM-dd"),
-    };
-  };
-
   const fetchData = async () => {
-    const { start, end } = calculateDateRange(selectedRange);
     try {
-      const res = await getLeadConversion(start, end);
+      const startDate = format(dateRange[0].startDate, "yyyy-MM-dd");
+      const endDate = format(dateRange[0].endDate, "yyyy-MM-dd");
+
+      const res = await getLeadConversion({ startDate, endDate });
+
       setChartData([
         {
-          date: `${start} to ${end}`,
+          date: `${startDate} to ${endDate}`,
           total_leads: res.total_leads || 0,
           total_handovers: res.total_handovers || 0,
         },
@@ -75,27 +59,13 @@ export default function ConversionRateChart() {
 
   React.useEffect(() => {
     fetchData();
-  }, [selectedRange]);
-
-  const activeChartKey = "total_leads"; // You can allow toggle between keys if needed
+  }, [dateRange]);
 
   return (
     <Card>
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle className="text-2xl">Conversion Rate</CardTitle>
-        </div>
-        <div className="flex gap-4 items-center p-2">
-          <Select value={selectedRange} onValueChange={setSelectedRange}>
-            <SelectTrigger className="w-[140px] h-9 text-sm">
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="14d">Last 2 weeks</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </CardHeader>
 

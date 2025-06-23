@@ -8,10 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getTopLeadSources } from "@/services/leads/dashboard.js";
-
-const RADIAN = Math.PI / 180;
+import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"; // ✅ import global date filter
+import { format } from "date-fns";
 
 const COLORS = [
   "#3B82F6", // Blue
@@ -23,42 +27,17 @@ const COLORS = [
   "#F87171", // Red
 ];
 
-const renderCustomizedLabel = ({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  percent,
-}) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="white"
-      textAnchor="middle"
-      dominantBaseline="central"
-      fontSize={12}
-      fontWeight="600"
-      pointerEvents="none"
-      style={{ userSelect: "none" }}
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
-
 export default function LeadSourceWidget() {
+  const { dateRange } = useDateFilter(); // ✅ hook
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const fetchLeadSources = async () => {
       try {
-        const data = await getTopLeadSources();
+        const startDate = format(dateRange[0].startDate, "yyyy-MM-dd");
+        const endDate = format(dateRange[0].endDate, "yyyy-MM-dd");
+
+        const data = await getTopLeadSources({ startDate, endDate });
 
         if (!Array.isArray(data)) {
           console.warn("Unexpected API response format:", data);
@@ -67,8 +46,8 @@ export default function LeadSourceWidget() {
         }
 
         const formatted = data.map((item, index) => ({
-          browser: item.source,
-          visitors: item.percentage,
+          label: item.source,
+          value: item.percentage,
           fill: COLORS[index % COLORS.length],
         }));
 
@@ -80,7 +59,7 @@ export default function LeadSourceWidget() {
     };
 
     fetchLeadSources();
-  }, []);
+  }, [dateRange]); // ✅ refetch on filter change
 
   return (
     <Card className="flex flex-col p-6">
@@ -96,13 +75,13 @@ export default function LeadSourceWidget() {
             <PieChart>
               <Pie
                 data={chartData}
-                dataKey="visitors"
-                nameKey="browser"
+                dataKey="value"
+                nameKey="label"
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
                 labelLine={false}
-                label={renderCustomizedLabel}
+                label={({ value }) => `${value}%`}
                 cursor="pointer"
                 animationDuration={800}
                 animationEasing="ease-in-out"
@@ -118,31 +97,29 @@ export default function LeadSourceWidget() {
         {chartData.length > 0 ? (
           <div className="flex flex-wrap justify-center gap-4 max-w-md">
             {chartData.map((entry) => (
-              <Tooltip key={entry.browser}>
+              <Tooltip key={entry.label}>
                 <TooltipTrigger asChild>
                   <div
                     className="flex items-center gap-2 cursor-pointer select-none"
-                    aria-label={`${entry.browser}: ${(entry.visitors * 100).toFixed(1)}%`}
+                    aria-label={`${entry.label}: ${entry.value}%`}
                   >
                     <div
-                      className="w-6 h-6 rounded shadow-md border border-gray-300 dark:border-gray-700"
+                      className="w-6 h-6 rounded shadow-md border border-gray-300"
                       style={{ backgroundColor: entry.fill }}
                     />
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {entry.browser}
+                    <span className="text-sm font-medium text-gray-800">
+                      {entry.label}
                     </span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" align="center" className="text-xs">
-                  {`${entry.browser}: ${(entry.visitors * 100).toFixed(1)}%`}
+                  {`${entry.label}: ${entry.value}%`}
                 </TooltipContent>
               </Tooltip>
             ))}
           </div>
         ) : (
-          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            No data available
-          </div>
+          <div className="mt-4 text-sm text-gray-500">No data available</div>
         )}
       </CardContent>
     </Card>

@@ -1,8 +1,50 @@
+"use client";
+
 import { Search, Filter } from "lucide-react";
+import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
+import { DateRange } from "react-date-range";
+import { useEffect, useRef } from "react";
+import { format } from "date-fns";
+
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 export default function SearchBar() {
+  const {
+    selectedFilter,
+    setSelectedFilter,
+    filters,
+    dateRange,
+    setDateRange,
+    showPicker,
+    setShowPicker,
+  } = useDateFilter();
+
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+
+    if (showPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPicker]);
+
+  const formattedDateRange = `${format(dateRange[0].startDate, "MMM d, yyyy")} - ${format(
+    dateRange[0].endDate,
+    "MMM d, yyyy"
+  )}`;
+
   return (
-    <div className=" bg-[#e5e5e5] w-screen px-4 py-3 flex justify-between items-center shadow-sm">
+    <div className="bg-[#e5e5e5] w-screen px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       {/* Search Input */}
       <div className="flex items-center bg-white rounded-md px-4 py-2 w-1/3 shadow-sm">
         <Search className="text-gray-400 mr-2" size={18} />
@@ -14,7 +56,7 @@ export default function SearchBar() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-6 text-sm text-gray-800 font-medium">
+      <div className="flex items-center gap-6 text-sm text-gray-800 font-medium relative">
         {/* Filter with red dot */}
         <div className="relative flex items-center gap-1 cursor-pointer">
           <Filter size={18} />
@@ -24,9 +66,11 @@ export default function SearchBar() {
           </span>
         </div>
 
-        {/* Dropdown (Last 2 weeks) */}
-        <div className="flex items-center gap-1 cursor-pointer">
-          <span>Last 2 weeks</span>
+        {/* Date Filter Dropdown */}
+        <div className="flex items-center gap-1 cursor-pointer group relative">
+          <span>
+            {selectedFilter === "Custom" ? formattedDateRange : selectedFilter}
+          </span>
           <svg
             className="w-4 h-4"
             fill="none"
@@ -35,12 +79,50 @@ export default function SearchBar() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
+
+          {/* Dropdown */}
+          <div className="absolute top-full right-0 mt-1 z-50 bg-white border border-gray-200 rounded shadow-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+            {filters.map((f) => (
+              <div
+                key={f.label}
+                onClick={() => {
+                  setSelectedFilter(f.label);
+                  if (f.label === "Custom") {
+                    setShowPicker(true);
+                  } else {
+                    setShowPicker(false);
+                  }
+                }}
+                className={`px-4 py-2 cursor-pointer hover:bg-gray-100 whitespace-nowrap ${
+                  selectedFilter === f.label ? "font-semibold text-blue-600" : ""
+                }`}
+              >
+                {f.label}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Action buttons */}
         <span className="cursor-pointer text-black hover:underline">+ Add Lead</span>
         <span className="cursor-pointer text-black hover:underline">+ Add Task</span>
       </div>
+
+      {/* Show Date Picker if Custom is selected */}
+      {selectedFilter === "Custom" && showPicker && (
+        <div
+          ref={pickerRef}
+          className="absolute top-full right-10 mt-2 z-50 shadow-lg"
+        >
+          <DateRange
+            editableDateInputs
+            onChange={(item) => setDateRange([item.selection])}
+            moveRangeOnFirstSelection={false}
+            ranges={dateRange}
+            maxDate={new Date()}
+          />
+        </div>
+      )}
     </div>
   );
 }

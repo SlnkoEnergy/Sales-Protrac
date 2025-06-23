@@ -5,10 +5,11 @@ import LoginPage from "../src/modules/Login/pages/login_page";
 import LeadProfile from "../src/modules/leads/pages/leadProfile"
 import PrivateRoute from "../utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner"; 
-
+import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
 function App() {
   return (
     <>
+    <DateFilterProvider>
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -39,6 +40,7 @@ function App() {
         </Routes>
       </Router>
       <Toaster richColors position="top-center" />
+      </DateFilterProvider>
     </>
   );
 }
