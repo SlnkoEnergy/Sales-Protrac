@@ -12,12 +12,7 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import TaskForm from "./TaskForm";
 import { Button } from "../ui/button";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-const users = [
-  { id: "mohit", name: "Mohit Goyal" },
-  { id: "anita", name: "Anita Sharma" },
-  { id: "ravi", name: "Ravi Kumar" },
-];
+
 export default function AddTask() {
   const navigate = useNavigate();
  

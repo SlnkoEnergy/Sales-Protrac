@@ -48,3 +48,25 @@ export const getAllTask = async () => {
     return [];
   }
 };
+
+export const getTaskById = async (_id) => {
+  try {
+    const response = await Axios.get(`/bddashboard/bd-tasks/${_id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to fetch task");
+  }
+};
+
+export const updateStatus = async ({ _id, status, user_id, remarks }) => {
+  try {
+    const response = await Axios.put(`/bddashboard/${_id}/updateStatus`, {
+      status: status,
+      remarks: remarks,
+      user_id: user_id
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error?.response?.data?.error || "Failed to update status");
+  }
+};

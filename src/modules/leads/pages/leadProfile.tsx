@@ -29,6 +29,7 @@ export type Lead = {
   state: string;
   scheme: string;
   capacity: string;
+  
   distance: string;
   entry_date: string;
   submitted_by: string;
