@@ -15,30 +15,57 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getWonAndLost } from "@/services/leads/dashboard"; // Adjust path as per your structure
 
-const chartData = [
-  { month: "Jan", closed: 45, lost: 28 },
-  { month: "Feb", closed: 64, lost: 23 },
-  { month: "Mar", closed: 54, lost: 43 },
-  { month: "Apr", closed: 74, lost: 30 },
-  { month: "May", closed: 44, lost: 24 },
-  { month: "Jun", closed: 54, lost: 33 },
-  { month: "Jul", closed: 39, lost: 18 },
-  { month: "Aug", closed: 59, lost: 42 },
-  { month: "Sep", closed: 74, lost: 33 },
-  { month: "Oct", closed: 46, lost: 20 },
-  { month: "Nov", closed: 49, lost: 31 },
-  { month: "Dec", closed: 43, lost: 19 },
-];
+export default function SalesOverviewChart({ filterParams }) {
+  const [chartData, setChartData] = React.useState([]);
+  const [stats, setStats] = React.useState([
+    { label: "Number of Leads", value: "-" },
+    { label: "Active Leads", value: "-" },
+    { label: "Closed Leads", value: "-", className: "text-green-600" },
+    { label: "Lost Leads", value: "-", className: "text-red-600" },
+  ]);
 
-const stats = [
-  { label: "Number of Leads", value: "12,721" },
-  { label: "Active Leads", value: "721" },
-  { label: "Closed Leads", value: "460", className: "text-green-600" },
-  { label: "Lost Leads", value: "120", className: "text-red-600" },
-];
+  React.useEffect(() => {
+    fetchWonAndLostData();
+  }, [filterParams]);
 
-export default function SalesOverviewChart() {
+  const fetchWonAndLostData = async () => {
+    try {
+      const data = await getWonAndLost(filterParams);
+
+      setStats([
+        { label: "Number of Leads", value: data.total_leads ?? 0 },
+        { label: "Active Leads", value: data.active_leads ?? 0 },
+        { label: "Closed Leads", value: data.won_leads ?? 0, className: "text-green-600" },
+        { label: "Lost Leads", value: data.lost_leads ?? 0, className: "text-red-600" },
+      ]);
+
+      const allMonths = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+      ];
+
+      const apiDataMap = {};
+      (data.monthly_data ?? []).forEach((item) => {
+        apiDataMap[item.month] = {
+          closed: item.won_percentage ?? 0,
+          lost: item.lost_percentage ?? 0,
+        };
+      });
+
+      const formattedChartData = allMonths.map((month) => ({
+        month,
+        closed: apiDataMap[month]?.closed ?? 0,
+        lost: apiDataMap[month]?.lost ?? 0,
+      }));
+
+      setChartData(formattedChartData);
+    } catch (error) {
+      console.error("Error fetching Won & Lost data:", error);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -46,7 +73,6 @@ export default function SalesOverviewChart() {
       </CardHeader>
 
       <CardContent>
-        {/* Increased height */}
         <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
@@ -58,7 +84,7 @@ export default function SalesOverviewChart() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis domain={[0, 100]} />
+              <YAxis domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
               <Area
                 type="monotone"
                 dataKey="closed"
@@ -76,7 +102,6 @@ export default function SalesOverviewChart() {
           </ResponsiveContainer>
         </div>
 
-        {/* Added more spacing */}
         <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
           {stats.map((item) => (
             <div key={item.label} className="text-center">
