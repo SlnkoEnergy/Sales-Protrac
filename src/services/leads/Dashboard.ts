@@ -1,4 +1,4 @@
-import Axios from "@/utils/axios/axios";
+import Axios from "@/utils/axios/Axios";
 
 // services/leads/dashboard.ts
 export const getTopLeadSources = async (params = {}) => {

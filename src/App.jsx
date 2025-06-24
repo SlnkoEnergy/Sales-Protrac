@@ -6,7 +6,7 @@ import LeadProfile from "@/modules/leads/pages/leadProfile";
 import Tasks from "@/modules/task/pages/TaskDashboard"
 import AddTask from "@/components/task/AddTask"
 import ViewTask from "@/components/task/ViewTask"
-import PrivateRoute from "../utils/PrivateRoutes";
+import PrivateRoute from "../src/utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner"; 
 import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
 import Layout from "../src/components/layout/Layout";

@@ -1,4 +1,4 @@
-import Axios from "@/utils/axios/axios";
+import Axios from "@/utils/axios/Axios";
 
 export const  getLeads = async (params = {}) => {
   let url = "/bddashboard/all-lead";

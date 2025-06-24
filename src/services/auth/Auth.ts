@@ -1,4 +1,4 @@
-import Axios from "@/utils/axios/axios";
+import Axios from "@/utils/axios/Axios";
 
 export const AuthLogin = async ({payload}) => {
   const response = await Axios.post("/logiN-IT", payload);
