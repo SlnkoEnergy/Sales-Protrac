@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
-import { CalendarIcon, CameraIcon, ChevronLeft, Clock } from "lucide-react";
+import { CalendarIcon, ChevronLeft } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getTaskById } from "@/services/task/task";
 import { useEffect, useState } from "react";
@@ -42,12 +42,17 @@ export type Task = {
     name: string;
     avatar?: string;
   }[];
-  status_history:{
-    _id: string,
-    status:string,
-    user_id: string,
-    remarks:string
+  status_history: {
+    _id: string;
+    status: string;
+    user_id: {
+      _id: string;
+      name: string;
+    };
+    remarks: string;
+    updatedAt: string;
   }[];
+
   lead_id?: {
     _id: string;
     id: string;
@@ -103,7 +108,7 @@ export default function ViewTask() {
     if (!data?._id || !userId || !newStatus) return;
 
     try {
-      const res = await updateStatus({
+      await updateStatus({
         _id: data._id,
         status: newStatus,
         remarks: newRemarks,
@@ -131,8 +136,6 @@ export default function ViewTask() {
 
     if (id) fetchTasks();
   }, [id]);
-  
-
 
   return (
     <div>
@@ -162,12 +165,6 @@ export default function ViewTask() {
               <Card>
                 <CardHeader className="flex justify-between items-center">
                   <CardTitle className="text-xl">{data?.title}</CardTitle>
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-100 text-shadow-white capitalize"
-                  >
-                    By {data?.type}
-                  </Badge>
                   <Badge
                     variant="outline"
                     className={`capitalize text-shadow-white ${
@@ -201,8 +198,8 @@ export default function ViewTask() {
                       })}
                   </div>
 
-                  <div className="flex items-center gap-2 mb-2 capitalize">
-                    <strong>Priority:</strong>
+                  <div className="capitalize">
+                    <strong>Priority:</strong>{" "}
                     <span
                       className={`font-semibold ${
                         data?.priority === "high"
@@ -216,14 +213,20 @@ export default function ViewTask() {
                     </span>
                   </div>
 
-                  <div className="flex gap-2 mb-2">
-                    <strong>Description:</strong> {data?.description}
+                  <div >
+                    <strong>Description:</strong>{" "} {data?.description}
                   </div>
 
-                  <div className="flex  gap-2">
-                    <strong>Assignees:</strong>
+                  <div >
+                    <strong>Assignees:</strong>{" "}
                     <span>
                       {data?.assigned_to?.map((user) => user.name).join(", ")}
+                    </span>
+                  </div>
+                  <div >
+                    <strong>Task Type:</strong>{" "}
+                    <span className="capitalize">
+                      {data?.type}
                     </span>
                   </div>
                 </CardDescription>
@@ -250,7 +253,8 @@ export default function ViewTask() {
                       onValueChange={handleStatusChange}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Change Status" />
+                        <SelectValue className="capitalize" placeholder={`${data?.current_status}`} />
+
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Change Status">
@@ -263,7 +267,6 @@ export default function ViewTask() {
                         ))}
                       </SelectContent>
                     </Select>
-
                     <Button
                       onClick={() =>
                         handleChangeStatus(selectedStatus, selectedRemarks)
@@ -278,46 +281,61 @@ export default function ViewTask() {
               )}
             </TabsContent>
             <TabsContent value="taskhistory">
-              <div className=" mx-auto py-10 px-4 overflow-y-auto max-h-150">
+              <div className=" max-w-200 py-10 px-4 overflow-y-auto max-h-150">
                 <div className="border-l-2 border-gray-300 pl-6 relative">
-                  {data?.status_history.map((event, idx) => (
+                  {data?.status_history.map((status, idx) => (
                     <div key={idx} className="mb-10 relative">
-                      <p className="text-sm text-gray-500 mb-1">{event.status}</p>
+                      <p className="text-sm text-gray-500 mb-1">
+                        {new Date(status.updatedAt).toLocaleString("en-GB", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </p>
                       <Card className="shadow-md">
                         <CardHeader>
-                          <CardTitle>{event.user_id}</CardTitle>
+                          <CardTitle className="flex flex-col-2 gap-2 ">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src="https://github.com/shadcn.png" />
+                              <AvatarFallback>{status.status}</AvatarFallback>
+                            </Avatar>
+                            {status?.user_id?.name}
+                          </CardTitle>
                         </CardHeader>
-                        <CardContent className="py-3">
-                          {event.status && (
-                            <div className="text-xs text-gray-500 flex items-center gap-1">
-                              <CalendarIcon className="h-3 w-3" /> {event.status}
-                            </div>
-                          )}
-                          {event.status && (
-                            <div className="text-sm text-gray-600 mt-2">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-5 w-5">
-                                  <AvatarImage src="https://github.com/shadcn.png" />
-                                  <AvatarFallback>
-                                    {event.status}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{event.status}</span>
-                                {event.status && (
-                                  <span className="text-xs text-gray-500">
-                                    @ {event.status}
-                                  </span>
-                                )}
-                                {event.remarks && (
-                                  <span className="text-xs text-gray-500">
-                                    · {event.remarks}
+                        <CardContent className="py-1">
+                          {status.status && (
+                            <div className="text-md text-gray-600 mt-2">
+                              <div>
+                                {status.remarks && (
+                                  <span className="text-sm text-gray-600">
+                                    {status.remarks}
                                   </span>
                                 )}
                               </div>
                             </div>
                           )}
-                    
                         </CardContent>
+                        <Separator />
+                        <CardFooter>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`capitalize ${
+                                status.status === "completed"
+                                  ? "text-green-600"
+                                  : status.status === "pending"
+                                  ? "text-red-600"
+                                  : status.status === "in progress"
+                                  ? "text-orange-600"
+                                  : "text-blue-600"
+                              }`}
+                            >
+                              {status.status}
+                            </span>
+                          </div>
+                        </CardFooter>
                       </Card>
                     </div>
                   ))}

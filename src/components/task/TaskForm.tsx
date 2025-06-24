@@ -22,7 +22,7 @@ import {
   createTask,
   getAllLeadDropdown,
   getAllUser,
-} from "@/services/task/task";
+} from "@/services/task/Task";
 import {
   Command,
   CommandEmpty,
@@ -42,7 +42,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-
 
 export default function TaskForm({
   type,
@@ -189,7 +188,7 @@ export default function TaskForm({
       toast.error("Failed to create Task. Please fill all the fields");
     }
   };
-
+  const handleSelectChange = (id: string) => setSelected([id]);
   return (
     <div className="space-y-4">
       <div>
@@ -313,7 +312,12 @@ export default function TaskForm({
           />
         </div>
 
-        {type !== "todo" ? (
+        {type === "todo" ? (
+          <div className="space-y-2">
+            <Label className="mb-2">Assigned to</Label>
+            <Input disabled value={getCurrentUser()?.name || ""} />
+          </div>
+        ) : type === "meeting" ? (
           <div className="space-y-2">
             <Label className="mb-2">Assigned to</Label>
             <Popover>
@@ -351,7 +355,24 @@ export default function TaskForm({
         ) : (
           <div className="space-y-2">
             <Label className="mb-2">Assigned to</Label>
-            <Input disabled value={getCurrentUser()?.name || ""} />
+            <Select
+              value={selected[0] || ""}
+              onValueChange={handleSelectChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a user" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <div className="max-h-60 overflow-y-auto">
+                  {user?.map((u) => (
+                    <SelectItem key={u._id} value={u._id}>
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </div>
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>

@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";
 import TasksCard from "../components/TaskCard";
+import { getTaskByLeadId } from "@/services/task/Task";
 
 export type Lead = {
   id: string;
@@ -29,7 +30,6 @@ export type Lead = {
   state: string;
   scheme: string;
   capacity: string;
-  
   distance: string;
   entry_date: string;
   submitted_by: string;
@@ -43,7 +43,7 @@ export type Lead = {
 export default function LeadProfile() {
   const navigate = useNavigate();
   const [data, setData] = React.useState<Lead | null>(null);
-
+  const [taskData, setTaskData] = React.useState(null);
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const status = searchParams.get("status");
@@ -55,7 +55,6 @@ export default function LeadProfile() {
           id: id,
           status: status,
         };
-        console.log("params:", params);
         const res = await getLeadbyId(params);
         setData(res.data);
       } catch (err) {
@@ -65,6 +64,24 @@ export default function LeadProfile() {
 
     fetchLeads();
   }, [id]);
+
+
+  React.useEffect(() =>{
+    const fetchTask = async()=> {
+      try {
+        const params = {
+          leadId:id
+        }
+        const res = await getTaskByLeadId(params);
+        setTaskData(res.data);
+        
+      } catch (error) {
+        console.error("Error fetching Tasks:", error);
+      }
+    }
+    fetchTask();
+  }, [id]);
+
 
   return (
     <div className="p-6 space-y-4">
@@ -159,14 +176,14 @@ export default function LeadProfile() {
         </Card>
         <Tabs defaultValue="notes" className="w-full">
           <TabsList>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="notes">Notes</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="tasks">Tasks</TabsTrigger>
           </TabsList>
           <TabsContent value="notes">
             <NotesCard />
           </TabsContent>
           <TabsContent value="tasks">
-            <TasksCard />
+            <TasksCard taskData = {taskData} />
           </TabsContent>
         </Tabs>
       </div>

@@ -67,8 +67,9 @@ export type Lead = {
 export function DataTable() {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage");
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "10");
+ const page = parseInt(searchParams.get("page") || "1", 10);
+const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
@@ -76,6 +77,8 @@ export function DataTable() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+
+
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -206,25 +209,28 @@ export function DataTable() {
       },
     },
   ];
+ const [total, setTotal] = React.useState(0);
 
-  React.useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const params = {
-          stage: selectedStages,
-          page,
-          limit: pageSize,
-          search: search,
-        };
-        const res = await getLeads(params);
-        setData(res.leads);
-      } catch (err) {
-        console.error("Error fetching leads:", err);
-      }
-    };
+React.useEffect(() => {
+  const fetchLeads = async () => {
+    try {
+      const params = {
+        stage: selectedStages,
+        page,
+        limit: pageSize,
+        search: search,
+      };
+      const res = await getLeads(params);
+      setTotal(res?.total || 0);
+      setData(res.leads);
+    } catch (err) {
+      console.error("Error fetching leads:", err);
+    }
+  };
 
-    fetchLeads();
-  }, [selectedStages, page, pageSize, search]);
+  fetchLeads();
+}, [selectedStages, page, pageSize, search]);
+
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -257,18 +263,19 @@ export function DataTable() {
   };
 
   const handleLimitChange = (newLimit: number) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.set("pageSize", newLimit.toString());
-      params.set("page", "1");
-      return params;
-    });
-  };
+  const params = new URLSearchParams(searchParams);
+  params.set("pageSize", newLimit.toString());
+  params.set("page", "1"); 
+  setSearchParams(params);
+};
 
   const [pagination, setPagination] = React.useState({
     pageIndex: page - 1,
     pageSize: pageSize,
   });
+  
+  const totalPages = Math.ceil(total/pageSize);
+  console.log("total", totalPages);
 
   const table = useReactTable({
     data,
@@ -468,7 +475,7 @@ export function DataTable() {
         >
           Previous
         </Button>
-        <span>Page {page} of page 10</span>
+        <span>Page {page} of page {totalPages}</span>
         <Button
           variant="outline"
           size="sm"
