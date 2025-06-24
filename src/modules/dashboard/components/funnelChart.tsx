@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
-import { getLeadFunnel } from "@/services/leads/dashboard";
+import { getLeadFunnel } from "@/services/leads/Dashboard";
 
 const FunnelChart = () => {
   const chartRef = useRef<HTMLDivElement>(null);

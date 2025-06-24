@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Mail, MapPin, Phone } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getLeadbyId } from "@/services/leads/leadService";
+import { getLeadbyId } from "@/services/leads/LeadService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";

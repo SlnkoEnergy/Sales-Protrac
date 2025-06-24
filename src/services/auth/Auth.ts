@@ -1,4 +1,4 @@
-import Axios from "../../utils/axios/axios";
+import Axios from "@/utils/axios/axios";
 
 export const AuthLogin = async ({payload}) => {
   const response = await Axios.post("/logiN-IT", payload);
@@ -6,6 +6,6 @@ export const AuthLogin = async ({payload}) => {
 };
 
 export const getUserById = async (userId) => {
-  const response = await Axios.get(`/get-single-useR-IT/${userId}`); // Adjust the endpoint if needed
+  const response = await Axios.get(`/get-single-useR-IT/${userId}`); 
   return response.data ?? {};
 };

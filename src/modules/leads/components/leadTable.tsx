@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { getLeads } from "@/services/leads/leadService";
+import { getLeads } from "@/services/leads/LeadService";
 import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,

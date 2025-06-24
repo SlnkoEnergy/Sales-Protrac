@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Banknote, User, BadgePercent, ActivitySquare } from "lucide-react";
 import StatCard from "@/components/ui/statrCard";
-import { getSummary } from "@/services/leads/dashboard"; // ✅ Use this API
+import { getSummary } from "@/services/leads/Dashboard"; // ✅ Use this API
 
 export default function DashboardStats() {
   const [stats, setStats] = useState({

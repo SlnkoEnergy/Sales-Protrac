@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { AuthLogin, getUserById } from "@/services/auth";
+import { AuthLogin, getUserById } from "@/services/auth/Auth";
 import { useNavigate } from "react-router-dom";
 import { CardTitle } from "@/components/ui/card";
 

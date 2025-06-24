@@ -1,5 +1,5 @@
 import  { useEffect, useState } from "react";
-import { getTeamAvailability } from "@/services/leads/dashboard"; // Adjust the import path as needed
+import { getTeamAvailability } from "@/services/leads/Dashboard"; // Adjust the import path as needed
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 

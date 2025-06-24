@@ -12,7 +12,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 
-import { getLeadSummary } from "@/services/leads/dashboard";
+import { getLeadSummary } from "@/services/leads/Dashboard";
 
 export default function LeadStatusWidget() {
   const { dateRange } = useDateFilter();

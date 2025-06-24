@@ -1,4 +1,4 @@
-import { DataTable } from "@/modules/leads/components/leadTable";
+import { DataTable } from "@/modules/leads/components/LeadTable";
 
 
 export default function Leads() {

@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Pencil, Trash } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { createNotes, getNotesByLeadId, editNotes, deleteNotes} from "@/services/leads/notes";
+import { createNotes, getNotesByLeadId, editNotes, deleteNotes} from "@/services/leads/Notes";
 import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 import {

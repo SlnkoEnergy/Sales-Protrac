@@ -1,4 +1,4 @@
-import Axios from "../../utils/axios/axios";
+import Axios from "@/utils/axios/axios";
 
 export const createNotes = async (noteData) => {
   try {

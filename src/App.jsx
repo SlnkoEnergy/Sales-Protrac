@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "@/modules/dashboard/pages/Dashboard";
 import Leads from "@/modules/leads/pages/leads";
-import LoginPage from "@/modules/Login/pages/login_page";
+import LoginPage from "@/modules/auth/pages/Login_Page";
 import LeadProfile from "@/modules/leads/pages/leadProfile";
 import Tasks from "@/modules/task/pages/TaskDashboard"
 import AddTask from "@/components/task/AddTask"
@@ -19,7 +19,6 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-
           <Route
             path="/"
             element={

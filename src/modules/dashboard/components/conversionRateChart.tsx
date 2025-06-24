@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 
 import { format } from "date-fns";
-import { getLeadConversion } from "@/services/leads/dashboard";
+import { getLeadConversion } from "@/services/leads/Dashboard";
 import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"; // ✅ Global filter
 
 const chartConfig = {

@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getWonAndLost } from "@/services/leads/dashboard"; // Adjust path as per your structure
+import { getWonAndLost } from "@/services/leads/Dashboard"; // Adjust path as per your structure
 
 export default function SalesOverviewChart({ filterParams }) {
   const [chartData, setChartData] = React.useState([]);
