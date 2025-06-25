@@ -8,16 +8,18 @@ import {
   Menu,
   Cross,
   X,
+  Trash,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { Cancel } from "@radix-ui/react-alert-dialog";
+import { getNotification, toggleViewTask } from "@/services/task/Task";
 
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
@@ -25,6 +27,14 @@ export default function Header() {
 
   const toggleDrawer = () => setShowDrawer(!showDrawer);
   const toggleNotifications = () => setShowNotifications(!showNotifications);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getNotification();
+      setNotifications(data);
+    };
+    fetchData();
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -43,20 +53,16 @@ export default function Header() {
     }
   }, []);
 
-  // Mock notifications (replace with API call if needed)
-  const notifications = [
-    {
-      title: "Task Assigned",
-      description: "You have been assigned a new task.",
-      time: "2 mins ago",
-    },
-    {
-      title: "Status Update",
-      description: "Your task status was updated to 'in progress'.",
-      time: "10 mins ago",
-    },
-  ];
+  const handleDelete = async (_id: string) => {
+    try {
+      await toggleViewTask(_id);
+      setNotifications((prev) => prev.filter((note) => note._id !== _id));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
 
+  console.log(notifications);
   return (
     <div className="bg-[#1F487C] w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md sticky top-0 z-50 relative">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -105,12 +111,23 @@ export default function Header() {
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">
         <Settings size={18} />
+
         <div className="relative">
-          <Bell
-            size={18}
-            onClick={toggleNotifications}
-            className="cursor-pointer"
-          />
+          {/* Bell Icon with Notification Count Badge */}
+          <div className="relative">
+            <Bell
+              size={18}
+              onClick={toggleNotifications}
+              className="cursor-pointer"
+            />
+            {notifications.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[13px] px-1.5 rounded-full leading-none">
+                {notifications.length}
+              </span>
+            )}
+          </div>
+
+          {/* Notification Dropdown */}
           {showNotifications && (
             <div className="absolute top-8 right-0 w-80 bg-white text-black rounded-lg shadow-xl z-50">
               <div className="px-4 py-2 border-b font-semibold text-gray-700 flex justify-between">
@@ -129,15 +146,29 @@ export default function Header() {
                   notifications.map((note, i) => (
                     <div
                       key={i}
-                      className="px-4 py-3 hover:bg-gray-100 border-b border-gray-200 cursor-pointer"
+                      className="flex items-start justify-between px-4 py-3 hover:bg-gray-100 border-b border-gray-200"
                     >
-                      <div className="text-sm font-medium">{note.title}</div>
-                      <div className="text-xs text-gray-500">
-                        {note.description}
+                    
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => navigate(`/viewtask?id=${note._id}`)}
+                      >
+                        <div className="text-sm font-medium">{note.title}</div>
+                        <div className="text-xs text-gray-500">
+                          {note.description}
+                        </div>
+                        <div className="text-[10px] text-gray-400 mt-1">
+                          {note.time}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-1">
-                        {note.time}
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="ml-2 mt-1"
+                        onClick={() => handleDelete(note._id)}
+                      >
+                        <Trash className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
                   ))
                 ) : (
@@ -149,14 +180,18 @@ export default function Header() {
             </div>
           )}
         </div>
+
         <Mail size={18} />
+
         <button
           onClick={handleLogout}
           className="bg-blue-500 text-white px-4 py-1 rounded-md font-medium cursor-pointer"
         >
           Logout
         </button>
+
         <div className="h-10 border-l border-white/30 mx-2"></div>
+
         <div className="flex items-center gap-2">
           <img
             src="/assets/avatar.png"

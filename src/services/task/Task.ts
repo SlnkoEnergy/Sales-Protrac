@@ -90,3 +90,24 @@ export const  getTaskByLeadId = async (params = {}) => {
   const response = await Axios.get(url);
   return response.data;
 };
+
+export const getNotification = async() => {
+  try {
+    const response = await Axios.get("/bddashboard/notification"); 
+    return response.data; 
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return [];
+  }
+}
+
+export const toggleViewTask = async (_id: string) => {
+  try {
+    const url = `/bddashboard/notification/${_id}`;
+  const response = await Axios.put(url);
+  return response.data;
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return [];
+  }
+};

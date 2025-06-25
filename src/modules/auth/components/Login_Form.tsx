@@ -116,7 +116,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
           <p className="text-sm text-red-600 text-center">{errorMessage}</p>
         )}
 
-        <Button type="submit" className="w-full bg-[#1f487c]" disabled={isSubmitting}>
+        <Button type="submit" className="w-full bg-[#1f487c] cursor-pointer" disabled={isSubmitting}>
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
       </div>
