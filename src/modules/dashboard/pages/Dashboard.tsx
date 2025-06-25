@@ -7,6 +7,7 @@ import DashboardStats from "@/modules/dashboard/components/DashBoardStats";
 import ConversionRateChart from "@/modules/dashboard/components/conversionRateChart";
 import ChartAreaInteractive from "@/modules/dashboard/components/interactiveChart";
 import LeadSourceWidget from "@/modules/dashboard/components/LeadSourceWidget";
+import TodoList from "@/modules/dashboard/components/toDoItems";
 
 export default function Dashboard() {
   return (
@@ -16,12 +17,14 @@ export default function Dashboard() {
         <DashboardStats />
         <div className="grid grid-cols-2 gap-4">
           <ConversionRateChart />
+          <TodoList/>
           <LeadSourceWidget />
           <TeamAvailability />
           <LeadStatusWidget />
           <FunnelChart />
-          <ChartAreaInteractive />
+          
         </div>
+        <ChartAreaInteractive />
       </div>
     </div>
   );

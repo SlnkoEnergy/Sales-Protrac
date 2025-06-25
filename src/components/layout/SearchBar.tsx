@@ -9,8 +9,6 @@ import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
-  
-
 export default function SearchBar() {
   const {
     selectedFilter,
@@ -24,7 +22,6 @@ export default function SearchBar() {
 
   const pickerRef = useRef<HTMLDivElement | null>(null);
 
-  // Close the picker on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
@@ -44,11 +41,13 @@ export default function SearchBar() {
     dateRange[0].endDate,
     "MMM d, yyyy"
   )}`;
+
   const navigate = useNavigate();
+
   return (
-    <div className="bg-[#e5e5e5] w-screen px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
+    <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       {/* Search Input */}
-      <div className="flex items-center bg-white rounded-md px-4 py-2 w-1/3 shadow-sm">
+      <div className="flex items-center bg-white rounded-md px-4 py-2 w-1/3 min-w-[200px] shadow-sm">
         <Search className="text-gray-400 mr-2" size={18} />
         <input
           type="text"
@@ -70,15 +69,8 @@ export default function SearchBar() {
 
         {/* Date Filter Dropdown */}
         <div className="flex items-center gap-1 cursor-pointer group relative">
-          <span>
-            {selectedFilter === "Custom" ? formattedDateRange : selectedFilter}
-          </span>
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <span>{selectedFilter === "Custom" ? formattedDateRange : selectedFilter}</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
 
@@ -89,11 +81,7 @@ export default function SearchBar() {
                 key={f.label}
                 onClick={() => {
                   setSelectedFilter(f.label);
-                  if (f.label === "Custom") {
-                    setShowPicker(true);
-                  } else {
-                    setShowPicker(false);
-                  }
+                  setShowPicker(f.label === "Custom");
                 }}
                 className={`px-4 py-2 cursor-pointer hover:bg-gray-100 whitespace-nowrap ${
                   selectedFilter === f.label ? "font-semibold text-blue-600" : ""
@@ -106,16 +94,17 @@ export default function SearchBar() {
         </div>
 
         {/* Action buttons */}
-        <span className="cursor-pointer text-black hover:underline" onClick={() => {navigate('/addLead')}}>+ Add Lead</span>
-        <span className="cursor-pointer text-black hover:underline" onClick={()=> navigate('/addtask')}>+ Add Task</span>
+        <span className="cursor-pointer text-black hover:underline" onClick={() => navigate("/addLead")}>
+          + Add Lead
+        </span>
+        <span className="cursor-pointer text-black hover:underline" onClick={() => navigate("/addtask")}>
+          + Add Task
+        </span>
       </div>
 
       {/* Show Date Picker if Custom is selected */}
       {selectedFilter === "Custom" && showPicker && (
-        <div
-          ref={pickerRef}
-          className="absolute top-full right-10 mt-2 z-50 shadow-lg"
-        >
+        <div ref={pickerRef} className="absolute top-full right-10 mt-2 z-50 shadow-lg">
           <DateRange
             editableDateInputs
             onChange={(item) => setDateRange([item.selection])}
@@ -126,5 +115,5 @@ export default function SearchBar() {
         </div>
       )}
     </div>
-  )
+  );
 }
