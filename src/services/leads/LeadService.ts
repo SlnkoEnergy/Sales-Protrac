@@ -75,3 +75,4 @@ export const deleteLead = async (_id: string, lead_model: string) => {
   const response = await Axios.delete(url);
   return response.data;
 };
+
