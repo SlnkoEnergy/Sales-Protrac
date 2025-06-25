@@ -12,7 +12,7 @@ export const getTeamAvailability = async (params = {}) => {
   const response = await Axios.get("/bddashboard/taskdashboard", {
     params,
   });
-  return response.data?.task_dashboard ?? [];
+  return response.data?.per_member_task_summary ?? [];
 };
 
 export const getLeadSummary = async (params = {}) => {

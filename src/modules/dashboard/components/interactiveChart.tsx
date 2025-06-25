@@ -7,15 +7,18 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
+  Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getWonAndLost } from "@/services/leads/Dashboard"; // Adjust path as per your structure
+
+import { getWonAndLost } from "@/services/leads/Dashboard";
 
 export default function SalesOverviewChart({ filterParams }) {
   const [chartData, setChartData] = React.useState([]);
@@ -82,9 +85,33 @@ export default function SalesOverviewChart({ filterParams }) {
                   <stop offset="95%" stopColor="#16a34a" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
+
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
+
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload?.length) {
+                    const closed = payload.find((p) => p.dataKey === "closed")?.value ?? 0;
+                    const lost = payload.find((p) => p.dataKey === "lost")?.value ?? 0;
+
+                    return (
+                      <div className="bg-white p-2 shadow rounded text-sm">
+                        <div className="font-medium mb-1">{label}</div>
+                        <div className="text-green-600">
+                          Closed: {closed.toFixed(2)}%
+                        </div>
+                        <div className="text-red-600">
+                          Lost: {lost.toFixed(2)}%
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+
               <Area
                 type="monotone"
                 dataKey="closed"

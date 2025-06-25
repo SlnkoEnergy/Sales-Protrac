@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pie, PieChart, Cell, ResponsiveContainer } from "recharts";
+import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getTopLeadSources } from "@/services/leads/Dashboard.js";
-import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"; // ✅ import global date filter
+import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
 import { format } from "date-fns";
 
 const COLORS = [
@@ -28,7 +28,7 @@ const COLORS = [
 ];
 
 export default function LeadSourceWidget() {
-  const { dateRange } = useDateFilter(); // ✅ hook
+  const { dateRange } = useDateFilter();
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function LeadSourceWidget() {
     };
 
     fetchLeadSources();
-  }, [dateRange]); // ✅ refetch on filter change
+  }, [dateRange]);
 
   return (
     <Card className="flex flex-col p-6">
@@ -90,6 +90,10 @@ export default function LeadSourceWidget() {
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
+              {/* ✅ Recharts Tooltip for Pie Hover */}
+              <RechartsTooltip
+                formatter={(value: any, name: any) => [`${value}%`, name]}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
