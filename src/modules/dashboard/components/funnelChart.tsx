@@ -16,7 +16,6 @@ const FunnelChart = () => {
 
         if (!chartRef.current || !D3Funnel) return;
 
-        // ✅ Build query params
         const params: Record<string, any> = { range: selectedFilter };
         if (selectedFilter === "Custom") {
           params.startDate = dateRange[0].startDate.toISOString().split("T")[0];
@@ -25,14 +24,12 @@ const FunnelChart = () => {
 
         const data = await getLeadFunnel(params);
 
-        // ✅ Always show all steps (even if count is 0)
         const funnelData = [
           ["Initial Leads", data.initial?.count ?? 0],
           ["Follow Up", data.followup?.count ?? 0],
           ["Warm Leads", data.warm?.count ?? 0],
           ["Closed Leads", data.won?.count ?? 0],
           ["Dead Leads", data.dead?.count ?? 0],
-          ["Payments", data.payment ?? 0],
         ];
 
         const funnel = new D3Funnel(chartRef.current);
@@ -44,12 +41,16 @@ const FunnelChart = () => {
           },
           block: {
             dynamicHeight: true,
-            minHeight: 15, // ✅ Enforce visibility even for small/zero values
+            minHeight: 15,
             highlight: true,
           },
           label: {
             fontSize: "16px",
             fill: "#fff",
+          },
+          tooltip: {
+            enabled: true,
+            format: (label, value) => `${label}: ${value}`,
           },
         });
       } catch (err) {

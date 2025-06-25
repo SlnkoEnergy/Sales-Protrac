@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PieChart, Pie, Cell, Label } from "recharts";
+import { PieChart, Pie, Cell, Label, Tooltip as RechartsTooltip } from "recharts";
 
 import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
 import {
@@ -95,6 +95,11 @@ export default function LeadStatusWidget() {
                 }}
               />
             </Pie>
+
+            {/* ✅ Recharts Tooltip Applied */}
+            <RechartsTooltip
+              formatter={(value: number, name: string) => [`${value} Leads`, name]}
+            />
           </PieChart>
         </div>
 
