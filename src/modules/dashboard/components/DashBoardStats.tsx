@@ -32,7 +32,7 @@ export default function DashboardStats() {
         const prevStart = format(prevStartDate, "yyyy-MM-dd");
         const prevEnd = format(prevEndDate, "yyyy-MM-dd");
 
-        // Fetch current and previous stats
+    
         const currentData = await getSummary({ startDate, endDate });
         const prevData = await getSummary({ startDate: prevStart, endDate: prevEnd });
 
@@ -51,7 +51,7 @@ export default function DashboardStats() {
     fetchStats();
   }, [dateRange]);
 
-  // Calculate Leads Trend
+ 
   const calculateLeadsTrend = () => {
     const { total_leads, previous_total_leads } = stats;
     if (previous_total_leads === 0) return 0;
@@ -62,7 +62,7 @@ export default function DashboardStats() {
   const leadsTrendValue = calculateLeadsTrend();
   const isLeadsTrendPositive = leadsTrendValue >= 0;
 
-  // Calculate Conversion Rate Trend
+ 
   const calculateConversionTrend = () => {
     const { conversion_rate_percentage, previous_conversion_rate_percentage } = stats;
     if (previous_conversion_rate_percentage === 0) return 0;

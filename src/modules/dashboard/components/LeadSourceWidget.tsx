@@ -18,13 +18,13 @@ import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"
 import { format } from "date-fns";
 
 const COLORS = [
-  "#3B82F6", // Blue
-  "#10B981", // Green
-  "#F59E0B", // Amber
-  "#6366F1", // Indigo
-  "#9CA3AF", // Gray
-  "#EC4899", // Pink
-  "#F87171", // Red
+  "#3B82F6", 
+  "#10B981", 
+  "#F59E0B", 
+  "#6366F1",  
+  "#9CA3AF", 
+  "#EC4899",  
+  "#F87171",  
 ];
 
 export default function LeadSourceWidget() {
@@ -90,7 +90,7 @@ export default function LeadSourceWidget() {
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
-              {/* ✅ Recharts Tooltip for Pie Hover */}
+              
               <RechartsTooltip
                 formatter={(value: any, name: any) => [`${value}%`, name]}
               />
