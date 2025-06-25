@@ -6,6 +6,8 @@ import LeadProfile from "@/modules/leads/pages/leadProfile";
 import Tasks from "@/modules/task/pages/TaskDashboard"
 import AddTask from "@/components/task/AddTask"
 import ViewTask from "@/components/task/ViewTask"
+import AddLead from "@/modules/leads/pages/AddLead"
+import EditLead from "@/modules/leads/pages/EditLead"
 import PrivateRoute from "../src/utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner"; 
 import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
@@ -33,6 +35,8 @@ function App() {
             <Route path="tasks" element={<Tasks />} />
             <Route path="addtask" element={<AddTask />} />
             <Route path="viewtask" element={<ViewTask />} />
+            <Route path="addlead" element={<AddLead />} />
+            <Route path="editlead" element={<EditLead />} />
           </Route>
         </Routes>
       </Router>

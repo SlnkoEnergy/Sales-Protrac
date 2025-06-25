@@ -67,8 +67,8 @@ export type Lead = {
 export function DataTable() {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage");
- const page = parseInt(searchParams.get("page") || "1", 10);
-const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
 
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
@@ -77,8 +77,6 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-
-
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -209,28 +207,27 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
       },
     },
   ];
- const [total, setTotal] = React.useState(0);
+  const [total, setTotal] = React.useState(0);
 
-React.useEffect(() => {
-  const fetchLeads = async () => {
-    try {
-      const params = {
-        stage: selectedStages,
-        page,
-        limit: pageSize,
-        search: search,
-      };
-      const res = await getLeads(params);
-      setTotal(res?.total || 0);
-      setData(res.leads);
-    } catch (err) {
-      console.error("Error fetching leads:", err);
-    }
-  };
+  React.useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const params = {
+          stage: selectedStages,
+          page,
+          limit: pageSize,
+          search: search,
+        };
+        const res = await getLeads(params);
+        setTotal(res?.total || 0);
+        setData(res.leads);
+      } catch (err) {
+        console.error("Error fetching leads:", err);
+      }
+    };
 
-  fetchLeads();
-}, [selectedStages, page, pageSize, search]);
-
+    fetchLeads();
+  }, [selectedStages, page, pageSize, search]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -263,18 +260,18 @@ React.useEffect(() => {
   };
 
   const handleLimitChange = (newLimit: number) => {
-  const params = new URLSearchParams(searchParams);
-  params.set("pageSize", newLimit.toString());
-  params.set("page", "1"); 
-  setSearchParams(params);
-};
+    const params = new URLSearchParams(searchParams);
+    params.set("pageSize", newLimit.toString());
+    params.set("page", "1");
+    setSearchParams(params);
+  };
 
   const [pagination, setPagination] = React.useState({
     pageIndex: page - 1,
     pageSize: pageSize,
   });
-  
-  const totalPages = Math.ceil(total/pageSize);
+
+  const totalPages = Math.ceil(total / pageSize);
   console.log("total", totalPages);
 
   const table = useReactTable({
@@ -302,16 +299,19 @@ React.useEffect(() => {
     <div className="w-full">
       <div className="flex flex-cols-2 justify-between">
         <Button
-        variant="default"
-        size="sm"
-        onClick={() => (window.location.href = "/")}
-        className="cursor-pointer"
-      >
-        <ChevronLeft />
-      </Button>
-      <Button variant="destructive" className="cursor-pointer">
-        Export to CSV
-      </Button>
+          variant="default"
+          size="sm"
+          onClick={() => (window.location.href = "/")}
+          className="cursor-pointer"
+        >
+          <ChevronLeft />
+        </Button>
+
+
+
+        <Button variant="destructive" className="cursor-pointer">
+          Export to CSV
+        </Button>
       </div>
 
       <div className="flex items-center py-4">
@@ -383,8 +383,12 @@ React.useEffect(() => {
             />
           </div>
         </div>
+        <Button variant="default" className="cursor-pointer" onClick={()=> {navigate('/addLead')}}>
+          + Add Lead
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
+             
             <Button variant="outline" className="ml-auto">
               Columns <ChevronDown />
             </Button>
@@ -475,7 +479,9 @@ React.useEffect(() => {
         >
           Previous
         </Button>
-        <span>Page {page} of page {totalPages}</span>
+        <span>
+          Page {page} of page {totalPages}
+        </span>
         <Button
           variant="outline"
           size="sm"

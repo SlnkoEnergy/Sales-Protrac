@@ -14,12 +14,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Mail, MapPin, Phone } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getLeadbyId } from "@/services/leads/LeadService";
+import { getLeadbyId, deleteLead } from "@/services/leads/LeadService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";
 import TasksCard from "../components/TaskCard";
 import { getTaskByLeadId } from "@/services/task/Task";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export type Lead = {
   id: string;
@@ -65,29 +77,46 @@ export default function LeadProfile() {
     fetchLeads();
   }, [id]);
 
-
-  React.useEffect(() =>{
-    const fetchTask = async()=> {
+  React.useEffect(() => {
+    const fetchTask = async () => {
       try {
         const params = {
-          leadId:id
-        }
+          leadId: id,
+        };
         const res = await getTaskByLeadId(params);
         setTaskData(res.data);
-        
       } catch (error) {
         console.error("Error fetching Tasks:", error);
       }
-    }
+    };
     fetchTask();
   }, [id]);
 
+  const handleDelete = async () => {
+    try {
+      if (!id || !status) {
+        toast.error("Missing lead ID or model");
+        return;
+      }
+
+      await deleteLead(id, status);
+      toast.success("Lead deleted successfully!");
+      navigate("/leads");
+    } catch (error) {
+      toast.error("Failed to delete lead");
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex gap-3 items-center">
-          <Button variant="outline" className="cursor-pointer" size="sm" onClick={() => navigate(-1)}>
+          <Button
+            variant="outline"
+            className="cursor-pointer"
+            size="sm"
+            onClick={() => navigate(-1)}
+          >
             <ChevronLeft />
           </Button>
           <CardTitle className="text-xl font-semibold">
@@ -96,12 +125,46 @@ export default function LeadProfile() {
         </div>
 
         <div className="flex gap-2">
-          <Button className="bg-blue-500" size="sm">
+          <Button
+            className="bg-blue-500 cursor-pointer"
+            size="sm"
+            onClick={() => {
+              navigate(`/editlead?id=${id}&lead_model=${status}`);
+            }}
+          >
             Edit Details
           </Button>
-          <Button variant="destructive" size="sm">
-            Remove Lead
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="cursor-pointer"
+                size="sm"
+              >
+                Remove Lead
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the
+                  lead from our system.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="cursor-pointer">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="cursor-pointer"
+                  onClick={handleDelete}
+                >
+                  Yes, delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       <div className="flex gap-4">
@@ -176,14 +239,18 @@ export default function LeadProfile() {
         </Card>
         <Tabs defaultValue="notes" className="w-full">
           <TabsList>
-            <TabsTrigger className="cursor-pointer" value="notes">Notes</TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="notes">
+              Notes
+            </TabsTrigger>
+            <TabsTrigger className="cursor-pointer" value="tasks">
+              Tasks
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="notes">
             <NotesCard />
           </TabsContent>
           <TabsContent value="tasks">
-            <TasksCard taskData = {taskData} />
+            <TasksCard taskData={taskData} />
           </TabsContent>
         </Tabs>
       </div>

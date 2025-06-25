@@ -106,7 +106,7 @@ export default function SearchBar() {
         </div>
 
         {/* Action buttons */}
-        <span className="cursor-pointer text-black hover:underline">+ Add Lead</span>
+        <span className="cursor-pointer text-black hover:underline" onClick={() => {navigate('/addLead')}}>+ Add Lead</span>
         <span className="cursor-pointer text-black hover:underline" onClick={()=> navigate('/addtask')}>+ Add Task</span>
       </div>
 

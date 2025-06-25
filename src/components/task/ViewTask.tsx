@@ -10,13 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
-import { CalendarIcon, ChevronLeft } from "lucide-react";
+import { ChevronLeft, Mail, Phone } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getTaskById } from "@/services/task/task";
+import { getTaskById } from "@/services/task/Task";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Textarea } from "../ui/textarea";
-import { updateStatus } from "@/services/task/task";
+import { updateStatus } from "@/services/task/Task";
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { toast } from "sonner";
+import { ScrollArea } from "@radix-ui/react-scroll-area";
 export type Task = {
   _id: string;
   title: string;
@@ -57,6 +58,7 @@ export type Task = {
     _id: string;
     id: string;
     c_name: string;
+    capacity: string;
   };
 };
 export default function ViewTask() {
@@ -137,36 +139,56 @@ export default function ViewTask() {
     if (id) fetchTasks();
   }, [id]);
 
+  console.log("data", data);
+
   return (
-    <div>
-      <div>
-        <div className="p-6">
+    <div className="p-6 space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-3 items-center">
           <Button
-            variant="default"
-            className="mb-2 cursor-pointer"
+            variant="outline"
+            className="cursor-pointer"
             size="sm"
             onClick={() => navigate(-1)}
           >
             <ChevronLeft />
           </Button>
+          <CardTitle className="text-xl font-semibold">Task Details</CardTitle>
         </div>
-        <div className="p-6 max-w-4xl mx-auto">
-          <Tabs defaultValue="taskdetails" className="mb-4">
-            <TabsList className="grid grid-cols-2 gap-1">
-              <TabsTrigger className="cursor-pointer" value="taskdetails">
-                Task Details
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="taskhistory">
-                Task History
-              </TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="taskdetails">
-              <Card>
-                <CardHeader className="flex justify-between items-center">
-                  <CardTitle className="text-xl">{data?.title}</CardTitle>
+        <div className="flex gap-2">
+          <Button className="bg-blue-500" size="sm">
+            Edit Task
+          </Button>
+          <Button variant="destructive" size="sm">
+            Remove Task
+          </Button>
+        </div>
+      </div>
+      <div className="flex gap-4 p-10">
+        <Card className="min-w-[450px]">
+          <CardHeader className="flex justify-center flex-col items-center">
+            <Avatar className="h-14 w-14">
+              <AvatarImage src="https://github.com/shadcn.png" />
+              <AvatarFallback>KR</AvatarFallback>
+            </Avatar>
+            <CardTitle className="mb-2">{data?.lead_id?.c_name}</CardTitle>
+            <CardDescription className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
+                <Mail size={18} /> abc@gmail.com
+              </span>
+              <span className="flex items-center gap-2">
+                <Phone size={18} /> abc@gmail.com
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col">
+            <div className="space-y-1 flex flex-col">
+              <div className="space-y-2">
+                <CardTitle>
+                  Status:{" "}
                   <Badge
-                    variant="outline"
+                    variant="default"
                     className={`capitalize text-shadow-white ${
                       data?.current_status === "completed"
                         ? "bg-green-400"
@@ -179,171 +201,152 @@ export default function ViewTask() {
                   >
                     {data?.current_status}
                   </Badge>
-                </CardHeader>
-                <CardDescription className="grid grid-cols-2 sm:grid-cols-2 px-6 text-md gap-y-2 gap-x-4 mb-4">
-                  <div>
-                    <strong>Lead Id:</strong> {data?.lead_id?.id}
-                  </div>
-                  <div>
-                    <strong>Lead Name:</strong> {data?.lead_id?.c_name}
-                  </div>
+                </CardTitle>
 
-                  <div>
-                    <strong>Deadline:</strong>{" "}
-                    {data?.deadline &&
-                      new Date(data?.deadline).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                  </div>
-
-                  <div className="capitalize">
-                    <strong>Priority:</strong>{" "}
-                    <span
-                      className={`font-semibold ${
-                        data?.priority === "high"
-                          ? "text-red-600"
-                          : data?.priority === "medium"
-                          ? "text-orange-500"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {data?.priority}
-                    </span>
-                  </div>
-
-                  <div >
-                    <strong>Description:</strong>{" "} {data?.description}
-                  </div>
-
-                  <div >
-                    <strong>Assignees:</strong>{" "}
-                    <span>
-                      {data?.assigned_to?.map((user) => user.name).join(", ")}
-                    </span>
-                  </div>
-                  <div >
-                    <strong>Task Type:</strong>{" "}
-                    <span className="capitalize">
-                      {data?.type}
-                    </span>
-                  </div>
-                </CardDescription>
-                <Separator />
-                <CardFooter>
-                  <strong>Lead Owner:</strong>{" "}
-                  <Badge className="ml-1 bg-amber-600">
-                    {data?.user_id?.name}
-                  </Badge>
-                </CardFooter>
-              </Card>
-
-              {data?.current_status !== "completed" && (
-                <div>
-                  <Textarea
-                    placeholder="Add Note"
-                    className="max-w-full mt-4 mb-4 h-[100px] resize-none"
-                    value={selectedRemarks}
-                    onChange={(e) => setSelectedRemarks(e.target.value)}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Select
-                      value={selectedStatus}
-                      onValueChange={handleStatusChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue className="capitalize" placeholder={`${data?.current_status}`} />
-
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Change Status">
-                          Clear Status Filter
-                        </SelectItem>
-                        {otherStatuses.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={() =>
-                        handleChangeStatus(selectedStatus, selectedRemarks)
-                      }
-                      className="w-[100px]"
-                      variant="outline"
-                    >
-                      Submit
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-            <TabsContent value="taskhistory">
-              <div className=" max-w-200 py-10 px-4 overflow-y-auto max-h-150">
-                <div className="border-l-2 border-gray-300 pl-6 relative">
-                  {data?.status_history.map((status, idx) => (
-                    <div key={idx} className="mb-10 relative">
-                      <p className="text-sm text-gray-500 mb-1">
-                        {new Date(status.updatedAt).toLocaleString("en-GB", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </p>
-                      <Card className="shadow-md">
-                        <CardHeader>
-                          <CardTitle className="flex flex-col-2 gap-2 ">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage src="https://github.com/shadcn.png" />
-                              <AvatarFallback>{status.status}</AvatarFallback>
-                            </Avatar>
-                            {status?.user_id?.name}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="py-1">
-                          {status.status && (
-                            <div className="text-md text-gray-600 mt-2">
-                              <div>
-                                {status.remarks && (
-                                  <span className="text-sm text-gray-600">
-                                    {status.remarks}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                        <Separator />
-                        <CardFooter>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`capitalize ${
-                                status.status === "completed"
-                                  ? "text-green-600"
-                                  : status.status === "pending"
-                                  ? "text-red-600"
-                                  : status.status === "in progress"
-                                  ? "text-orange-600"
-                                  : "text-blue-600"
-                              }`}
-                            >
-                              {status.status}
-                            </span>
-                          </div>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
+                <p>
+                  <strong>Task Type:</strong>{" "}
+                  <span className="capitalize">{data?.type}</span>
+                </p>
+                <p>
+                  <strong>Capacity:</strong> {data?.lead_id?.capacity}
+                </p>
+                <p>
+                  <strong>Priority:</strong>{" "}
+                  <span
+                    className={`font-semibold capitalize ${
+                      data?.priority === "high"
+                        ? "text-red-600"
+                        : data?.priority === "medium"
+                        ? "text-orange-500"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {data?.priority}
+                  </span>
+                </p>
+                <p>
+                  <strong>Deadline:</strong>{" "}
+                  {data?.deadline &&
+                    new Date(data?.deadline).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                </p>
+                <p>
+                  <strong>Description:</strong> {data?.description}
+                </p>
+                <p>
+                  <strong>Assignees:</strong>{" "}
+                  <span>
+                    {data?.assigned_to?.map((user) => user.name).join(", ")}
+                  </span>
+                </p>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-2 items-start">
+            <Separator />
+            Owner:{" "}
+            <Badge className="ml-1 bg-amber-600">{data?.user_id?.name}</Badge>
+          </CardFooter>
+        </Card>
+
+        <Tabs defaultValue="notes" className="w-full">
+          <TabsList>
+            <TabsTrigger className="cursor-pointer" value="notes">
+              Task Activities
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="notes">
+            <Card className=" h-full">
+              <CardHeader className="flex flex-row w-full items-center justify-between">
+                <CardTitle className="text-lg font-medium">
+                  Task Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                <Textarea
+                  placeholder="Add Task Note"
+                  className="max-w-full h-[100px] resize-none"
+                  value={selectedRemarks}
+                  onChange={(e) => setSelectedRemarks(e.target.value)}
+                />
+                <div className="grid items-center grid-cols-2 gap-2 w-100">
+                  <Select
+                    value={selectedStatus}
+                    onValueChange={handleStatusChange}
+                  >
+                    <SelectTrigger className="cursor-pointer">
+                      <SelectValue
+                        className="capitalize"
+                        placeholder={`${data?.current_status}`}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Change Status">
+                        Clear Status Filter
+                      </SelectItem>
+                      {otherStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    onClick={() =>
+                      handleChangeStatus(selectedStatus, selectedRemarks)
+                    }
+                    className="w-[100px] cursor-pointer"
+                    variant="default"
+                  >
+                    Submit
+                  </Button>
+                </div>
+                <ScrollArea className="h-48 w-full overflow-auto">
+                  <div className="flex flex-col gap-3 p-2">
+                    {data?.status_history?.map((entry, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src="https://github.com/vercel.png" />
+                          <AvatarFallback>
+                            {entry.user_id?.name?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span
+                            className={`font-semibold capitalize ${
+                              entry.status === "pending"
+                                ? "text-red-500"
+                                : entry.status === "in progress"
+                                ? "text-orange-500"
+                                : entry.status === "draft"
+                                ? "text-blue-500"
+                                : entry.status === "completed"
+                                ? "text-green-600"
+                                : ""
+                            }`}
+                          >
+                            {entry.status}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            by {entry.user_id?.name} on{" "}
+                            {new Date(entry.updatedAt).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                            })}
+                          </span>
+                          <span className="text-sm">{entry.remarks}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

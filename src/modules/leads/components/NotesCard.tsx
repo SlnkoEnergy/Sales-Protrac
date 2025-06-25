@@ -68,7 +68,7 @@ const [deleteId, setDeleteId] = useState(null);
         const res = await getNotesByLeadId(params);
         setData(res.data);
       } catch (error) {
-        console.error("Error fetching leads:", err);
+        console.error("Error fetching leads:", error);
       }
     };
     fetchNotes();

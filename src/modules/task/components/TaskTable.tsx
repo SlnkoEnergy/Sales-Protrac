@@ -43,7 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
-import { getAllTask } from "@/services/task/task";
+import { getAllTask } from "@/services/task/Task";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { format } from "date-fns";
 
