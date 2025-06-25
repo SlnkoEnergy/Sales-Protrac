@@ -76,3 +76,8 @@ export const deleteLead = async (_id: string, lead_model: string) => {
   return response.data;
 };
 
+export const transferLead = async(_id: string, lead_model: string, assigned_to)=> {
+  const url = `/bddashboard/assign-to/${_id}?lead_model=${encodeURIComponent(lead_model)}`;
+  const response = await Axios.put(url, assigned_to);
+  return response.data;
+}

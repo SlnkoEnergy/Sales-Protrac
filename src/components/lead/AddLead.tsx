@@ -272,7 +272,7 @@ export default function AddLead() {
         </div>
 
         <div className="mt-8 flex justify-end">
-          <Button type="submit">Submit</Button>
+          <Button type="submit" className="cursor-pointer">Submit</Button>
         </div>
       </form>
     </div>

@@ -29,7 +29,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -42,12 +41,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { getLeads } from "@/services/leads/LeadService";
+import { getLeads, transferLead} from "@/services/leads/LeadService";
+import { getAllUser } from "@/services/task/Task";
 import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@radix-ui/react-dropdown-menu";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 export type Lead = {
   _id: string;
   id: string;
@@ -62,6 +79,10 @@ export type Lead = {
   entry_date: string;
   submitted_by: string;
   email: string;
+  assigned_to: {
+    id: string;
+    name: string;
+  };
 };
 
 export function DataTable() {
@@ -69,11 +90,19 @@ export function DataTable() {
   const stageFromUrl = searchParams.get("stage");
   const page = parseInt(searchParams.get("page") || "1", 10);
   const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
-
+  const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [total, setTotal] = React.useState(0);
+  const [users, setUsers] = React.useState([]);
+  const [selectedUser, setSelectedUser] = React.useState(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(null);
+  const [selectedAssignTo, setSelectedAssignTo] = React.useState<string | null>(null);
+  const [leadModel, setLeadModel] = React.useState<string | null>(null);
+  const department = "BD";
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -167,9 +196,9 @@ export function DataTable() {
       cell: ({ row }) => <div>{row.getValue("entry_date")}</div>,
     },
     {
-      accessorKey: "submitted_by",
+      accessorKey: "assigned_to.name",
       header: "Lead Owner",
-      cell: ({ row }) => <div>{row.getValue("submitted_by")}</div>,
+      cell: ({ row }) => <div>{row.original.assigned_to?.name}</div>,
     },
     {
       id: "actions",
@@ -179,7 +208,11 @@ export function DataTable() {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button
+                onClick={(e) => e.stopPropagation()}
+                variant="ghost"
+                className="h-8 w-8 p-0"
+              >
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal />
               </Button>
@@ -187,27 +220,44 @@ export function DataTable() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(lead.id)}
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(lead.id);
+                  toast.success(`Lead ID ${lead.id} copied successfully`);
+                }}
               >
                 Copy Lead ID
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
+
               <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/leadProfile?id=${lead._id}&status=${lead.status}`)
-                }
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/leadProfile?id=${lead._id}&status=${lead.status}`);
+                }}
               >
                 View Customer
               </DropdownMenuItem>
 
-              <DropdownMenuItem>View Owner</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedAssignTo(row.original?.assigned_to.id);
+                  setLeadModel(row.original.status);
+                  setSelectedLeadId(row.original._id);
+                  setOpen(true);
+                }}
+                className="cursor-pointer"
+              >
+                Transfer Lead
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
       },
     },
   ];
-  const [total, setTotal] = React.useState(0);
 
   React.useEffect(() => {
     const fetchLeads = async () => {
@@ -266,13 +316,46 @@ export function DataTable() {
     setSearchParams(params);
   };
 
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const params = {
+          department: department,
+        };
+        const res = await getAllUser(params);
+        setUsers(res.data);
+      } catch (err) {
+        console.error("Error fetching leads:", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+const handleTransferLead = async () => {
+  if (!selectedLeadId || !selectedUser) return;
+
+  try {
+    const payload = { assigned_to: selectedUser };
+    await transferLead(selectedLeadId, leadModel, payload);
+    toast.success("Lead transferred successfully");
+    setOpen(false);
+   setTimeout(() => {
+  location.reload();
+}, 300);
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to transfer lead");
+  }
+};
+
   const [pagination, setPagination] = React.useState({
     pageIndex: page - 1,
     pageSize: pageSize,
   });
 
   const totalPages = Math.ceil(total / pageSize);
-  console.log("total", totalPages);
 
   const table = useReactTable({
     data,
@@ -306,8 +389,6 @@ export function DataTable() {
         >
           <ChevronLeft />
         </Button>
-
-
 
         <Button variant="destructive" className="cursor-pointer">
           Export to CSV
@@ -383,12 +464,17 @@ export function DataTable() {
             />
           </div>
         </div>
-        <Button variant="default" className="cursor-pointer" onClick={()=> {navigate('/addLead')}}>
+        <Button
+          variant="default"
+          className="cursor-pointer"
+          onClick={() => {
+            navigate("/addLead");
+          }}
+        >
           + Add Lead
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-             
             <Button variant="outline" className="ml-auto">
               Columns <ChevronDown />
             </Button>
@@ -490,6 +576,49 @@ export function DataTable() {
           Next
         </Button>
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select BD Member to Transfer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {users
+  .filter((user) => user._id !== selectedAssignTo)
+  .map((user) => (
+    <div
+      key={user._id}
+      className="p-2 border rounded cursor-pointer hover:bg-gray-100"
+      onClick={() => {
+        setSelectedUser(user);
+        setConfirmOpen(true); // assuming you're opening the AlertDialog here
+      }}
+    >
+      {user.name}
+    </div>
+))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you want to transfer to <strong>{selectedUser?.name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleTransferLead} className="cursor-pointer">
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
