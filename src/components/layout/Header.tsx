@@ -3,10 +3,11 @@ import {
   Bell,
   Mail,
   Settings,
-  Home,
+  LayoutDashboard,
+  Users,
+  Calendar,
   ClipboardList,
   Menu,
-  Cross,
   X,
   Trash,
 } from "lucide-react";
@@ -86,14 +87,14 @@ export default function Header() {
           className="flex items-center gap-1 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <Home size={18} />
+          <LayoutDashboard size={18} />
           <span>Dashboard</span>
         </div>
         <div
           className="flex items-center gap-1 cursor-pointer"
           onClick={() => navigate("/leads")}
         >
-          <Home size={18} />
+          <Users size={18} />
           <span>Leads</span>
         </div>
         <div
@@ -104,7 +105,7 @@ export default function Header() {
           <span>Tasks</span>
         </div>
         <div className="flex items-center gap-1 cursor-pointer">
-          <Home size={18} />
+          <Calendar size={18} />
           <span>Meetings</span>
         </div>
       </div>
@@ -221,14 +222,14 @@ export default function Header() {
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={() => navigate("/")}
               >
-                <Home size={18} />
+                <LayoutDashboard size={18} />
                 <span>Dashboard</span>
               </div>
               <div
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={() => navigate("/leads")}
               >
-                <Home size={18} />
+                <Users size={18} />
                 <span>Leads</span>
               </div>
               <div
@@ -239,7 +240,7 @@ export default function Header() {
                 <span>Tasks</span>
               </div>
               <div className="flex items-center gap-2">
-                <Home size={18} />
+                <Calendar size={18} />
                 <span>Meetings</span>
               </div>
               <button

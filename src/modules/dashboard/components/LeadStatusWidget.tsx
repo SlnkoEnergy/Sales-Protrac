@@ -96,7 +96,7 @@ export default function LeadStatusWidget() {
               />
             </Pie>
 
-            {/* ✅ Recharts Tooltip Applied */}
+          
             <RechartsTooltip
               formatter={(value: number, name: string) => [`${value} Leads`, name]}
             />

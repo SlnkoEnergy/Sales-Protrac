@@ -20,7 +20,7 @@ import {
 
 import { format } from "date-fns";
 import { getLeadConversion } from "@/services/leads/Dashboard";
-import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"; // ✅ Global filter
+import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"; 
 
 const chartConfig = {
   total_leads: {
@@ -34,7 +34,7 @@ const chartConfig = {
 };
 
 export default function ConversionRateChart() {
-  const { dateRange } = useDateFilter(); // ✅ Global date range
+  const { dateRange } = useDateFilter(); 
   const [chartData, setChartData] = React.useState([]);
 
   const fetchData = async () => {

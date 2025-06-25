@@ -55,3 +55,7 @@ export const getWonAndLost = async (params = {}) => {
   return response.data ?? {};
 };
 
+export const getToDoList = async () => {
+  const response = await Axios.get("/bddashboard/task-assign");
+  return response.data ?? {};
+};
