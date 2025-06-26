@@ -23,7 +23,7 @@ import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext"
 
 export default function SalesOverviewChart() {
   const [chartData, setChartData] = React.useState([]);
-  const { selectedFilter, dateRange } = useDateFilter();
+  const {  dateRange } = useDateFilter();
   
   const [stats, setStats] = React.useState([
     { label: "Number of Leads", value: "-" },
@@ -34,19 +34,16 @@ export default function SalesOverviewChart() {
 
   React.useEffect(() => {
     fetchWonAndLostData();
-  }, [selectedFilter, dateRange]);
+  }, [ dateRange]);
 
   const fetchWonAndLostData = async () => {
     try {
-       const params: Record<string, any> = { range: selectedFilter };
-        if (selectedFilter) {
-          params.startDate = dateRange[0].startDate.toISOString().split("T")[0];
-          params.endDate = dateRange[0].endDate.toISOString().split("T")[0];
-        }
+       
+       
 
+      const data = await getWonAndLost({ startDate: dateRange[0].startDate,
+        endDate: dateRange[0].endDate});
 
-      const data = await getWonAndLost(params);
-      console.log("params", params);
       console.log("",data)
 
       setStats([
