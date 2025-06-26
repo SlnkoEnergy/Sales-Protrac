@@ -81,3 +81,22 @@ export const transferLead = async(_id: string, lead_model: string, assigned_to)=
   const response = await Axios.put(url, assigned_to);
   return response.data;
 }
+
+export const exportToCsv = async () => {
+  try {
+    const response = await Axios.get(`/bddashboard/export-lead`, {
+      responseType: "blob", 
+    });
+
+    const blob = new Blob([response.data], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "leads.csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to export CSV");
+  }
+};
