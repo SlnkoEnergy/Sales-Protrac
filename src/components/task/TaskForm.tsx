@@ -130,7 +130,7 @@ export default function TaskForm({
         lead_id: formData.lead_id,
         user_id: getUserIdFromToken(),
         type,
-        assigned_to: selected,
+         assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
         deadline: formData.due_date,
         contact_info: formData.contact_info,
         priority: formData.priority,
