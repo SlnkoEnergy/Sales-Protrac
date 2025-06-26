@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "@/modules/dashboard/pages/Dashboard";
-import Leads from "@/modules/leads/pages/leads";
+import Leads from "@/modules/leads/pages/Leads";
 import LoginPage from "@/modules/auth/pages/Login_Page";
-import LeadProfile from "@/modules/leads/pages/leadProfile";
+import LeadProfile from "@/modules/leads/pages/LeadProfile";
 import Tasks from "@/modules/task/pages/TaskDashboard"
 import AddTask from "@/components/task/AddTask"
 import ViewTask from "@/components/task/ViewTask"
@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
 import Layout from "../src/components/layout/Layout";
 
+// Main file code
 
 function App() {
   return (
