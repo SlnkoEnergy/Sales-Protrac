@@ -63,7 +63,6 @@ export default function Header() {
     }
   };
 
-  console.log(notifications);
   return (
     <div className="bg-[#1F487C] w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md sticky top-0 z-50 relative">
       <div className="flex items-center gap-2 sm:gap-4">
@@ -106,7 +105,7 @@ export default function Header() {
         </div>
         <div className="flex items-center gap-1 cursor-pointer">
           <Calendar size={18} />
-          <span>Meetings</span>
+          <span className="cursor-pointer" onClick={()=> navigate('/meeting')}>Meetings</span>
         </div>
       </div>
 

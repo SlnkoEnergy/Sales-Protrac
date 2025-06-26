@@ -8,6 +8,7 @@ import AddTask from "@/components/task/AddTask"
 import ViewTask from "@/components/task/ViewTask"
 import AddLead from "@/modules/leads/pages/AddLead"
 import EditLead from "@/modules/leads/pages/EditLead"
+import Meetings from "@/modules/meeting/pages/MeetingDashboard"
 import PrivateRoute from "../src/utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner"; 
 import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
@@ -37,6 +38,7 @@ function App() {
             <Route path="viewtask" element={<ViewTask />} />
             <Route path="addlead" element={<AddLead />} />
             <Route path="editlead" element={<EditLead />} />
+            <Route path="meeting" element={<Meetings />} />
           </Route>
         </Routes>
       </Router>
