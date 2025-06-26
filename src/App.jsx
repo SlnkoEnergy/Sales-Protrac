@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
 import Layout from "../src/components/layout/Layout";
 
+// Main file
 
 function App() {
   return (
