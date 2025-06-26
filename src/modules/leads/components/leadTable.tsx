@@ -41,7 +41,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { getLeads, transferLead} from "@/services/leads/LeadService";
+import {
+  exportToCsv,
+  getLeads,
+  transferLead,
+} from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
 import {
   DropdownMenuRadioGroup,
@@ -99,8 +103,12 @@ export function DataTable() {
   const [users, setUsers] = React.useState([]);
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(null);
-  const [selectedAssignTo, setSelectedAssignTo] = React.useState<string | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
+    null
+  );
+  const [selectedAssignTo, setSelectedAssignTo] = React.useState<string | null>(
+    null
+  );
   const [leadModel, setLeadModel] = React.useState<string | null>(null);
   const department = "BD";
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -332,28 +340,36 @@ export function DataTable() {
     fetchUser();
   }, []);
 
-const handleTransferLead = async () => {
-  if (!selectedLeadId || !selectedUser) return;
+  const handleTransferLead = async () => {
+    if (!selectedLeadId || !selectedUser) return;
 
-  try {
-    const payload = { assigned_to: selectedUser };
-    await transferLead(selectedLeadId, leadModel, payload);
-    toast.success("Lead transferred successfully");
-    setOpen(false);
-   setTimeout(() => {
-  location.reload();
-}, 300);
-
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to transfer lead");
-  }
-};
+    try {
+      const payload = { assigned_to: selectedUser };
+      await transferLead(selectedLeadId, leadModel, payload);
+      toast.success("Lead transferred successfully");
+      setOpen(false);
+      setTimeout(() => {
+        location.reload();
+      }, 300);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to transfer lead");
+    }
+  };
 
   const [pagination, setPagination] = React.useState({
     pageIndex: page - 1,
     pageSize: pageSize,
   });
+
+  const handleExportToCsv = async () => {
+    try {
+      await exportToCsv();
+      toast.success("CSV exported successfully");
+    } catch (error) {
+      toast.error(error.message || "Failed to export CSV");
+    }
+  };
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -390,7 +406,11 @@ const handleTransferLead = async () => {
           <ChevronLeft />
         </Button>
 
-        <Button variant="destructive" className="cursor-pointer">
+        <Button
+          variant="destructive"
+          className="cursor-pointer"
+          onClick={handleExportToCsv}
+        >
           Export to CSV
         </Button>
       </div>
@@ -584,19 +604,19 @@ const handleTransferLead = async () => {
           </DialogHeader>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {users
-  .filter((user) => user._id !== selectedAssignTo)
-  .map((user) => (
-    <div
-      key={user._id}
-      className="p-2 border rounded cursor-pointer hover:bg-gray-100"
-      onClick={() => {
-        setSelectedUser(user);
-        setConfirmOpen(true); // assuming you're opening the AlertDialog here
-      }}
-    >
-      {user.name}
-    </div>
-))}
+              .filter((user) => user._id !== selectedAssignTo)
+              .map((user) => (
+                <div
+                  key={user._id}
+                  className="p-2 border rounded cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setConfirmOpen(true); 
+                  }}
+                >
+                  {user.name}
+                </div>
+              ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -613,7 +633,10 @@ const handleTransferLead = async () => {
             <AlertDialogCancel className="cursor-pointer">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleTransferLead} className="cursor-pointer">
+            <AlertDialogAction
+              onClick={handleTransferLead}
+              className="cursor-pointer"
+            >
               Confirm
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -54,7 +54,7 @@ export type Task = {
   leadname: string;
   priority: "high" | "medium" | "low";
   title: string;
-  lead_model:string,
+  lead_model: string;
   assigned_to: string;
   type: "meeting";
   current_status: "draft" | "pending" | "completed" | "in progress";
@@ -248,7 +248,9 @@ export function MeetingTable() {
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">View Task Detail</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
+                View Task Detail
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={(e) => {

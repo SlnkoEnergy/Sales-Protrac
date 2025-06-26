@@ -49,13 +49,8 @@ export default function SearchBar() {
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
-      <div className="flex items-center bg-white rounded-md px-4 py-2 w-1/3 min-w-[200px] shadow-sm">
-        <Search className="text-gray-400 mr-2" size={18} />
-        <input
-          type="text"
-          placeholder="Search Leads"
-          className="w-full bg-transparent focus:outline-none text-sm text-gray-700"
-        />
+      <div className="flex items-center  px-4 py-2 w-1/3 min-w-[200px] ">
+        
       </div>
 
       <div className="flex items-center gap-6 text-sm text-gray-800 font-medium relative">
