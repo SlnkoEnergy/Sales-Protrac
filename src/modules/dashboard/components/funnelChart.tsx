@@ -32,11 +32,14 @@ const FunnelChart = () => {
           ["Dead Leads", data.dead?.count ?? 0],
         ];
 
+        const containerWidth = chartRef.current.offsetWidth;
+        const funnelHeight = containerWidth * 0.6; // Keep height proportional
+
         const funnel = new D3Funnel(chartRef.current);
         funnel.draw(funnelData, {
           chart: {
-            width: 650,
-            height: 400,
+            width: containerWidth,
+            height: funnelHeight,
             bottomPinch: 1,
           },
           block: {
@@ -59,12 +62,19 @@ const FunnelChart = () => {
     };
 
     loadFunnel();
+
+    const handleResize = () => {
+      loadFunnel();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [selectedFilter, dateRange]);
 
   return (
     <div className="bg-white rounded-2xl shadow border p-6 w-full overflow-x-auto">
       <h2 className="text-2xl font-semibold text-gray-800 mb-4">Lead Funnel</h2>
-      <div ref={chartRef} className="min-h-[400px]" />
+      <div ref={chartRef} className="min-h-[400px] w-full" />
     </div>
   );
 };
