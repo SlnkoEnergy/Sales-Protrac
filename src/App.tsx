@@ -9,10 +9,10 @@ import ViewTasks from "@/modules/task/pages/ViewTask"
 import AddLead from "@/modules/leads/pages/AddLead"
 import EditLead from "@/modules/leads/pages/EditLead"
 import Meetings from "@/modules/meeting/pages/MeetingDashboard"
-import PrivateRoute from "../src/utils/PrivateRoutes";
+import PrivateRoute from "./utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner"; 
-import {DateFilterProvider} from "../src/modules/dashboard/components/DateFilterContext"
-import Layout from "../src/components/layout/Layout";
+import {DateFilterProvider} from "./modules/dashboard/components/DateFilterContext"
+import Layout from "./components/layout/Layout";
 
 // Main file code
 
