@@ -46,7 +46,7 @@ import {
 export default function TaskForm({
   type,
 }: {
-  type: "email" | "call" | "meeting" | "sms" | "todo";
+  type: "email" | "call" | "meeting" | "todo";
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -225,7 +225,7 @@ export default function TaskForm({
                           contact_info:
                             type === "email"
                               ? lead.email || ""
-                              : type === "call" || type === "sms"
+                              : type === "call" 
                               ? lead.mobile || ""
                               : "",
                         });
@@ -248,7 +248,7 @@ export default function TaskForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {(type === "email" || type === "call" || type === "sms") && (
+        {(type === "email" || type === "call") && (
           <div>
             <Label className="mb-2">
               {type === "email" ? "Email" : "Phone Number"}
@@ -292,7 +292,6 @@ export default function TaskForm({
                 <SelectItem value="call">Call</SelectItem>
                 <SelectItem value="meeting">Meeting</SelectItem>
                 <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="sms">SMS</SelectItem>
               </SelectContent>
             </Select>
           </div>
