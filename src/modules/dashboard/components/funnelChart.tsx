@@ -6,7 +6,7 @@ import { getLeadFunnel } from "@/services/leads/Dashboard";
 
 const FunnelChart = () => {
   const chartRef = useRef<HTMLDivElement>(null);
-  const { selectedFilter, dateRange } = useDateFilter();
+  const { dateRange } = useDateFilter();
 
   useEffect(() => {
     const loadFunnel = async () => {
@@ -15,14 +15,10 @@ const FunnelChart = () => {
         const D3Funnel = module.default;
 
         if (!chartRef.current || !D3Funnel) return;
+    
 
-        const params: Record<string, any> = { range: selectedFilter };
-        if (selectedFilter === "Custom") {
-          params.startDate = dateRange[0].startDate.toISOString().split("T")[0];
-          params.endDate = dateRange[0].endDate.toISOString().split("T")[0];
-        }
-
-        const data = await getLeadFunnel(params);
+        const data = await getLeadFunnel({ startDate: dateRange[0].startDate,
+        endDate: dateRange[0].endDate});
 
         const funnelData = [
           ["Initial Leads", data.initial?.count ?? 0],
@@ -69,7 +65,7 @@ const FunnelChart = () => {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [selectedFilter, dateRange]);
+  }, [ dateRange]);
 
   return (
     <div className="bg-white rounded-2xl shadow border p-6 w-full overflow-x-auto">
