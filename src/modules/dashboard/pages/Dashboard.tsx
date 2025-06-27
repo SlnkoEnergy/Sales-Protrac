@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Header from "@/components/layout/Header";
 import SearchBar from "@/components/layout/SearchBar";
 import TeamAvailability from "@/modules/dashboard/components/TeamAvailability";
 import LeadStatusWidget from "@/modules/dashboard/components/LeadStatusWidget";

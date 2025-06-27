@@ -13,18 +13,8 @@ import PrivateRoute from "./utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner";
 import { DateFilterProvider } from "./modules/dashboard/components/DateFilterContext";
 import Layout from "./components/layout/Layout";
-import { useEffect, useState } from "react";
-import Loader from "./components/loader/loader";
 
 function App() {
-  // const [loading, setLoading] = useState(true);
-
-  // useEffect(() => {
-  //   const timer = setTimeout(() => setLoading(false), 200);
-  //   return () => clearTimeout(timer);
-  // }, []);
-
-  // if (loading) return <Loader />;
 
   return (
     <DateFilterProvider>
