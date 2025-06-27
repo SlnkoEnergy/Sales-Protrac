@@ -4,8 +4,8 @@ import Leads from "@/modules/leads/pages/Leads";
 import LoginPage from "@/modules/auth/pages/Login_Page";
 import LeadProfile from "@/modules/leads/pages/LeadProfile";
 import Tasks from "@/modules/task/pages/TaskDashboard"
-import AddTask from "@/components/task/AddTask"
-import ViewTask from "@/components/task/ViewTask"
+import AddTasks from "@/modules/task/pages/AddTask"
+import ViewTasks from "@/modules/task/pages/ViewTask"
 import AddLead from "@/modules/leads/pages/AddLead"
 import EditLead from "@/modules/leads/pages/EditLead"
 import Meetings from "@/modules/meeting/pages/MeetingDashboard"
@@ -35,8 +35,8 @@ function App() {
             <Route path="leads" element={<Leads />} />
             <Route path="leadProfile" element={<LeadProfile />} />
             <Route path="tasks" element={<Tasks />} />
-            <Route path="addtask" element={<AddTask />} />
-            <Route path="viewtask" element={<ViewTask />} />
+            <Route path="addtask" element={<AddTasks />} />
+            <Route path="viewtask" element={<ViewTasks />} />
             <Route path="addlead" element={<AddLead />} />
             <Route path="editlead" element={<EditLead />} />
             <Route path="meeting" element={<Meetings />} />
