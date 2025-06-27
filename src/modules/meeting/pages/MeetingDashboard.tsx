@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MeetingTable } from "../components/MeetingTable";
-import Loader from "@/components/loader/loader";
+import Loader from "@/components/loader/Loader";
 
 
 export default function Meetings() {

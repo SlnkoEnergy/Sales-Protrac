@@ -8,7 +8,7 @@ import ConversionRateChart from "@/modules/dashboard/components/conversionRateCh
 import ChartAreaInteractive from "@/modules/dashboard/components/interactiveChart";
 import LeadSourceWidget from "@/modules/dashboard/components/LeadSourceWidget";
 import TodoList from "@/modules/dashboard/components/toDoItems";
-import Loader from "@/components/loader/loader";
+import Loader from "@/components/loader/Loader";
 
 
 export default function Dashboard() {

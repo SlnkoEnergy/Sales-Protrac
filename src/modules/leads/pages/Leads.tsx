@@ -1,4 +1,4 @@
-import Loader from "@/components/loader/loader";
+import Loader from "@/components/loader/Loader";
 import { DataTable } from "@/modules/leads/components/LeadTable";
 import { useEffect, useState } from "react";
 
