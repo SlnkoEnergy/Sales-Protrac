@@ -31,7 +31,7 @@ export default function AddTask() {
           <h2 className="text-lg font-semibold mb-4">Add Task</h2>
 
           <Tabs defaultValue="email" className="mb-4">
-            <TabsList className="grid grid-cols-5 gap-1">
+            <TabsList className="grid grid-cols-4 w-full gap-1">
               <TabsTrigger className="cursor-pointer" value="email">
                 <Mail className="w-5 h-5 text-muted-foreground" /> Email
               </TabsTrigger>
@@ -41,9 +41,6 @@ export default function AddTask() {
               <TabsTrigger className="cursor-pointer" value="meeting">
                 <CalendarClock className="w-5 h-5 text-muted-foreground" />{" "}
                 Meeting
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="sms">
-                <MessageSquare className="w-5 h-5 text-muted-foreground" /> SMS
               </TabsTrigger>
               <TabsTrigger className="cursor-pointer" value="todo">
                 <CheckSquare className="w-5 h-5 text-muted-foreground" /> To-Do
@@ -57,9 +54,6 @@ export default function AddTask() {
             </TabsContent>
             <TabsContent value="meeting">
               <TaskForm type="meeting" />
-            </TabsContent>
-            <TabsContent value="sms">
-              <TaskForm type="sms" />
             </TabsContent>
             <TabsContent value="todo">
               <TaskForm type="todo" />

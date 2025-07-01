@@ -53,6 +53,8 @@ export type Lead = {
   other_remarks: string;
 };
 export default function LeadProfile() {
+
+  
   const navigate = useNavigate();
   const [data, setData] = React.useState<Lead | null>(null);
   const [taskData, setTaskData] = React.useState(null);

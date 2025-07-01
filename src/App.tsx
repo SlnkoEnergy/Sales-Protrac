@@ -3,23 +3,21 @@ import Dashboard from "@/modules/dashboard/pages/Dashboard";
 import Leads from "@/modules/leads/pages/Leads";
 import LoginPage from "@/modules/auth/pages/Login_Page";
 import LeadProfile from "@/modules/leads/pages/LeadProfile";
-import Tasks from "@/modules/task/pages/TaskDashboard"
-import AddTasks from "@/modules/task/pages/AddTask"
-import ViewTasks from "@/modules/task/pages/ViewTask"
-import AddLead from "@/modules/leads/pages/AddLead"
-import EditLead from "@/modules/leads/pages/EditLead"
-import Meetings from "@/modules/meeting/pages/MeetingDashboard"
+import Tasks from "@/modules/task/pages/TaskDashboard";
+import AddTasks from "@/modules/task/pages/AddTask";
+import ViewTasks from "@/modules/task/pages/ViewTask";
+import AddLead from "@/modules/leads/pages/AddLead";
+import EditLead from "@/modules/leads/pages/EditLead";
+import Meetings from "@/modules/meeting/pages/MeetingDashboard";
 import PrivateRoute from "./utils/PrivateRoutes";
-import { Toaster } from "@/components/ui/sonner"; 
-import {DateFilterProvider} from "./modules/dashboard/components/DateFilterContext"
+import { Toaster } from "@/components/ui/sonner";
+import { DateFilterProvider } from "./modules/dashboard/components/DateFilterContext";
 import Layout from "./components/layout/Layout";
 import Team from "./modules/team/pages/TeamDashboard";
 
-// Main file code
-
 function App() {
+
   return (
-    <>
     <DateFilterProvider>
       <Router>
         <Routes>
@@ -45,10 +43,8 @@ function App() {
           </Route>
         </Routes>
       </Router>
-
       <Toaster richColors position="top-center" />
-      </DateFilterProvider>
-    </>
+    </DateFilterProvider>
   );
 }
 
