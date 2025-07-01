@@ -267,6 +267,9 @@ export function DataTable() {
     },
   ];
 
+  const fromDate = searchParams.get("fromDate");
+  const toDate = searchParams.get("toDate");
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -274,8 +277,12 @@ export function DataTable() {
           stage: selectedStages,
           page,
           limit: pageSize,
-          search: search,
+          search,
         };
+
+        if (fromDate) params.fromDate = fromDate;
+        if (toDate) params.toDate = toDate;
+
         const res = await getLeads(params);
         setTotal(res?.total || 0);
         setData(res.leads);
@@ -285,7 +292,7 @@ export function DataTable() {
     };
 
     fetchLeads();
-  }, [selectedStages, page, pageSize, search]);
+  }, [selectedStages, page, pageSize, search, fromDate, toDate]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -425,13 +432,14 @@ export function DataTable() {
         <div className="flex items-center px-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-4">
+              <Button variant="outline" className="ml-4 cursor-pointer">
                 Filter Status <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {/* Clear Filter Option */}
               <DropdownMenuItem
+              
                 onClick={() => {
                   setSelectedStages("");
                   setSearchParams((prev) => {
@@ -441,7 +449,7 @@ export function DataTable() {
                   });
                   table.getColumn("status")?.setFilterValue(undefined);
                 }}
-                className="flex items-center justify-between text-red-500"
+                className="flex items-center justify-between text-red-500 cursor-pointer"
               >
                 Clear Filter
               </DropdownMenuItem>
@@ -457,9 +465,10 @@ export function DataTable() {
                 {["initial", "followup", "warm", "won", "dead"].map(
                   (status) => (
                     <DropdownMenuRadioItem
+                    
                       key={status}
                       value={status}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between cursor-pointer capitalize"
                     >
                       {status}
                       {selectedStages === status && (
@@ -582,6 +591,7 @@ export function DataTable() {
           size="sm"
           onClick={() => handlePageChange("prev")}
           disabled={page === 1}
+          className="cursor-pointer"
         >
           Previous
         </Button>
@@ -592,6 +602,8 @@ export function DataTable() {
           variant="outline"
           size="sm"
           onClick={() => handlePageChange("next")}
+          disabled={page === totalPages || totalPages === 0}
+          className="cursor-pointer"
         >
           Next
         </Button>
@@ -611,7 +623,7 @@ export function DataTable() {
                   className="p-2 border rounded cursor-pointer hover:bg-gray-100"
                   onClick={() => {
                     setSelectedUser(user);
-                    setConfirmOpen(true); 
+                    setConfirmOpen(true);
                   }}
                 >
                   {user.name}

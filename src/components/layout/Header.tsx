@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   Trash,
+  UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -105,7 +106,13 @@ export default function Header() {
         </div>
         <div className="flex items-center gap-1 cursor-pointer">
           <Calendar size={18} />
-          <span className="cursor-pointer" onClick={()=> navigate('/meeting')}>Meetings</span>
+          <span className="cursor-pointer" onClick={() => navigate("/meeting")}>
+            Meetings
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <UserRound size={18} />
+          <span className="cursor-pointer" onClick={() => navigate("/team")}>Team</span>
         </div>
       </div>
 
@@ -148,7 +155,6 @@ export default function Header() {
                       key={i}
                       className="flex items-start justify-between px-4 py-3 hover:bg-gray-100 border-b border-gray-200"
                     >
-                    
                       <div
                         className="flex-1 cursor-pointer"
                         onClick={() => navigate(`/viewtask?id=${note._id}`)}
@@ -242,6 +248,7 @@ export default function Header() {
                 <Calendar size={18} />
                 <span>Meetings</span>
               </div>
+
               <button
                 onClick={handleLogout}
                 className="w-full bg-[#1F487C] text-white px-4 py-2 mt-6 rounded"

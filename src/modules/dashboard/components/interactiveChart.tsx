@@ -11,20 +11,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { getWonAndLost } from "@/services/leads/Dashboard";
 import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
+import { useNavigate } from "react-router-dom";
 
 export default function SalesOverviewChart() {
   const [chartData, setChartData] = React.useState([]);
-  const {  dateRange } = useDateFilter();
-  
+  const { dateRange } = useDateFilter();
+  const navigate = useNavigate();
   const [stats, setStats] = React.useState([
     { label: "Number of Leads", value: "-" },
     { label: "Active Leads", value: "-" },
@@ -34,28 +30,43 @@ export default function SalesOverviewChart() {
 
   React.useEffect(() => {
     fetchWonAndLostData();
-  }, [ dateRange]);
+  }, [dateRange]);
 
   const fetchWonAndLostData = async () => {
     try {
-       
-       
-
-      const data = await getWonAndLost({ startDate: dateRange[0].startDate,
-        endDate: dateRange[0].endDate});
-
-      console.log("",data)
+      const data = await getWonAndLost({
+        startDate: dateRange[0].startDate,
+        endDate: dateRange[0].endDate,
+      });
 
       setStats([
         { label: "Number of Leads", value: data.total_leads ?? 0 },
         { label: "Active Leads", value: data.active_leads ?? 0 },
-        { label: "Closed Leads", value: data.won_leads ?? 0, className: "text-green-600" },
-        { label: "Lost Leads", value: data.lost_leads ?? 0, className: "text-red-600" },
+        {
+          label: "Closed Leads",
+          value: data.won_leads ?? 0,
+          className: "text-green-600",
+        },
+        {
+          label: "Lost Leads",
+          value: data.lost_leads ?? 0,
+          className: "text-red-600",
+        },
       ]);
 
       const allMonths = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
 
       const apiDataMap = {};
@@ -78,6 +89,12 @@ export default function SalesOverviewChart() {
     }
   };
 
+  const handleNavigate = (type: "won" | "dead") => {
+    const fromDate = dateRange[0].startDate.toISOString();
+    const toDate = dateRange[0].endDate.toISOString();
+    navigate(`/leads?stage=${type}&fromDate=${fromDate}&toDate=${toDate}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -87,7 +104,19 @@ export default function SalesOverviewChart() {
       <CardContent>
         <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <AreaChart
+              data={chartData}
+              className="cursor-pointer"
+              onClick={(e) => {
+                if (!e?.activePayload?.length) return;
+                const keys = e.activePayload.map((p) => p.dataKey);
+                if (keys.includes("closed")) {
+                  handleNavigate("won");
+                } else if (keys.includes("lost")) {
+                  handleNavigate("dead");
+                }
+              }}
+            >
               <defs>
                 <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8} />
@@ -102,16 +131,34 @@ export default function SalesOverviewChart() {
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (active && payload?.length) {
-                    const closed = payload.find((p) => p.dataKey === "closed")?.value ?? 0;
-                    const lost = payload.find((p) => p.dataKey === "lost")?.value ?? 0;
+                    const closed =
+                      payload.find((p) => p.dataKey === "closed")?.value ?? 0;
+                    const lost =
+                      payload.find((p) => p.dataKey === "lost")?.value ?? 0;
 
                     return (
-                      <div className="bg-white p-2 shadow rounded text-sm">
+                      <div
+                        className="bg-white p-2 shadow rounded text-sm"
+                        style={{ pointerEvents: "auto" }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
                         <div className="font-medium mb-1">{label}</div>
-                        <div className="text-green-600">
+                        <div
+                          className="text-green-600 cursor-pointer"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            handleNavigate("won");
+                          }}
+                        >
                           Closed: {closed.toFixed(2)}%
                         </div>
-                        <div className="text-red-600">
+                        <div
+                          className="text-red-600 cursor-pointer"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            handleNavigate("dead");
+                          }}
+                        >
                           Lost: {lost.toFixed(2)}%
                         </div>
                       </div>
