@@ -69,6 +69,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 export type Lead = {
   _id: string;
   id: string;
@@ -89,13 +96,19 @@ export type Lead = {
   };
 };
 
-export function DataTable() {
+export function DataTable({
+  search,
+  stage,
+}: {
+  search: string;
+  stage: string;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage");
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+  const page = parseInt(searchParams.get("page"));
+const pageSize = parseInt(searchParams.get("pageSize"));
+
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -119,9 +132,6 @@ export function DataTable() {
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const navigate = useNavigate();
-  const [selectedStages, setSelectedStages] = React.useState<string>(
-    stageFromUrl || ""
-  );
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",
@@ -269,12 +279,12 @@ export function DataTable() {
 
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
-
+  
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
         const params = {
-          stage: selectedStages,
+          stage: stage,
           page,
           limit: pageSize,
           search,
@@ -292,7 +302,7 @@ export function DataTable() {
     };
 
     fetchLeads();
-  }, [selectedStages, page, pageSize, search, fromDate, toDate]);
+  }, [page, pageSize, search, fromDate, toDate, stage]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -369,15 +379,6 @@ export function DataTable() {
     pageSize: pageSize,
   });
 
-  const handleExportToCsv = async () => {
-    try {
-      await exportToCsv();
-      toast.success("CSV exported successfully");
-    } catch (error) {
-      toast.error(error.message || "Failed to export CSV");
-    }
-  };
-
   const totalPages = Math.ceil(total / pageSize);
 
   const table = useReactTable({
@@ -403,105 +404,27 @@ export function DataTable() {
 
   return (
     <div className="w-full">
-      <div className="flex flex-cols-2 justify-between">
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => (window.location.href = "/")}
-          className="cursor-pointer"
-        >
-          <ChevronLeft />
-        </Button>
-
-        <Button
-          variant="destructive"
-          className="cursor-pointer"
-          onClick={handleExportToCsv}
-        >
-          Export to CSV
-        </Button>
-      </div>
-
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter name, LeadId, Mobile, State, Scheme, Lead Owner..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
         <div className="flex items-center px-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-4 cursor-pointer">
-                Filter Status <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {/* Clear Filter Option */}
-              <DropdownMenuItem
-              
-                onClick={() => {
-                  setSelectedStages("");
-                  setSearchParams((prev) => {
-                    const updated = new URLSearchParams(prev);
-                    updated.delete("stage");
-                    return updated;
-                  });
-                  table.getColumn("status")?.setFilterValue(undefined);
-                }}
-                className="flex items-center justify-between text-red-500 cursor-pointer"
-              >
-                Clear Filter
-              </DropdownMenuItem>
-
-              <DropdownMenuRadioGroup
-                value={selectedStages}
-                onValueChange={(value) => {
-                  setSelectedStages(value);
-                  setSearchParams({ stage: value });
-                  table.getColumn("status")?.setFilterValue([value]);
-                }}
-              >
-                {["initial", "followup", "warm", "won", "dead"].map(
-                  (status) => (
-                    <DropdownMenuRadioItem
-                    
-                      key={status}
-                      value={status}
-                      className="flex items-center justify-between cursor-pointer capitalize"
-                    >
-                      {status}
-                      {selectedStages === status && (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </DropdownMenuRadioItem>
-                  )
-                )}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <div className="flex items-center gap-2 mx-4">
             <label htmlFor="limit">Rows per page:</label>
-            <Input
-              id="limit"
-              type="number"
-              min="1"
-              value={pageSize}
-              onChange={(e) => handleLimitChange(Number(e.target.value))}
-              className="w-20"
-            />
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => handleLimitChange(Number(value))}
+            >
+              <SelectTrigger className="w-24">
+                <SelectValue placeholder="Select limit" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 5, 10, 20, 50, 100, 1000].map((limit) => (
+                  <SelectItem key={limit} value={limit.toString()}>
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        <Button
-          variant="default"
-          className="cursor-pointer"
-          onClick={() => {
-            navigate("/addLead");
-          }}
-        >
-          + Add Lead
-        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -529,7 +452,7 @@ export function DataTable() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border max-h-180 overflow-y-auto">
+      <div className="rounded-md border max-h-160 overflow-y-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
