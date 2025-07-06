@@ -9,9 +9,6 @@ export default function Leads() {
   const [selectedStages, setSelectedStages] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedStage, setSelectedStage] = useState<string | null>(
-    searchParams.get("stage") || ""
-  );
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 400);
     return () => clearTimeout(timer);
@@ -32,24 +29,24 @@ export default function Leads() {
   };
 
   useEffect(() => {
-  const stageFromURL = searchParams.get("stage") || "";
-  setSelectedStages(stageFromURL);
-}, [searchParams]);
+    const stageFromURL = searchParams.get("stage") || "";
+    setSelectedStages(stageFromURL);
+  }, [searchParams]);
 
   if (loading) return <Loader />;
 
   return (
     <div className="w-full h-full">
-     <SearchBarLeads
-  searchValue={searchQuery}
-  onSearchChange={setSearchQuery}
-  selectedStage={selectedStages}
-  onValueChange={handleValueChange}
-  clearFilters={handleClickFilter}
-/>
+      <SearchBarLeads
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedStage={selectedStages}
+        onValueChange={handleValueChange}
+        clearFilters={handleClickFilter}
+      />
 
       <div className="h-[calc(100%-4rem)] p-4 overflow-auto">
-        <DataTable search={searchQuery} stage={selectedStages} />
+        <DataTable search={searchQuery} />
       </div>
     </div>
   );

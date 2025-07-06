@@ -11,11 +11,15 @@ import {
 import { TabsContent } from "@radix-ui/react-tabs";
 import TaskForm from "./TaskForm";
 import { Button } from "../ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AddTask() {
   const navigate = useNavigate();
- 
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id") || null;
+  const name = searchParams.get("name") || null;
+  const leadId = searchParams.get("leadId") || null;
+
   return (
     <div className="w-full p-4">
       <Button
@@ -47,16 +51,16 @@ export default function AddTask() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="email">
-              <TaskForm type="email" />
+              <TaskForm id = {id} name={name} leadId={leadId} type="email" />
             </TabsContent>
             <TabsContent value="call">
-              <TaskForm type="call" />
+              <TaskForm id = {id} name={name} leadId={leadId} type="call" />
             </TabsContent>
             <TabsContent value="meeting">
-              <TaskForm type="meeting" />
+              <TaskForm id = {id} name={name} leadId={leadId} type="meeting" />
             </TabsContent>
             <TabsContent value="todo">
-              <TaskForm type="todo" />
+              <TaskForm id = {id} name={name} leadId={leadId} type="todo" />
             </TabsContent>
           </Tabs>
         </CardContent>

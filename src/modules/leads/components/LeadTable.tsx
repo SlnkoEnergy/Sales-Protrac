@@ -98,15 +98,13 @@ export type Lead = {
 
 export function DataTable({
   search,
-  stage,
 }: {
   search: string;
-  stage: string;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const stageFromUrl = searchParams.get("stage");
-  const page = parseInt(searchParams.get("page"));
-const pageSize = parseInt(searchParams.get("pageSize"));
+  const stageFromUrl = searchParams.get("stage") || "";
+  const page = parseInt(searchParams.get("page") || "1");
+const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
   const [open, setOpen] = React.useState(false);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
@@ -284,7 +282,7 @@ const pageSize = parseInt(searchParams.get("pageSize"));
     const fetchLeads = async () => {
       try {
         const params = {
-          stage: stage,
+          stage: stageFromUrl,
           page,
           limit: pageSize,
           search,
@@ -302,7 +300,7 @@ const pageSize = parseInt(searchParams.get("pageSize"));
     };
 
     fetchLeads();
-  }, [page, pageSize, search, fromDate, toDate, stage]);
+  }, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {

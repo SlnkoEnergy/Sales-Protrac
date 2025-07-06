@@ -45,8 +45,14 @@ import {
 
 export default function TaskForm({
   type,
+  id,
+  name,
+  leadId,
 }: {
   type: "email" | "call" | "meeting" | "todo";
+  id: String;
+  name: String;
+  leadId: String;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -65,6 +71,8 @@ export default function TaskForm({
     assigned_to: [] as string[],
     description: "",
   });
+
+  console.log(id, name, leadId);
 
   const toggle = (id: string) =>
     setSelected((prev) =>
@@ -130,7 +138,7 @@ export default function TaskForm({
         lead_id: formData.lead_id,
         user_id: getUserIdFromToken(),
         type,
-         assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
+        assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
         deadline: formData.due_date,
         contact_info: formData.contact_info,
         priority: formData.priority,
@@ -155,6 +163,31 @@ export default function TaskForm({
       toast.error("Failed to create Task. Please fill all the fields");
     }
   };
+  const isDisabled = id && name && leadId;
+
+  useEffect(() => {
+    if (id && name && leadId && leads.length > 0) {
+      const matchedLead = leads.find(
+        (lead) => lead._id === id || lead.id === leadId
+      );
+  
+      if (matchedLead) {
+        setSelectedLead(matchedLead.id); // display in dropdown
+        setFormData({
+          ...formData,
+          lead_id: matchedLead._id, // for backend
+          lead_name: matchedLead.c_name,
+          contact_info:
+            type === "email"
+              ? matchedLead.email || ""
+              : type === "call"
+              ? matchedLead.mobile || ""
+              : "",
+        });
+      }
+    }
+  }, [id, name, leadId, leads]);
+  
 
   const handleMarkDone = async () => {
     try {
@@ -199,51 +232,59 @@ export default function TaskForm({
           placeholder="Enter Title of task..."
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label className="mb-2">Lead Id</Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                disabled={isDisabled}
+              >
                 {selectedLead ? selectedLead : "Choose one"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0">
-              <Command>
-                <CommandInput placeholder="Search lead..." />
-                <CommandEmpty>No lead found.</CommandEmpty>
-                <CommandGroup className="max-h-[150px] overflow-y-auto">
-                  {leads.map((lead) => (
-                    <CommandItem
-                      key={lead._id}
-                      onSelect={() => {
-                        setSelectedLead(lead.id);
-                        setFormData({
-                          ...formData,
-                          lead_id: lead._id,
-                          lead_name: lead.c_name,
-                          contact_info:
-                            type === "email"
-                              ? lead.email || ""
-                              : type === "call" 
-                              ? lead.mobile || ""
-                              : "",
-                        });
+            {!isDisabled && (
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search lead..." />
+                  <CommandEmpty>No lead found.</CommandEmpty>
+                  <CommandGroup className="max-h-[150px] overflow-y-auto">
+                    {leads.map((lead) => (
+                      <CommandItem
+                        key={lead._id}
+                        onSelect={() => {
+                          setSelectedLead(lead.id);
+                          setFormData({
+                            ...formData,
+                            lead_id: lead._id,
+                            lead_name: lead.c_name,
+                            contact_info:
+                              type === "email"
+                                ? lead.email || ""
+                                : type === "call"
+                                ? lead.mobile || ""
+                                : "",
+                          });
 
-                        setOpen(false);
-                      }}
-                    >
-                      {lead.id}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
+                          setOpen(false);
+                        }}
+                      >
+                        {lead.id}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            )}
           </Popover>
         </div>
+
         <div>
           <Label className="mb-2">Lead Name</Label>
-          <Input value={formData.lead_name ?? ""} disabled />
+          <Input value={formData.lead_name ?? ""} disabled={!!isDisabled} />
         </div>
       </div>
 
