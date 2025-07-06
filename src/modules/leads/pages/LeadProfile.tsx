@@ -179,10 +179,10 @@ export default function LeadProfile() {
             <CardTitle className="mb-2">{data?.c_name}</CardTitle>
             <CardDescription className="flex items-center gap-3">
               <span className="flex items-center gap-2">
-                <Mail size={18} /> abc@gmail.com
+                <Mail size={18} /> {data?.email || "NA"} 
               </span>
               <span className="flex items-center gap-2">
-                <Phone size={18} /> abc@gmail.com
+                <Phone size={18} /> {data?.mobile || "N/A"} 
               </span>
             </CardDescription>
           </CardHeader>
@@ -252,7 +252,7 @@ export default function LeadProfile() {
             <NotesCard />
           </TabsContent>
           <TabsContent value="tasks">
-            <TasksCard taskData={taskData} />
+            <TasksCard leadId={data?.id} name={data?.c_name} id={id} taskData={taskData} />
           </TabsContent>
         </Tabs>
       </div>

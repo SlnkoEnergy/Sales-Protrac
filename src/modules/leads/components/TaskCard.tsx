@@ -5,13 +5,13 @@ import { CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 
-export default function TasksCard({ taskData }) {
+export default function TasksCard({id, taskData, name, leadId }) {
   const navigate = useNavigate();
   return (
     <Card>
       <CardHeader className="flex flex-row w-full items-center justify-between">
         <CardTitle className="text-lg font-medium">Tasks</CardTitle>
-        <Button variant="outline" className="cursor-pointer" size="sm" onClick={() => {navigate('/addtask')}}>
+        <Button variant="outline" className="cursor-pointer" size="sm" onClick={() => {navigate(`/addtask?id=${id}&name=${name}&leadId=${leadId}`)}}>
           + Add Task
         </Button>
       </CardHeader>
