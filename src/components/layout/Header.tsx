@@ -92,7 +92,7 @@ export default function Header() {
         </div>
         <div
           className="flex items-center gap-1 cursor-pointer"
-          onClick={() => navigate("/leads")}
+          onClick={() => navigate(`/leads?pageSize=20&page=1`)}
         >
           <Users size={18} />
           <span>Leads</span>
