@@ -478,7 +478,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() =>
                     navigate(
-                      `/leadProfile?id=${row.original._id}&status=${row.original.status}`
+                      `/leadProfile?id=${row.original._id}&status=${row.original.status === "followup" ? "followUp" : row.original.status}`
                     )
                   }
                 >
