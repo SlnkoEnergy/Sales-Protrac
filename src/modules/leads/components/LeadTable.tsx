@@ -31,7 +31,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -40,17 +39,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import {
-  exportToCsv,
-  getLeads,
-  transferLead,
-} from "@/services/leads/LeadService";
+import { getLeads, transferLead } from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
-import {
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@radix-ui/react-dropdown-menu";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Dialog,
@@ -79,32 +69,53 @@ import {
 export type Lead = {
   _id: string;
   id: string;
-  status: "initial" | "followUp" | "warm" | "won" | "dead";
-  leadId: string;
-  c_name: string;
-  mobile: string;
-  state: string;
-  scheme: string;
-  capacity: string;
-  distance: string;
-  entry_date: string;
-  submitted_by: string;
-  email: string;
+  current_status: {
+    name: string;
+    stage: string;
+  };
+  name: string;
+  contact_details: {
+    mobile: string[];
+  };
+  address: {
+    district: string;
+    village: string;
+    state: string;
+  };
+  createdAt: Date;
+  current_assigned:{
+    user_id:{
+      name:string
+    },
+    status:{
+      string
+    }
+  },
+  project_details: {
+    capacity: string;
+    land_type: string;
+    scheme: string;
+    tarrif: string;
+    available_land: {
+      unit: string;
+      value: string;
+    };
+    distance_from_substation: {
+      unit: string;
+      value: string;
+    };
+  };
   assigned_to: {
     id: string;
     name: string;
   };
 };
 
-export function DataTable({
-  search,
-}: {
-  search: string;
-}) {
+export function DataTable({ search }: { search: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
-const pageSize = parseInt(searchParams.get("pageSize") || "10");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
   const [open, setOpen] = React.useState(false);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
@@ -151,11 +162,9 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
       enableHiding: false,
     },
     {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("status")}</div>
-      ),
+      accessorKey: "current_status.name",
+      header: "Stage",
+      cell: ({ row }) => <div>{row.original.current_status?.name}</div>,
     },
     {
       accessorKey: "id",
@@ -170,7 +179,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
       cell: ({ row }) => <div>{row.getValue("id")}</div>,
     },
     {
-      accessorKey: "c_name",
+      accessorKey: "name",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -179,42 +188,55 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
           Name <ArrowUpDown />
         </Button>
       ),
-      cell: ({ row }) => <div>{row.getValue("c_name")}</div>,
+      cell: ({ row }) => <div>{row.getValue("name")}</div>,
     },
     {
-      accessorKey: "mobile",
+      accessorKey: "contact_details.mobile",
       header: "Mobile",
-      cell: ({ row }) => <div>{row.getValue("mobile")}</div>,
+      cell: ({ row }) => (
+        <div>{row.original.contact_details?.mobile?.join(", ")}</div>
+      ),
     },
     {
-      accessorKey: "state",
+      accessorKey: "address.state",
       header: "State",
-      cell: ({ row }) => <div>{row.getValue("state")}</div>,
+      cell: ({ row }) => <div>{row.original.address?.state || "-"}</div>,
     },
     {
-      accessorKey: "scheme",
+      accessorKey: "project_details.scheme",
       header: "Scheme",
-      cell: ({ row }) => <div>{row.getValue("scheme")}</div>,
+      cell: ({ row }) => <div>{row.original.project_details?.scheme || "-"}</div>,
     },
     {
-      accessorKey: "capacity",
+      accessorKey: "project_details.capacity",
       header: "Capacity (MW)",
-      cell: ({ row }) => <div>{row.getValue("capacity")}</div>,
+      cell: ({ row }) => <div>{row.original.project_details?.capacity || "-"}</div>,
     },
     {
-      accessorKey: "distance",
+      accessorKey: "project_details.distance_from_substation.value",
       header: "Distance (KM)",
-      cell: ({ row }) => <div>{row.getValue("distance")}</div>,
+      cell: ({ row }) => (
+        <div>
+          {row.original.project_details?.distance_from_substation?.value || "-"}
+        </div>
+      ),
     },
     {
-      accessorKey: "entry_date",
-      header: "Date",
-      cell: ({ row }) => <div>{row.getValue("entry_date")}</div>,
+      accessorKey: "createdAt",
+      header: "Created Date",
+      cell: ({ row }) => {
+        const date = new Date(row.getValue("createdAt") || "-");
+        return <div>{date.toLocaleDateString()}</div>;
+      },
     },
     {
-      accessorKey: "assigned_to.name",
+      accessorKey: "current_assigned?.user_id?.name",
       header: "Lead Owner",
-      cell: ({ row }) => <div>{row.original.assigned_to?.name}</div>,
+      cell: ({ row }) => (
+        <div>
+          {row.original.current_assigned?.user_id?.name || "-"}
+        </div>
+      ),
     },
     {
       id: "actions",
@@ -277,7 +299,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
-  
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -301,6 +323,8 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
     fetchLeads();
   }, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
+
+  console.log("data", data);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -434,6 +458,13 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
               .getAllColumns()
               .filter((column) => column.getCanHide())
               .map((column) => {
+                let label = column.id;
+
+                if (column.id === "id") label = "Lead Id";
+                else if (column.id === "name") label = "Name";
+                else if (typeof column.columnDef.header === "string")
+                  label = column.columnDef.header;
+
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
@@ -443,7 +474,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    {label}
                   </DropdownMenuCheckboxItem>
                 );
               })}
@@ -478,7 +509,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() =>
                     navigate(
-                      `/leadProfile?id=${row.original._id}&status=${row.original.status === "followup" ? "followUp" : row.original.status}`
+                      `/leadProfile?id=${row.original._id}`
                     )
                   }
                 >

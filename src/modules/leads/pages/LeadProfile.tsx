@@ -34,27 +34,58 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export type Lead = {
+  _id: string;
   id: string;
-  status: "initial" | "followUp" | "warm" | "won" | "dead";
-  leadId: string;
-  c_name: string;
-  mobile: string;
-  state: string;
-  scheme: string;
-  capacity: string;
-  distance: string;
-  entry_date: string;
-  submitted_by: string;
-  email: string;
-  village: string;
-  district: string;
-  source: string;
-  company: string;
-  other_remarks: string;
+  current_status: {
+    name: string;
+    stage: string;
+    remarks: string;
+  };
+  name: string;
+  contact_details: {
+    mobile: string[];
+    email: string;
+  };
+  address: {
+    district: string;
+    village: string;
+    state: string;
+  };
+  company_name: string;
+  createdAt: Date;
+  current_assigned: {
+    user_id: {
+      name: string;
+    };
+    status: {
+      string;
+    };
+  };
+  project_details: {
+    capacity: string;
+    land_type: string;
+    scheme: string;
+    tarrif: string;
+    available_land: {
+      unit: string;
+      value: string;
+    };
+    distance_from_substation: {
+      unit: string;
+      value: string;
+    };
+  };
+  assigned_to: {
+    id: string;
+    name: string;
+  };
+  source: {
+    from: string;
+    sub_source: string;
+  };
 };
-export default function LeadProfile() {
 
-  
+export default function LeadProfile() {
   const navigate = useNavigate();
   const [data, setData] = React.useState<Lead | null>(null);
   const [taskData, setTaskData] = React.useState(null);
@@ -67,7 +98,6 @@ export default function LeadProfile() {
       try {
         const params = {
           id: id,
-          status: status,
         };
         const res = await getLeadbyId(params);
         setData(res.data);
@@ -100,7 +130,6 @@ export default function LeadProfile() {
         toast.error("Missing lead ID or model");
         return;
       }
-
       await deleteLead(id, status);
       toast.success("Lead deleted successfully!");
       navigate("/leads");
@@ -121,9 +150,7 @@ export default function LeadProfile() {
           >
             <ChevronLeft />
           </Button>
-          <CardTitle className="text-xl font-semibold">
-            {data?.c_name}
-          </CardTitle>
+          <CardTitle className="text-xl font-semibold">{data?.name}</CardTitle>
         </div>
 
         <div className="flex gap-2">
@@ -176,13 +203,14 @@ export default function LeadProfile() {
               <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>KR</AvatarFallback>
             </Avatar>
-            <CardTitle className="mb-2">{data?.c_name}</CardTitle>
+            <CardTitle className="mb-2">{data?.name}</CardTitle>
             <CardDescription className="flex items-center gap-3">
               <span className="flex items-center gap-2">
-                <Mail size={18} /> {data?.email || "NA"} 
+                <Mail size={18} /> {data?.contact_details?.email || "NA"}
               </span>
               <span className="flex items-center gap-2">
-                <Phone size={18} /> {data?.mobile || "N/A"} 
+                <Phone size={18} />{" "}
+                {data?.contact_details?.mobile?.join(", ") || "N/A"}
               </span>
             </CardDescription>
           </CardHeader>
@@ -194,49 +222,54 @@ export default function LeadProfile() {
                   <Badge
                     variant="default"
                     className={`capitalize ${
-                      status === "won"
+                      data?.current_status?.name === "Won"
                         ? "bg-green-500"
-                        : status === "followUp"
+                        : data?.current_status?.name === "FollowUp"
                         ? "bg-yellow-400"
-                        : status === "initial"
+                        : data?.current_status?.name === "Initial"
                         ? "bg-blue-500"
-                        : status === "dead"
+                        : data?.current_status?.name === "Dead"
                         ? "bg-red-500"
-                        : status === "warm"
+                        : data?.current_status?.name === "Warm"
                         ? "bg-orange-400"
                         : ""
                     }`}
                   >
-                    {status}
+                    {data?.current_status?.name}
                   </Badge>
                 </CardTitle>
                 <CardDescription className="text-black capitalize flex gap-1 items-center">
                   <MapPin size={16} />{" "}
                   <span>
-                    {data?.village}, {data?.district}, {data?.state}
+                    {data?.address?.village}, {data?.address?.district},{" "}
+                    {data?.address?.state}
                   </span>{" "}
                 </CardDescription>
                 <p>
-                  <strong>Source:</strong> {data?.source}
+                  <strong>Source:</strong> {data?.source?.from}
+                  {data?.source?.from && data?.source?.sub_source !== " "
+                    ? " - "
+                    : ""}
+                  {data?.source?.sub_source}
                 </p>
                 <p>
-                  <strong>Capacity:</strong> {data?.capacity}
+                  <strong>Capacity:</strong> {data?.project_details?.capacity}
                 </p>
                 <p>
-                  <strong>Scheme:</strong> {data?.scheme}
+                  <strong>Scheme:</strong> {data?.project_details?.scheme}
                 </p>
                 <p>
-                  <strong>Company:</strong> {data?.company}
+                  <strong>Company:</strong> {data?.company_name}
                 </p>
                 <p>
-                  <strong>Description:</strong> {data?.other_remarks}
+                  <strong>Description:</strong> {data?.current_status?.remarks}
                 </p>
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 items-start">
             <Separator />
-            Owner: {data?.submitted_by}
+            Owner: {data?.current_assigned?.user_id?.name}
           </CardFooter>
         </Card>
         <Tabs defaultValue="notes" className="w-full">
@@ -252,7 +285,12 @@ export default function LeadProfile() {
             <NotesCard />
           </TabsContent>
           <TabsContent value="tasks">
-            <TasksCard leadId={data?.id} name={data?.c_name} id={id} taskData={taskData} />
+            <TasksCard
+              leadId={data?.id}
+              name={data?.name}
+              id={id}
+              taskData={taskData}
+            />
           </TabsContent>
         </Tabs>
       </div>
