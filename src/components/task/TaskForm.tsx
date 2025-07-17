@@ -131,6 +131,10 @@ export default function TaskForm({
     }
   };
 
+  const pathname = window.location.pathname;
+  const isModal = pathname === "/leadProfile";
+
+
   const handleSave = async () => {
     try {
       const payload = {
@@ -158,7 +162,8 @@ export default function TaskForm({
         description: "",
       });
       setSelected([]);
-      navigate("/tasks");
+      if(!isModal) navigate("/tasks");
+      
     } catch (err) {
       toast.error("Failed to create Task. Please fill all the fields");
     }

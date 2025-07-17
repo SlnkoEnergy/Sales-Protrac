@@ -19,12 +19,9 @@ export default function AddTask({idModal, nameModal, leadIdModal}) {
   const id = searchParams.get("id") || null;
   const name = searchParams.get("name") || null;
   const leadId = searchParams.get("leadId") || null;
- const pathname = window.location.pathname;
-console.log("pathname",pathname);
-
+  const pathname = window.location.pathname;
   const isModal = pathname === "/leadProfile";
-  console.log("isModal", isModal)
-
+ 
   return (
     <div className="w-full p-4">
       {!isModal && (
