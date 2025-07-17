@@ -98,7 +98,6 @@ export default function NotesCard() {
 
     try {
       const newNote = await createNotes({ lead_id, user_id, description });
-
       const localNote = {
         _id: newNote?.data?._id,
         description: description,
@@ -107,7 +106,6 @@ export default function NotesCard() {
         },
         updatedAt: new Date().toISOString(),
       };
-
       toast.success("Note created");
       setData((prev) => [localNote, ...prev]);
       setDescription("");

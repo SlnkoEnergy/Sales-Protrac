@@ -92,7 +92,7 @@ export default function LeadProfile() {
   const [searchParams, setSearchParams] = useSearchParams();
   const id = searchParams.get("id");
   const status = searchParams.get("status");
-    const tabParam = searchParams.get("tab") || "notes";
+  const tabParam = searchParams.get("tab") || "notes";
   const [tab, setTab] = React.useState(tabParam);
 
   React.useEffect(() => {

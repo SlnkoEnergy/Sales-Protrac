@@ -14,6 +14,7 @@ export default function TasksCard({id, taskData, name, leadId }) {
   const navigate = useNavigate();
   const [openTaskModal, setOpenTaskModal] = React.useState(false);
 const [taskProps, setTaskProps] = React.useState({ id: "", name: "", leadId: "" });
+
   return (
     <>
     <Card>
@@ -86,11 +87,11 @@ const [taskProps, setTaskProps] = React.useState({ id: "", name: "", leadId: "" 
       
     </Card>
 <Dialog open={openTaskModal} onOpenChange={setOpenTaskModal}>
-  <DialogContent className="p-4">
+  <DialogContent  className="p-4 w-full">
     <AddTask
-      id={taskProps.id}
-      name={taskProps.name}
-      leadId={taskProps.leadId}
+      idModal={taskProps.id}
+      nameModal={taskProps.name}
+      leadIdModal={taskProps.leadId}
       onClose={() => setOpenTaskModal(false)}
     />
   </DialogContent>

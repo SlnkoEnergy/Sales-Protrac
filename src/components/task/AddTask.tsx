@@ -13,16 +13,22 @@ import TaskForm from "./TaskForm";
 import { Button } from "../ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-export default function AddTask() {
+export default function AddTask({idModal, nameModal, leadIdModal}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || null;
   const name = searchParams.get("name") || null;
   const leadId = searchParams.get("leadId") || null;
+ const pathname = window.location.pathname;
+console.log("pathname",pathname);
+
+  const isModal = pathname === "/leadProfile";
+  console.log("isModal", isModal)
 
   return (
     <div className="w-full p-4">
-      <Button
+      {!isModal && (
+        <Button
         className="cursor-pointer"
         variant="default"
         size="sm"
@@ -30,6 +36,7 @@ export default function AddTask() {
       >
         <ChevronLeft />
       </Button>
+      )}
       <Card className="w-full max-w-xl mx-auto mt-10">
         <CardContent className="p-6">
           <h2 className="text-lg font-semibold mb-4">Add Task</h2>
@@ -51,16 +58,16 @@ export default function AddTask() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="email">
-              <TaskForm id = {id} name={name} leadId={leadId} type="email" />
+              <TaskForm id={isModal ? idModal : id}  name={isModal? nameModal: name} leadId={isModal? leadIdModal: leadId} type="email" />
             </TabsContent>
             <TabsContent value="call">
-              <TaskForm id = {id} name={name} leadId={leadId} type="call" />
+              <TaskForm id={isModal ? idModal : id}  name={isModal? nameModal: name} leadId={isModal? leadIdModal: leadId} type="call" />
             </TabsContent>
             <TabsContent value="meeting">
-              <TaskForm id = {id} name={name} leadId={leadId} type="meeting" />
+              <TaskForm id={isModal ? idModal : id}  name={isModal? nameModal: name} leadId={isModal? leadIdModal: leadId} type="meeting" />
             </TabsContent>
             <TabsContent value="todo">
-              <TaskForm id = {id} name={name} leadId={leadId} type="todo" />
+              <TaskForm id={isModal ? idModal : id}  name={isModal? nameModal: name} leadId={isModal? leadIdModal: leadId} type="todo" />
             </TabsContent>
           </Tabs>
         </CardContent>
