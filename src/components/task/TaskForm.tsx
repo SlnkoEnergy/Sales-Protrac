@@ -172,22 +172,23 @@ export default function TaskForm({
       );
   
       if (matchedLead) {
-        setSelectedLead(matchedLead.id); // display in dropdown
+        setSelectedLead(matchedLead?.id); 
         setFormData({
           ...formData,
-          lead_id: matchedLead._id, // for backend
-          lead_name: matchedLead.c_name,
+          lead_id: matchedLead?._id,
+          lead_name: matchedLead?.name,
           contact_info:
             type === "email"
-              ? matchedLead.email || ""
+              ? matchedLead?.contact_details?.email || ""
               : type === "call"
-              ? matchedLead.mobile || ""
+              ?  matchedLead?.contact_details?.mobile?.join(", ") || ""
               : "",
         });
       }
     }
   }, [id, name, leadId, leads]);
   
+  console.log("formData", formData);
 
   const handleMarkDone = async () => {
     try {
@@ -241,7 +242,7 @@ export default function TaskForm({
               <Button
                 variant="outline"
                 className="w-full justify-start"
-                disabled={isDisabled}
+                disabled
               >
                 {selectedLead ? selectedLead : "Choose one"}
               </Button>

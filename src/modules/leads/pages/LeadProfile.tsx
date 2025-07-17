@@ -89,9 +89,19 @@ export default function LeadProfile() {
   const navigate = useNavigate();
   const [data, setData] = React.useState<Lead | null>(null);
   const [taskData, setTaskData] = React.useState(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const id = searchParams.get("id");
   const status = searchParams.get("status");
+    const tabParam = searchParams.get("tab") || "notes";
+  const [tab, setTab] = React.useState(tabParam);
+
+  React.useEffect(() => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+      updated.set("tab", tab);
+      return updated;
+    });
+  }, [tab, setSearchParams]);
 
   React.useEffect(() => {
     const fetchLeads = async () => {
@@ -197,7 +207,7 @@ export default function LeadProfile() {
         </div>
       </div>
       <div className="flex gap-4">
-        <Card className="min-w-[450px]">
+        <Card className="md:min-w-[150px] lg:min-w-[400px] xl:min-w-[450px]">
           <CardHeader className="flex justify-center flex-col items-center">
             <Avatar className="h-14 w-14">
               <AvatarImage src="https://github.com/shadcn.png" />
@@ -272,27 +282,28 @@ export default function LeadProfile() {
             Owner: {data?.current_assigned?.user_id?.name}
           </CardFooter>
         </Card>
-        <Tabs defaultValue="notes" className="w-full">
-          <TabsList>
-            <TabsTrigger className="cursor-pointer" value="notes">
-              Notes
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="tasks">
-              Tasks
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="notes">
-            <NotesCard />
-          </TabsContent>
-          <TabsContent value="tasks">
-            <TasksCard
-              leadId={data?.id}
-              name={data?.name}
-              id={id}
-              taskData={taskData}
-            />
-          </TabsContent>
-        </Tabs>
+       <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <TabsList>
+        <TabsTrigger className="cursor-pointer" value="notes">
+          Notes
+        </TabsTrigger>
+        <TabsTrigger className="cursor-pointer" value="tasks">
+          Tasks
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="notes">
+        <NotesCard />
+      </TabsContent>
+      <TabsContent value="tasks">
+        <TasksCard
+          leadId={data?.id}
+          name={data?.name}
+          id={id}
+          taskData={taskData}
+        />
+      </TabsContent>
+    </Tabs>
       </div>
     </div>
   );
