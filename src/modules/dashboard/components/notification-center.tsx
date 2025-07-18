@@ -8,7 +8,7 @@ export function NotificationCenter() {
   return (
     <Inbox
       applicationIdentifier="vHKf6fc5ojnD"
-      subscriber="6839a4086356310d4e15f6c7"
+      subscriber="6864c58da3a6f7ceca663d9d"
       routerPush={(path: string) => navigate(path)}
     />
   );
