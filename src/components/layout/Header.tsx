@@ -65,7 +65,7 @@ export default function Header() {
   };
 
   return (
-    <div className="bg-[#1F487C] w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md sticky top-0 z-50 relative">
+    <div className="bg-[#1F487C] w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md  top-0 z-50 relative">
       <div className="flex items-center gap-2 sm:gap-4">
         <img
           src="/assets/slnko_white_logo.png"

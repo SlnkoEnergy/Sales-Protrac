@@ -40,10 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import {
-  getLeads,
-  transferLead,
-} from "@/services/leads/LeadService";
+import { getLeads, transferLead } from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -70,6 +67,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export type Lead = {
   _id: string;
   id: string;
@@ -90,15 +88,11 @@ export type Lead = {
   };
 };
 
-export function DataTable({
-  search,
-}: {
-  search: string;
-}) {
+export function DataTable({ search }: { search: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
-const pageSize = parseInt(searchParams.get("pageSize") || "10");
+  const pageSize = parseInt(searchParams.get("pageSize") || "100");
 
   const [open, setOpen] = React.useState(false);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
@@ -183,12 +177,25 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
     {
       accessorKey: "state",
       header: "State",
-      cell: ({ row }) => <div>{row.getValue("state")}</div>,
+      cell: ({ row }) => {
+        const state = row.getValue("state") || "";
+        const capitalized =
+          state.charAt(0).toUpperCase() + state.slice(1).toLowerCase();
+        return <div>{capitalized}</div>;
+      },
     },
     {
       accessorKey: "scheme",
       header: "Scheme",
-      cell: ({ row }) => <div>{row.getValue("scheme")}</div>,
+      cell: ({ row }) => {
+        const scheme = row.getValue("scheme") || "";
+        const capitalized = scheme
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+        return <div>{capitalized}</div>;
+      },
     },
     {
       accessorKey: "capacity",
@@ -201,22 +208,26 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
       cell: ({ row }) => <div>{row.getValue("distance")}</div>,
     },
     {
-  accessorKey: "createdAt",
-  header: ({ column }) => (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    >
-      Created Date <ArrowUpDown className="ml-2 h-4 w-4" />
-    </Button>
-  ),
-  cell: ({ row }) => {
-    const dateValue = row.getValue("createdAt");
-    const date = dateValue ? new Date(dateValue) : null;
-    return <div>{date ? date.toLocaleDateString() : "-"}</div>;
-  },
-}
-,
+      accessorKey: "distance",
+      header: "Task Count",
+      cell: ({ row }) => <div>{row.getValue("distance")}</div>,
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created Date <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const dateValue = row.getValue("createdAt");
+        const date = dateValue ? new Date(dateValue) : null;
+        return <div>{date ? date.toLocaleDateString() : "-"}</div>;
+      },
+    },
     {
       accessorKey: "assigned_to.name",
       header: "Lead Owner",
@@ -283,7 +294,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
-  
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -406,10 +417,23 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  const [tab, setTab] = React.useState("all");
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
         <div className="flex items-center px-2">
+          <div>
+            <Tabs value={tab} onValueChange={setTab} className="mb-4">
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="initial">Initial</TabsTrigger>
+                <TabsTrigger value="followup">Follow Up</TabsTrigger>
+                <TabsTrigger value="warm">Warm</TabsTrigger>
+                <TabsTrigger value="dead">Dead</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
           <div className="flex items-center gap-2 mx-4">
             <label htmlFor="limit">Rows per page:</label>
             <Select
@@ -420,7 +444,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
                 <SelectValue placeholder="Select limit" />
               </SelectTrigger>
               <SelectContent>
-                {[1, 5, 10, 20, 50, 100, 1000].map((limit) => (
+                {[1, 5, 10, 20, 50, 100].map((limit) => (
                   <SelectItem key={limit} value={limit.toString()}>
                     {limit}
                   </SelectItem>
@@ -436,7 +460,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-             {table
+            {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
               .map((column) => {
@@ -463,6 +487,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
       <div className="rounded-md border max-h-160 overflow-y-auto">
         <Table>
           <TableHeader>
@@ -491,7 +516,11 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() =>
                     navigate(
-                      `/leadProfile?id=${row.original._id}&status=${row.original.status === "followup" ? "followUp" : row.original.status}`
+                      `/leadProfile?id=${row.original._id}&status=${
+                        row.original.status === "followup"
+                          ? "followUp"
+                          : row.original.status
+                      }`
                     )
                   }
                 >

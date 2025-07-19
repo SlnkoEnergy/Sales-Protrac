@@ -124,7 +124,6 @@ export default function AddLead() {
               "select",
               [
                 "Andhra Pradesh",
-
                 "Arunachal Pradesh",
                 "Assam",
                 "Bihar",
@@ -170,7 +169,6 @@ export default function AddLead() {
             ["Comments", "comments", true, "textarea"],
           ].map(([label, name, required, type = "input", options], idx) => {
             const isSource = name === "source";
-
             if (isSource) {
               return (
                 <div
@@ -187,7 +185,7 @@ export default function AddLead() {
                       </SelectTrigger>
                       <SelectContent>
                         {(options as string[]).map((opt, i) => (
-                          <SelectItem value={opt.toLowerCase()} key={i}>
+                          <SelectItem value={opt} key={i}>
                             {opt}
                           </SelectItem>
                         ))}
@@ -206,7 +204,7 @@ export default function AddLead() {
                         </SelectTrigger>
                         <SelectContent>
                           {subSourceOptions[source].map((sub, idx) => (
-                            <SelectItem key={idx} value={sub.toLowerCase()}>
+                            <SelectItem key={idx} value={sub}>
                               {sub}
                             </SelectItem>
                           ))}
