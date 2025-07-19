@@ -15,9 +15,7 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  Check,
   ChevronDown,
-  ChevronLeft,
   MoreHorizontal,
 } from "lucide-react";
 
