@@ -421,72 +421,78 @@ export function DataTable({ search }: { search: string }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
-        <div className="flex items-center px-2">
-          <div>
-            <Tabs value={tab} onValueChange={setTab} className="mb-4">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="initial">Initial</TabsTrigger>
-                <TabsTrigger value="followup">Follow Up</TabsTrigger>
-                <TabsTrigger value="warm">Warm</TabsTrigger>
-                <TabsTrigger value="dead">Dead</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          <div className="flex items-center gap-2 mx-4">
-            <label htmlFor="limit">Rows per page:</label>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => handleLimitChange(Number(value))}
-            >
-              <SelectTrigger className="w-24">
-                <SelectValue placeholder="Select limit" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 5, 10, 20, 50, 100].map((limit) => (
-                  <SelectItem key={limit} value={limit.toString()}>
-                    {limit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                let label = column.id;
+      <div className="flex justify-between items-center py-4 px-2">
+  {/* Left side: Tabs */}
+  <div>
+    <Tabs value={tab} onValueChange={setTab}>
+      <TabsList >
+        <TabsTrigger className="cursor-pointer" value="all">All</TabsTrigger>
+        <TabsTrigger className="cursor-pointer" value="initial">Initial</TabsTrigger>
+        <TabsTrigger className="cursor-pointer" value="followup">Follow Up</TabsTrigger>
+        <TabsTrigger className="cursor-pointer" value="warm">Warm</TabsTrigger>
+        <TabsTrigger className="cursor-pointer" value="dead">Dead</TabsTrigger>
+      </TabsList>
+    </Tabs>
+  </div>
 
-                if (column.id === "id") label = "Lead Id";
-                else if (column.id === "c_name") label = "Name";
-                else if (typeof column.columnDef.header === "string")
-                  label = column.columnDef.header;
+  {/* Right side: Rows per page and Columns */}
+  <div className="flex items-center gap-4">
+    {/* Rows per page */}
+    <div className="flex items-center gap-2">
+      <label htmlFor="limit" >Rows per page:</label>
+      <Select
+        value={pageSize.toString()}
+        onValueChange={(value) => handleLimitChange(Number(value))}
+      >
+        <SelectTrigger  className="w-24 h-9 cursor-pointer">
+          <SelectValue placeholder="Select limit"  />
+        </SelectTrigger>
+        <SelectContent   >
+          {[1, 5, 10, 20, 50, 100].map((limit) => (
+            <SelectItem className="cursor-pointer" key={limit} value={limit.toString()}>
+              {limit}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
 
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {label}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    {/* Columns Dropdown */}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="cursor-pointer" variant="outline">
+          Columns <ChevronDown className="ml-1 h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent  align="end">
+        {table
+          .getAllColumns()
+          .filter((column) => column.getCanHide())
+          .map((column) => {
+            let label = column.id;
+            if (column.id === "id") label = "Lead Id";
+            else if (column.id === "c_name") label = "Name";
+            else if (typeof column.columnDef.header === "string")
+              label = column.columnDef.header;
+
+            return (
+              <DropdownMenuCheckboxItem 
+                key={column.id}
+                className="capitalize cursor-pointer"
+                checked={column.getIsVisible()}
+                onCheckedChange={(value) =>
+                  column.toggleVisibility(!!value)
+                }
+              >
+                {label}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</div>
+
 
       <div className="rounded-md border max-h-160 overflow-y-auto">
         <Table>
