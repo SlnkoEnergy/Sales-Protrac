@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import LeadDocuments from "../components/LeadDocument";
 
 export type Lead = {
   id: string;
@@ -236,7 +237,7 @@ export default function LeadProfile() {
             Owner: {data?.submitted_by}
           </CardFooter>
         </Card>
-        <div  className="w-full   flex flex-col gap-4">
+        <div  className="w-full overflow-y-auto pr-2 flex flex-col gap-4">
           <NotesCard />
           <TasksCard
             leadId={data?.id}
@@ -244,6 +245,7 @@ export default function LeadProfile() {
             id={id}
             taskData={taskData}
           />
+          <LeadDocuments />
         </div>
       </div>
     </div>
