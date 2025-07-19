@@ -15,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Mail, MapPin, Phone } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getLeadbyId, deleteLead } from "@/services/leads/LeadService";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";
 import TasksCard from "../components/TaskCard";
@@ -53,8 +52,6 @@ export type Lead = {
   other_remarks: string;
 };
 export default function LeadProfile() {
-
-  
   const navigate = useNavigate();
   const [data, setData] = React.useState<Lead | null>(null);
   const [taskData, setTaskData] = React.useState(null);
@@ -179,10 +176,10 @@ export default function LeadProfile() {
             <CardTitle className="mb-2">{data?.c_name}</CardTitle>
             <CardDescription className="flex items-center gap-3">
               <span className="flex items-center gap-2">
-                <Mail size={18} /> {data?.email || "NA"} 
+                <Mail size={18} /> {data?.email || "NA"}
               </span>
               <span className="flex items-center gap-2">
-                <Phone size={18} /> {data?.mobile || "N/A"} 
+                <Phone size={18} /> {data?.mobile || "N/A"}
               </span>
             </CardDescription>
           </CardHeader>
@@ -239,22 +236,15 @@ export default function LeadProfile() {
             Owner: {data?.submitted_by}
           </CardFooter>
         </Card>
-        <Tabs defaultValue="notes" className="w-full">
-          <TabsList>
-            <TabsTrigger className="cursor-pointer" value="notes">
-              Notes
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="tasks">
-              Tasks
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="notes">
-            <NotesCard />
-          </TabsContent>
-          <TabsContent value="tasks">
-            <TasksCard leadId={data?.id} name={data?.c_name} id={id} taskData={taskData} />
-          </TabsContent>
-        </Tabs>
+        <div  className="w-full   flex flex-col gap-4">
+          <NotesCard />
+          <TasksCard
+            leadId={data?.id}
+            name={data?.c_name}
+            id={id}
+            taskData={taskData}
+          />
+        </div>
       </div>
     </div>
   );

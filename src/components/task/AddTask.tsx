@@ -13,15 +13,20 @@ import TaskForm from "./TaskForm";
 import { Button } from "../ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-export default function AddTask() {
+export default function AddTask({idModal, leadIdModal, nameModal, onClose}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || null;
   const name = searchParams.get("name") || null;
   const leadId = searchParams.get("leadId") || null;
 
+  const location = window.location.pathname;
+
+  const isFromModal = location === "/leadProfile";
+
   return (
     <div className="w-full p-4">
+      {!isFromModal && (
       <Button
         className="cursor-pointer"
         variant="default"
@@ -30,6 +35,7 @@ export default function AddTask() {
       >
         <ChevronLeft />
       </Button>
+      )}
       <Card className="w-full max-w-xl mx-auto mt-10">
         <CardContent className="p-6">
           <h2 className="text-lg font-semibold mb-4">Add Task</h2>
@@ -51,16 +57,16 @@ export default function AddTask() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="email">
-              <TaskForm id = {id} name={name} leadId={leadId} type="email" />
+              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="email" />
             </TabsContent>
             <TabsContent value="call">
-              <TaskForm id = {id} name={name} leadId={leadId} type="call" />
+              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="call" />
             </TabsContent>
             <TabsContent value="meeting">
-              <TaskForm id = {id} name={name} leadId={leadId} type="meeting" />
+              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="meeting" />
             </TabsContent>
             <TabsContent value="todo">
-              <TaskForm id = {id} name={name} leadId={leadId} type="todo" />
+              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="todo" />
             </TabsContent>
           </Tabs>
         </CardContent>

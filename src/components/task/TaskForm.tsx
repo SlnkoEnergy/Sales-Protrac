@@ -48,11 +48,13 @@ export default function TaskForm({
   id,
   name,
   leadId,
+  onClose,
 }: {
   type: "email" | "call" | "meeting" | "todo";
-  id: String;
-  name: String;
-  leadId: String;
+  id: string;
+  name: string;
+  leadId: string;
+  onClose?: () => void;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -73,6 +75,9 @@ export default function TaskForm({
   });
 
   console.log(id, name, leadId);
+  const location = window.location.pathname;
+
+  const isFromModal = location === "/leadProfile";
 
   const toggle = (id: string) =>
     setSelected((prev) =>
@@ -158,19 +163,23 @@ export default function TaskForm({
         description: "",
       });
       setSelected([]);
-      navigate("/tasks");
+      if (isFromModal) {
+        onClose?.(); // optional chaining ensures no error if onClose is undefined
+      } else {
+        navigate("/tasks");
+      }
     } catch (err) {
       toast.error("Failed to create Task. Please fill all the fields");
     }
   };
-  const isDisabled = id && name && leadId;
+  const isDisabled = !!(id && name && leadId);
 
   useEffect(() => {
     if (id && name && leadId && leads.length > 0) {
       const matchedLead = leads.find(
         (lead) => lead._id === id || lead.id === leadId
       );
-  
+
       if (matchedLead) {
         setSelectedLead(matchedLead.id); // display in dropdown
         setFormData({
@@ -187,7 +196,6 @@ export default function TaskForm({
       }
     }
   }, [id, name, leadId, leads]);
-  
 
   const handleMarkDone = async () => {
     try {
