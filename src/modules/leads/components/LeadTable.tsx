@@ -31,7 +31,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -42,15 +41,10 @@ import {
 } from "@/components/ui/table";
 
 import {
-  exportToCsv,
   getLeads,
   transferLead,
 } from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
-import {
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@radix-ui/react-dropdown-menu";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Dialog,
@@ -87,7 +81,7 @@ export type Lead = {
   scheme: string;
   capacity: string;
   distance: string;
-  entry_date: string;
+  createdAt: string;
   submitted_by: string;
   email: string;
   assigned_to: {
@@ -207,10 +201,22 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
       cell: ({ row }) => <div>{row.getValue("distance")}</div>,
     },
     {
-      accessorKey: "entry_date",
-      header: "Date",
-      cell: ({ row }) => <div>{row.getValue("entry_date")}</div>,
-    },
+  accessorKey: "createdAt",
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Created Date <ArrowUpDown className="ml-2 h-4 w-4" />
+    </Button>
+  ),
+  cell: ({ row }) => {
+    const dateValue = row.getValue("createdAt");
+    const date = dateValue ? new Date(dateValue) : null;
+    return <div>{date ? date.toLocaleDateString() : "-"}</div>;
+  },
+}
+,
     {
       accessorKey: "assigned_to.name",
       header: "Lead Owner",
@@ -430,10 +436,17 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {table
+             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
               .map((column) => {
+                let label = column.id;
+
+                if (column.id === "id") label = "Lead Id";
+                else if (column.id === "c_name") label = "Name";
+                else if (typeof column.columnDef.header === "string")
+                  label = column.columnDef.header;
+
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
@@ -443,7 +456,7 @@ const pageSize = parseInt(searchParams.get("pageSize") || "10");
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    {label}
                   </DropdownMenuCheckboxItem>
                 );
               })}
