@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
 import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
-import { FilterDropdown } from "@/components/ui/filter";
 
 interface SearchBarLeadsProps {
   searchValue: string;
@@ -26,19 +25,9 @@ interface SearchBarLeadsProps {
 export default function SearchBarLeads({
   searchValue,
   onSearchChange,
-  selectedStage,
-  onValueChange,
-  clearFilters,
 }: SearchBarLeadsProps) {
-  const {
-    selectedFilter,
-    setSelectedFilter,
-    filters,
-    dateRange,
-    setDateRange,
-    showPicker,
-    setShowPicker,
-  } = useDateFilter();
+  const { selectedFilter, dateRange, setDateRange, showPicker, setShowPicker } =
+    useDateFilter();
 
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
@@ -70,17 +59,6 @@ export default function SearchBarLeads({
     };
   }, [showPicker]);
 
-  const formattedDateRange = `${format(
-    dateRange[0].startDate,
-    "MMM d, yyyy"
-  )} - ${format(dateRange[0].endDate, "MMM d, yyyy")}`;
-
-  const handleFilterClick = (status: string) => {
-    onValueChange(status);
-    const filterUsed = status.charAt(0).toUpperCase() + status.slice(1);
-    toast.success(`Filtered by ${filterUsed}`);
-  };
-
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center gap-2 w-full max-w-md">
@@ -107,24 +85,6 @@ export default function SearchBarLeads({
       </div>
 
       <div className="flex items-center gap-6 text-sm text-gray-800 font-medium relative">
-        <div className="flex items-center gap-1 cursor-pointer group relative">
-          <FilterDropdown
-            hasActiveFilters={!!selectedStage}
-            selectedStage={selectedStage}
-            filters={[
-              { label: "Initial", onClick: () => handleFilterClick("initial") },
-              {
-                label: "Follow Up",
-                onClick: () => handleFilterClick("followup"),
-              },
-              { label: "Warm", onClick: () => handleFilterClick("warm") },
-              { label: "Won", onClick: () => handleFilterClick("won") },
-              { label: "Dead", onClick: () => handleFilterClick("dead") },
-            ]}
-            clearFilters={clearFilters}
-          />
-        </div>
-
         <span
           className="cursor-pointer text-black hover:underline"
           onClick={() => navigate("/addLead")}

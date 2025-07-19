@@ -66,9 +66,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format, formatDistanceToNow } from "date-fns";
 export type Lead = {
   _id: string;
   id: string;
+  total: string;
   status: "initial" | "followUp" | "warm" | "won" | "dead";
   leadId: string;
   c_name: string;
@@ -84,6 +86,16 @@ export type Lead = {
     id: string;
     name: string;
   };
+  lastModifiedTaskDate: Date;
+};
+
+export type stageCounts = {
+  lead_without_task: number;
+  initial: number;
+  followup: number;
+  warm: number;
+  dead: number;
+  all: number;
 };
 
 export function DataTable({ search }: { search: string }) {
@@ -91,7 +103,6 @@ export function DataTable({ search }: { search: string }) {
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = parseInt(searchParams.get("pageSize") || "100");
-
   const [open, setOpen] = React.useState(false);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
@@ -100,6 +111,7 @@ export function DataTable({ search }: { search: string }) {
   const [users, setUsers] = React.useState([]);
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [stageCounts, setStageCounts] = React.useState("");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
     null
   );
@@ -139,9 +151,24 @@ export function DataTable({ search }: { search: string }) {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("status")}</div>
-      ),
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string;
+
+        const statusColors: Record<string, string> = {
+          initial: "text-gray-500",
+          followup: "text-blue-600",
+          warm: "text-orange-500",
+          won: "text-green-600",
+          dead: "text-red-600",
+        };
+
+        const colorClass =
+          statusColors[status.toLowerCase()] || "text-gray-700";
+
+        return (
+          <div className={`capitalize font-medium ${colorClass}`}>{status}</div>
+        );
+      },
     },
     {
       accessorKey: "id",
@@ -156,45 +183,65 @@ export function DataTable({ search }: { search: string }) {
       cell: ({ row }) => <div>{row.getValue("id")}</div>,
     },
     {
-      accessorKey: "c_name",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name <ArrowUpDown />
-        </Button>
-      ),
-      cell: ({ row }) => <div>{row.getValue("c_name")}</div>,
-    },
+  id: "client_info",
+  accessorFn: (row) => row.c_name,
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Client Info <ArrowUpDown />
+    </Button>
+  ),
+  cell: ({ row }) => {
+    const navigateToLeadProfile = () => {
+      const status =
+        row.original.status === "followup" ? "followUp" : row.original.status;
+      navigate(`/leadProfile?id=${row.original._id}&status=${status}`);
+    };
+
+    return (
+      <div
+        onClick={navigateToLeadProfile}
+        className="cursor-pointer hover:text-[#214b7b]"
+      >
+        <div className="font-medium">{row?.original?.c_name}</div>
+        <div className="text-sm text-gray-500">
+          {Array.isArray(row?.original?.mobile)
+            ? row.original.mobile.join(", ")
+            : row.original.mobile ?? "-"}
+        </div>
+      </div>
+    );
+  },
+}
+,
+
     {
-      accessorKey: "mobile",
-      header: "Mobile",
-      cell: ({ row }) => <div>{row.getValue("mobile")}</div>,
-    },
-    {
-      accessorKey: "state",
-      header: "State",
+      id: "location_info",
+      header: "Location Info",
       cell: ({ row }) => {
-        const state = row.getValue("state") || "";
-        const capitalized =
+        const state = row.original.state || "";
+        const scheme = row.original.scheme || "";
+
+        const capitalizedState =
           state.charAt(0).toUpperCase() + state.slice(1).toLowerCase();
-        return <div>{capitalized}</div>;
-      },
-    },
-    {
-      accessorKey: "scheme",
-      header: "Scheme",
-      cell: ({ row }) => {
-        const scheme = row.getValue("scheme") || "";
-        const capitalized = scheme
+
+        const capitalizedScheme = scheme
           .toLowerCase()
           .split(" ")
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
           .join(" ");
-        return <div>{capitalized}</div>;
+
+        return (
+          <div>
+            <div className="font-medium">{capitalizedState}</div>
+            <div className="text-sm text-gray-500">{capitalizedScheme}</div>
+          </div>
+        );
       },
     },
+    ,
     {
       accessorKey: "capacity",
       header: "Capacity (MW)",
@@ -206,9 +253,47 @@ export function DataTable({ search }: { search: string }) {
       cell: ({ row }) => <div>{row.getValue("distance")}</div>,
     },
     {
-      accessorKey: "distance",
-      header: "Task Count",
-      cell: ({ row }) => <div>{row.getValue("distance")}</div>,
+      accessorKey: "lastModifiedTaskDate",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Inactive (Days) <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.lastModifiedTaskDate || rowA.original.createdAt;
+        const b = rowB.original.lastModifiedTaskDate || rowB.original.createdAt;
+
+        const dateA = new Date(a).getTime();
+        const dateB = new Date(b).getTime();
+
+        return dateA - dateB;
+      },
+      cell: ({ row }) => {
+        const modified = row.getValue("lastModifiedTaskDate");
+        const created = row.original.createdAt;
+
+        const fallbackDate = created ? new Date(created) : new Date();
+        const date = modified ? new Date(modified) : fallbackDate;
+
+        let relativeRaw = formatDistanceToNow(date, { addSuffix: true });
+        if (!relativeRaw.toLowerCase().includes("ago")) {
+          relativeRaw += " ago";
+        }
+
+        const relative =
+          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
+        const formatted = format(date, "MMM d, yyyy");
+
+        return (
+          <div>
+            {relative}{" "}
+            <span className="text-gray-500 text-xs">({formatted})</span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "createdAt",
@@ -301,6 +386,8 @@ export function DataTable({ search }: { search: string }) {
           page,
           limit: pageSize,
           search,
+          lead_without_task:
+            stageFromUrl === "lead_without_task" ? "true" : undefined,
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -309,6 +396,7 @@ export function DataTable({ search }: { search: string }) {
         const res = await getLeads(params);
         setTotal(res?.total || 0);
         setData(res.leads);
+        setStageCounts(res.stageCounts);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
@@ -370,9 +458,19 @@ export function DataTable({ search }: { search: string }) {
     fetchUser();
   }, []);
 
+  const handleTabChange = (value: string) => {
+    setTab(value);
+    React.startTransition(() => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("stage", value);
+        return newParams;
+      });
+    });
+  };
+
   const handleTransferLead = async () => {
     if (!selectedLeadId || !selectedUser) return;
-
     try {
       const payload = { assigned_to: selectedUser };
       await transferLead(selectedLeadId, leadModel, payload);
@@ -415,86 +513,104 @@ export function DataTable({ search }: { search: string }) {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const [tab, setTab] = React.useState("all");
+  const [tab, setTab] = React.useState(stageFromUrl || "lead_without_task");
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center py-4 px-2">
-  {/* Left side: Tabs */}
-  <div>
-    <Tabs value={tab} onValueChange={setTab}>
-      <TabsList >
-        <TabsTrigger className="cursor-pointer" value="all">All</TabsTrigger>
-        <TabsTrigger className="cursor-pointer" value="initial">Initial</TabsTrigger>
-        <TabsTrigger className="cursor-pointer" value="followup">Follow Up</TabsTrigger>
-        <TabsTrigger className="cursor-pointer" value="warm">Warm</TabsTrigger>
-        <TabsTrigger className="cursor-pointer" value="dead">Dead</TabsTrigger>
-      </TabsList>
-    </Tabs>
-  </div>
+        <div>
+          <Tabs value={tab} onValueChange={handleTabChange}>
+            <TabsList className="gap-2">
+              <TabsTrigger className="cursor-pointer" value="lead_without_task">
+                Lead W/O Task ({stageCounts?.lead_without_task || "0"})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="initial">
+                Initial ({stageCounts?.initial || "0"})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="followup">
+                Follow Up ({stageCounts?.followup || "0"})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="warm">
+                Warm ({stageCounts?.warm || "0"})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="won">
+                Won ({stageCounts?.won || "0"})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="dead">
+                Dead ({stageCounts?.dead || "0"})
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="all">
+                All ({stageCounts?.all || "0"})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-  {/* Right side: Rows per page and Columns */}
-  <div className="flex items-center gap-4">
-    {/* Rows per page */}
-    <div className="flex items-center gap-2">
-      <label htmlFor="limit" >Rows per page:</label>
-      <Select
-        value={pageSize.toString()}
-        onValueChange={(value) => handleLimitChange(Number(value))}
-      >
-        <SelectTrigger  className="w-24 h-9 cursor-pointer">
-          <SelectValue placeholder="Select limit"  />
-        </SelectTrigger>
-        <SelectContent   >
-          {[1, 5, 10, 20, 50, 100].map((limit) => (
-            <SelectItem className="cursor-pointer" key={limit} value={limit.toString()}>
-              {limit}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+        {/* Right side: Rows per page and Columns */}
+        <div className="flex items-center gap-4">
+          {/* Rows per page */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="limit">Rows per page:</label>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => handleLimitChange(Number(value))}
+            >
+              <SelectTrigger className="w-24 h-9 cursor-pointer">
+                <SelectValue placeholder="Select limit" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 5, 10, 20, 50, 100].map((limit) => (
+                  <SelectItem
+                    className="cursor-pointer"
+                    key={limit}
+                    value={limit.toString()}
+                  >
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-    {/* Columns Dropdown */}
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button className="cursor-pointer" variant="outline">
-          Columns <ChevronDown className="ml-1 h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent  align="end">
-        {table
-          .getAllColumns()
-          .filter((column) => column.getCanHide())
-          .map((column) => {
-            let label = column.id;
-            if (column.id === "id") label = "Lead Id";
-            else if (column.id === "c_name") label = "Name";
-            else if (typeof column.columnDef.header === "string")
-              label = column.columnDef.header;
+          {/* Columns Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="cursor-pointer" variant="outline">
+                Columns <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  let label = column.id;
+                  if (column.id === "id") label = "Lead Id";
+                  else if (column.id === "c_name") label = "Name";
+                  else if (typeof column.columnDef.header === "string")
+                    label = column.columnDef.header;
 
-            return (
-              <DropdownMenuCheckboxItem 
-                key={column.id}
-                className="capitalize cursor-pointer"
-                checked={column.getIsVisible()}
-                onCheckedChange={(value) =>
-                  column.toggleVisibility(!!value)
-                }
-              >
-                {label}
-              </DropdownMenuCheckboxItem>
-            );
-          })}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
-</div>
-
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize cursor-pointer"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {label}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <div className="rounded-md border max-h-160 overflow-y-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gray-400">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -515,18 +631,8 @@ export function DataTable({ search }: { search: string }) {
             {table.getPaginationRowModel().rows?.length ? (
               table.getPaginationRowModel().rows.map((row) => (
                 <TableRow
-                  className="cursor-pointer"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  onClick={() =>
-                    navigate(
-                      `/leadProfile?id=${row.original._id}&status=${
-                        row.original.status === "followup"
-                          ? "followUp"
-                          : row.original.status
-                      }`
-                    )
-                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell className="text-left" key={cell.id}>
