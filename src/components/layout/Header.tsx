@@ -1,7 +1,5 @@
-// src/components/layout/Header.tsx
 import {
   Bell,
-  Mail,
   Settings,
   LayoutDashboard,
   Users,
@@ -11,21 +9,37 @@ import {
   X,
   Trash,
   UserRound,
+  LogOut,
+  User2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { getNotification, toggleViewTask } from "@/services/task/Task";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(
+  const [user, setUser] = useState<{ name: string; emp_id: string } | null>(
     null
   );
+  const location = useLocation();
   const navigate = useNavigate();
+
+  const isActiveMeeting = location.pathname === "/meeting";
+  const isActiveTask = location.pathname === "/tasks";
+  const isActiveLead = location.pathname === "/leads";
+  const isActiveDashboard = location.pathname === "/";
 
   const toggleDrawer = () => setShowDrawer(!showDrawer);
   const toggleNotifications = () => setShowNotifications(!showNotifications);
@@ -84,43 +98,51 @@ export default function Header() {
 
       <div className="hidden sm:flex gap-8 items-center text-white">
         <div
-          className="flex items-center gap-1 cursor-pointer"
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveDashboard ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
           onClick={() => navigate("/")}
         >
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
         </div>
         <div
-          className="flex items-center gap-1 cursor-pointer"
-          onClick={() => navigate(`/leads?pageSize=20&page=1`)}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveLead ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
+          onClick={() => navigate("/leads")}
         >
           <Users size={18} />
           <span>Leads</span>
         </div>
         <div
-          className="flex items-center gap-1 cursor-pointer"
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveTask ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
           onClick={() => navigate("/tasks")}
         >
           <ClipboardList size={18} />
           <span>Tasks</span>
         </div>
-        <div className="flex items-center gap-1 cursor-pointer">
+        <div
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveMeeting ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
+          onClick={() => navigate("/meeting")}
+        >
           <Calendar size={18} />
-          <span className="cursor-pointer" onClick={() => navigate("/meeting")}>
-            Meetings
-          </span>
+          <span>Meetings</span>
         </div>
         <div className="flex items-center gap-2">
           <UserRound size={18} />
-          <span className="cursor-pointer" onClick={() => navigate("/team")}>Team</span>
+          <span className="cursor-pointer" onClick={() => navigate("/team")}>
+            Team
+          </span>
         </div>
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">
-        <Settings size={18} />
-
         <div className="relative">
-          {/* Bell Icon with Notification Count Badge */}
           <div className="relative">
             <Bell
               size={18}
@@ -134,7 +156,6 @@ export default function Header() {
             )}
           </div>
 
-          {/* Notification Dropdown */}
           {showNotifications && (
             <div className="absolute top-8 right-0 w-80 bg-white text-black rounded-lg shadow-xl z-50">
               <div className="px-4 py-2 border-b font-semibold text-gray-700 flex justify-between">
@@ -187,28 +208,60 @@ export default function Header() {
           )}
         </div>
 
-        <Mail size={18} />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <img
+                src="/assets/avatar.png"
+                alt="Profile"
+                className="w-8 h-8 rounded-full"
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </DropdownMenuTrigger>
 
-        <button
-          onClick={handleLogout}
-          className="bg-blue-500 text-white px-4 py-1 rounded-md font-medium cursor-pointer"
-        >
-          Logout
-        </button>
+          <DropdownMenuContent align="end" className="w-64 shadow-md">
+            <DropdownMenuLabel className="py-2 gap-2">
+              <div className="font-medium flex justify-between items-center gap-2 text-sm leading-tight">
+                <div className="flex items-center gap-2">
+                  <User2 className="w-4 h-4" />
+                  {user?.name || "User"}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {user?.emp_id || "user@example.com"}
+                </div>
+              </div>
+            </DropdownMenuLabel>
 
-        <div className="h-10 border-l border-white/30 mx-2"></div>
+            <DropdownMenuSeparator />
 
-        <div className="flex items-center gap-2">
-          <img
-            src="/assets/avatar.png"
-            alt="Profile"
-            className="w-8 h-8 rounded-full"
-          />
-          <div className="text-sm leading-tight">
-            <div className="font-semibold">{user?.name || "User"}</div>
-            <div className="text-gray-200 text-xs">{user?.email || ""}</div>
-          </div>
-        </div>
+            <DropdownMenuItem className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 flex items-center gap-2 font-medium cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Mobile Drawer */}
