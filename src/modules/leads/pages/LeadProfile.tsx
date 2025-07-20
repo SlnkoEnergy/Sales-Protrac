@@ -151,7 +151,7 @@ export default function LeadProfile() {
           >
             <ChevronLeft />
           </Button>
-          <CardTitle className="text-xl font-semibold">
+          <CardTitle className="text-xl font-semibold capitalize">
             {data?.name}
           </CardTitle>
         </div>
@@ -207,7 +207,7 @@ export default function LeadProfile() {
               <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>KR</AvatarFallback>
             </Avatar>
-            <CardTitle className="mb-2">{data?.name}</CardTitle>
+            <CardTitle className="mb-2 capitalize">{data?.name}</CardTitle>
             <CardDescription className="flex items-center gap-3">
               <span className="flex items-center gap-2">
                 <Mail size={18} />  {data?.contact_details?.email || "NA"}

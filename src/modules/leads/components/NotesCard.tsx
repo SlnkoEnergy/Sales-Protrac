@@ -146,89 +146,101 @@ export default function NotesCard() {
               onChange={(e) => setDescription(e.target.value)}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" className="cursor-pointer" onClick={() => setOpenDialog(false)}>
+              <Button
+                variant="ghost"
+                className="cursor-pointer"
+                onClick={() => setOpenDialog(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} className="cursor-pointer">Submit</Button>
+              <Button onClick={handleSubmit} className="cursor-pointer">
+                Submit
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent className="max-h-64 overflow-hidden">
         <ScrollArea className="h-60 pr-2">
-          {data.map((note) => (
-            <div key={note._id} className="flex items-start gap-3 mt-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="https://github.com/vercel.png" />
-                <AvatarFallback>
-                  {note.user_id?.name?.slice(0, 2).toUpperCase() || "NA"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                {editId === note._id ? (
-                  <>
-                    <Textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="resize-none"
-                    />
-                    <Button
-                      size="sm"
-                      className="mt-1"
-                      onClick={() => handleEditSave(note._id)}
-                    >
-                      Save
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm">{note.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(note.updatedAt).toLocaleString()} by{" "}
-                      {note.user_id?.name || "Unknown"}
-                    </p>
-                  </>
-                )}
-              </div>
-              <div className="ml-auto flex gap-1">
-                <Pencil
-                  className="h-4 w-4 text-muted-foreground cursor-pointer"
-                  onClick={() => handleEdit(note)}
-                />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Trash
-                      className="h-4 w-4 text-muted-foreground cursor-pointer"
-                      onClick={() => setDeleteId(note._id)}
-                    />
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. It will permanently delete
-                        this note.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogAction
-                        className="cursor-pointer"
-                        onClick={handleDelete}
+          {data.length > 0 ? (
+            data.map((note) => (
+              <div key={note._id} className="flex items-start gap-3 mt-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="https://github.com/vercel.png" />
+                  <AvatarFallback>
+                    {note.user_id?.name?.slice(0, 2).toUpperCase() || "NA"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  {editId === note._id ? (
+                    <>
+                      <Textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="resize-none"
+                      />
+                      <Button
+                        size="sm"
+                        className="mt-1"
+                        onClick={() => handleEditSave(note._id)}
                       >
-                        Delete
-                      </AlertDialogAction>
-                      <AlertDialogCancel
-                        className="cursor-pointer"
-                        onClick={() => setDeleteId(null)}
-                      >
-                        Cancel
-                      </AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm">{note.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(note.updatedAt).toLocaleString()} by{" "}
+                        {note.user_id?.name || "Unknown"}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="ml-auto flex gap-1">
+                  <Pencil
+                    className="h-4 w-4 text-muted-foreground cursor-pointer"
+                    onClick={() => handleEdit(note)}
+                  />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Trash
+                        className="h-4 w-4 text-muted-foreground cursor-pointer"
+                        onClick={() => setDeleteId(note._id)}
+                      />
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. It will permanently
+                          delete this note.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogAction
+                          className="cursor-pointer"
+                          onClick={handleDelete}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                        <AlertDialogCancel
+                          className="cursor-pointer"
+                          onClick={() => setDeleteId(null)}
+                        >
+                          Cancel
+                        </AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground mt-2">
+              No Available Internal Notes
+            </p>
+          )}
         </ScrollArea>
       </CardContent>
     </Card>
