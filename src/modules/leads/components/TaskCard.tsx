@@ -1,21 +1,131 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import AddTask from "@/components/task/AddTask";
-import { getTaskById } from "@/services/task/Task";
+import { getTaskById, updateStatus } from "@/services/task/Task";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CheckCircle, Clock, Loader2, CircleDashed } from "lucide-react";
 import { createElement } from "react";
 import { useLocation } from "react-router-dom";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function TasksCard({ id, taskData, name, leadId }) {
   const [showModal, setShowModal] = useState(false);
   const [expandedTasks, setExpandedTasks] = useState({});
   const [taskDetails, setTaskDetails] = useState({});
   const [tasks, setTasks] = useState(taskData || []);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [newStatus, setNewStatus] = useState("");
+  const [newRemarks, setNewRemarks] = useState("");
+
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
+
+  const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  const userId = getUserIdFromToken();
+
+  const handleChangeStatus = async () => {
+    if (!editingTaskId || !userId || !newStatus) return;
+
+    const now = new Date();
+
+    const newStatusEntry = {
+      status: newStatus,
+      remarks: newRemarks,
+      updatedAt: now.toISOString(),
+      user_id: {
+        _id: userId,
+        name: getCurrentUser().name || "Unknown",
+      },
+    };
+
+    try {
+      await updateStatus({
+        _id: editingTaskId,
+        status: newStatus,
+        remarks: newRemarks,
+        user_id: userId,
+      });
+
+      // Update tasks list
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task._id === editingTaskId
+            ? {
+                ...task,
+                current_status: newStatus,
+                remarks: [
+                  ...(task.remarks || []),
+                  { text: newRemarks, date: now, user_id: userId },
+                ],
+              }
+            : task
+        )
+      );
+
+      // Update taskDetails[task._id]
+      setTaskDetails((prev) => ({
+        ...prev,
+        [editingTaskId]: {
+          ...prev[editingTaskId],
+          status_history: [
+            ...(prev[editingTaskId]?.status_history || []),
+            newStatusEntry,
+          ],
+        },
+      }));
+
+      toast.success("Status updated");
+      setEditModalOpen(false);
+      toggleTask(editingTaskId);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   const toggleTask = async (taskId) => {
     setExpandedTasks((prev) => ({
@@ -50,7 +160,15 @@ export default function TasksCard({ id, taskData, name, leadId }) {
 
   const isFromModal = location === "/leadProfile";
 
-  console.log({tasks});
+  const getTruncatedDescription = (desc: string) => {
+    if (!desc) return "";
+    const words = desc.split(" ");
+    if (words.length > 1) {
+      return words.slice(0, 15).join(" ") + (words.length > 15 ? "..." : "");
+    } else {
+      return desc.length > 15 ? desc.slice(0, 15) + "..." : desc;
+    }
+  };
 
   return (
     <>
@@ -87,10 +205,7 @@ export default function TasksCard({ id, taskData, name, leadId }) {
 
                   return (
                     <div key={task._id} className="space-y-2">
-                      <div
-                        className="flex items-start gap-3 cursor-pointer"
-                        onClick={() => toggleTask(task._id)}
-                      >
+                      <div className="flex items-start gap-3">
                         {createElement(statusIcon, {
                           className: "h-4 w-4 mt-1 text-muted-foreground",
                         })}
@@ -100,11 +215,16 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                             <p className="text-sm truncate" title={task.title}>
                               {task.title}
                             </p>
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            )}
+                            <button
+                              className="cursor-pointer"
+                              onClick={() => toggleTask(task._id)}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </button>
                           </div>
 
                           <p className="text-xs text-muted-foreground truncate">
@@ -119,53 +239,100 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                             by {details?.user_id?.name}
                           </p>
                         </div>
-
-                        <Badge
-                          className={`p-1 capitalize text-xs ${
-                            task.current_status === "completed"
-                              ? "bg-green-400"
-                              : task.current_status === "pending"
-                              ? "bg-red-400"
-                              : task.current_status === "in progress"
-                              ? "bg-orange-400"
-                              : "bg-blue-400"
-                          }`}
-                        >
-                          {task.current_status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={`p-1 capitalize text-xs ${
+                              task.current_status === "completed"
+                                ? "bg-green-400"
+                                : task.current_status === "pending"
+                                ? "bg-red-400"
+                                : task.current_status === "in progress"
+                                ? "bg-orange-400"
+                                : "bg-blue-400"
+                            }`}
+                          >
+                            {task.current_status}
+                          </Badge>
+                          <div>
+                            <div
+                              onClick={() => {
+                                setEditingTaskId(task._id);
+                                setNewStatus(details?.current_status || "");
+                                setNewRemarks("");
+                                setEditModalOpen(true);
+                              }}
+                            >
+                              {task?.current_status !== "completed" && (
+                                <Pencil className="cursor-pointer" size={18} />
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       {isExpanded && details && (
-                        <div className="ml-12 mt-2 space-y-2 text-sm">
+                        <div className="ml-12 mt-2 space-y-2 text-sm max-h-[200px] overflow-auto">
                           {!isFromModal && (
                             <div>
                               <strong>Status:</strong> {details.current_status}
                             </div>
                           )}
-                          <div>
-                            <strong>Type:</strong> {details.type}
+
+                          <div className="flex gap-1">
+                            <strong>Type:</strong>{" "}
+                            <p className="capitalize">{details.type}</p>
                           </div>
-                          <div>
-                            <strong>Priority:</strong> {details.priority}
+
+                          <div className="flex gap-1">
+                            <strong>Priority:</strong>
+                            <p className="capitalize"> {details.priority}</p>
                           </div>
-                          <div>
+
+                          <div className="flex gap-1">
                             <strong>Deadline:</strong>{" "}
                             {new Date(details.deadline).toLocaleDateString(
                               "en-GB"
                             )}
                           </div>
-                          <div>
-                            <strong>Description:</strong> {details.description}
-                          </div>
+
+                          {/* Tooltip for Description */}
+                          <TooltipProvider>
+                            <div className="flex gap-1 items-start">
+                              <strong>Description:</strong>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="cursor-pointer underline text-muted-foreground max-w-xs break-all">
+                                    {getTruncatedDescription(
+                                      details.description
+                                    )}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="bottom"
+                                  align="start"
+                                  className="w-72 max-h-60 overflow-y-auto whitespace-pre-wrap break-words text-left"
+                                >
+                                  {details.description}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
+
                           {!isFromModal && (
-                            <div>
-                              <strong>Lead:</strong> {details.lead_id?.name}
+                            <div className="flex gap-1">
+                              <strong>Lead:</strong>
+                              <p className="capitalize">
+                                {details.lead_id?.name}
+                              </p>
                             </div>
                           )}
+
                           {!isFromModal && (
-                            <div>
+                            <div className="flex gap-1">
                               <strong>Created By:</strong>{" "}
-                              {details.user_id?.name}
+                              <p className="capitalize">
+                                {details.user_id?.name}
+                              </p>
                             </div>
                           )}
 
@@ -199,6 +366,7 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                                       >
                                         {entry.status}
                                       </div>
+
                                       <div className="text-sm text-gray-500">
                                         by {entry.user_id?.name} on{" "}
                                         {new Date(
@@ -249,6 +417,53 @@ export default function TasksCard({ id, taskData, name, leadId }) {
               onClose={() => setShowModal(false)}
               onTaskCreated={handleNewTask}
             />
+          </div>
+        </div>
+      )}
+      {editModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
+          <div className="bg-white rounded-xl w-full max-w-md p-6 relative shadow-xl space-y-4">
+            <Button
+              className="absolute top-4 right-4 z-50"
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditModalOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+
+            <h2 className="text-lg font-semibold">Update Task Status</h2>
+
+            <Select value={newStatus} onValueChange={setNewStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Textarea
+              placeholder="Enter remarks..."
+              value={newRemarks}
+              onChange={(e) => setNewRemarks(e.target.value)}
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button className="cursor-pointer" onClick={handleChangeStatus}>
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => setEditModalOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}

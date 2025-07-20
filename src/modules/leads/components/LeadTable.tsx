@@ -63,6 +63,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, formatDistanceToNow } from "date-fns";
+import { is } from "date-fns/locale";
+import Loader from "@/components/loader/Loader";
 
 export type Lead = {
   _id: string;
@@ -141,6 +143,8 @@ export function DataTable({ search }: { search: string }) {
   );
   const [leadModel, setLeadModel] = React.useState<string | null>(null);
   const department = "BD";
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -408,32 +412,36 @@ export function DataTable({ search }: { search: string }) {
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
 
-  React.useEffect(() => {
-    const fetchLeads = async () => {
-      try {
-        const params = {
-          stage: stageFromUrl,
-          page,
-          limit: pageSize,
-          search,
-          lead_without_task:
-            stageFromUrl === "lead_without_task" ? "true" : undefined,
-        };
+ React.useEffect(() => {
+  const fetchLeads = async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        stage: stageFromUrl,
+        page,
+        limit: pageSize,
+        search,
+        lead_without_task: stageFromUrl === "lead_without_task" ? "true" : undefined,
+      };
 
-        if (fromDate) params.fromDate = fromDate;
-        if (toDate) params.toDate = toDate;
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
 
-        const res = await getLeads(params);
-        setTotal(res?.total || 0);
-        setData(res.leads);
-        setStageCounts(res.stageCounts);
-      } catch (err) {
-        console.error("Error fetching leads:", err);
-      }
-    };
+      const res = await getLeads(params);
+      setTotal(res?.total || 0);
+      setData(res.leads);
+      setStageCounts(res.stageCounts);
+    } catch (err) {
+      console.error("Error fetching leads:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchLeads();
-  }, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
+  fetchLeads();
+}, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
+ 
+
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -544,6 +552,8 @@ export function DataTable({ search }: { search: string }) {
   });
 
   const [tab, setTab] = React.useState(stageFromUrl || "lead_without_task");
+  
+  if(isLoading) return <Loader />
 
   return (
     <div className="w-full">
