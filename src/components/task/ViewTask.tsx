@@ -82,6 +82,7 @@ export default function ViewTask() {
     }
   };
 
+  
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
     if (!token) return null;
@@ -139,7 +140,6 @@ export default function ViewTask() {
     if (id) fetchTasks();
   }, [id]);
 
-  console.log("data", data);
 
   return (
     <div className="p-6 space-y-4">

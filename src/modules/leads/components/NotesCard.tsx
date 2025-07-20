@@ -179,13 +179,16 @@ export default function NotesCard() {
                         onChange={(e) => setEditText(e.target.value)}
                         className="resize-none"
                       />
-                      <Button
+                  
+                       <Button
                         size="sm"
                         className="mt-1"
                         onClick={() => handleEditSave(note._id)}
                       >
                         Save
                       </Button>
+                     
+                   
                     </>
                   ) : (
                     <>
