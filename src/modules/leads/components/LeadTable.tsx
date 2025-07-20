@@ -13,11 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  MoreHorizontal,
-} from "lucide-react";
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,21 +63,46 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, formatDistanceToNow } from "date-fns";
+
 export type Lead = {
   _id: string;
   id: string;
-  total: string;
-  status: "initial" | "followUp" | "warm" | "won" | "dead";
-  leadId: string;
-  c_name: string;
-  mobile: string;
-  state: string;
-  scheme: string;
-  capacity: string;
-  distance: string;
-  createdAt: string;
-  submitted_by: string;
-  email: string;
+  current_status: {
+    name: string;
+    stage: string;
+  };
+  name: string;
+  contact_details: {
+    mobile: string[];
+  };
+  address: {
+    district: string;
+    village: string;
+    state: string;
+  };
+  createdAt: Date;
+  current_assigned: {
+    user_id: {
+      name: string;
+    };
+    status: {
+      string;
+    };
+  };
+  project_details: {
+    capacity: string;
+    land_type: string;
+    scheme: string;
+    tarrif: string;
+    available_land: {
+      unit: string;
+      value: string;
+    };
+    distance_from_substation: {
+      unit: string;
+      value: string;
+    };
+  };
   assigned_to: {
     id: string;
     name: string;
@@ -92,7 +113,7 @@ export type Lead = {
 export type stageCounts = {
   lead_without_task: number;
   initial: number;
-  followup: number;
+  "follow up": number;
   warm: number;
   dead: number;
   all: number;
@@ -149,27 +170,31 @@ export function DataTable({ search }: { search: string }) {
       enableHiding: false,
     },
     {
-      accessorKey: "status",
+      accessorKey: "current_status.name",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = row.original.current_status?.name as string;
+
+        const normalizedStatus = status?.toLowerCase();
 
         const statusColors: Record<string, string> = {
           initial: "text-gray-500",
-          followup: "text-blue-600",
+          "follow up": "text-blue-600",
           warm: "text-orange-500",
           won: "text-green-600",
           dead: "text-red-600",
         };
 
-        const colorClass =
-          statusColors[status.toLowerCase()] || "text-gray-700";
+        const colorClass = statusColors[normalizedStatus] || "text-gray-700";
 
         return (
-          <div className={`capitalize font-medium ${colorClass}`}>{status}</div>
+          <div className={`capitalize font-medium ${colorClass}`}>
+            {status || "N/A"}
+          </div>
         );
       },
     },
+
     {
       accessorKey: "id",
       header: ({ column }) => (
@@ -183,46 +208,42 @@ export function DataTable({ search }: { search: string }) {
       cell: ({ row }) => <div>{row.getValue("id")}</div>,
     },
     {
-  id: "client_info",
-  accessorFn: (row) => row.c_name,
-  header: ({ column }) => (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    >
-      Client Info <ArrowUpDown />
-    </Button>
-  ),
-  cell: ({ row }) => {
-    const navigateToLeadProfile = () => {
-      const status =
-        row.original.status === "followup" ? "followUp" : row.original.status;
-      navigate(`/leadProfile?id=${row.original._id}&status=${status}`);
-    };
+      id: "client_info",
+      accessorFn: (row) => row?.name,
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Client Info <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const navigateToLeadProfile = () => {
+          navigate(`/leadProfile?id=${row.original._id}`);
+        };
 
-    return (
-      <div
-        onClick={navigateToLeadProfile}
-        className="cursor-pointer hover:text-[#214b7b]"
-      >
-        <div className="font-medium">{row?.original?.c_name}</div>
-        <div className="text-sm text-gray-500">
-          {Array.isArray(row?.original?.mobile)
-            ? row.original.mobile.join(", ")
-            : row.original.mobile ?? "-"}
-        </div>
-      </div>
-    );
-  },
-}
-,
-
+        return (
+          <div
+            onClick={navigateToLeadProfile}
+            className="cursor-pointer hover:text-[#214b7b]"
+          >
+            <div className="font-medium">{row?.original?.name}</div>
+            <div className="text-sm text-gray-500">
+              {Array.isArray(row?.original?.contact_details?.mobile)
+                ? row.original?.contact_details?.mobile.join(", ")
+                : row.original?.contact_details?.mobile ?? "-"}
+            </div>
+          </div>
+        );
+      },
+    },
     {
       id: "location_info",
       header: "Location Info",
       cell: ({ row }) => {
-        const state = row.original.state || "";
-        const scheme = row.original.scheme || "";
+        const state = row.original?.address?.state || "";
+        const scheme = row.original?.project_details?.scheme || "";
 
         const capitalizedState =
           state.charAt(0).toUpperCase() + state.slice(1).toLowerCase();
@@ -243,14 +264,21 @@ export function DataTable({ search }: { search: string }) {
     },
     ,
     {
-      accessorKey: "capacity",
+      accessorKey: "project_details.capacity",
       header: "Capacity (MW)",
-      cell: ({ row }) => <div>{row.getValue("capacity")}</div>,
+      cell: ({ row }) => {
+        const capacity = row.original.project_details?.capacity;
+        return <div>{capacity ?? "N/A"}</div>;
+      },
     },
     {
-      accessorKey: "distance",
-      header: "Distance (KM)",
-      cell: ({ row }) => <div>{row.getValue("distance")}</div>,
+      accessorKey: "project_details.distance_from_substation.value",
+      header: "Distance (Km)",
+      cell: ({ row }) => {
+        const distance =
+          row.original.project_details?.distance_from_substation?.value;
+        return <div>{distance ?? "N/A"}</div>;
+      },
     },
     {
       accessorKey: "lastModifiedTaskDate",
@@ -312,9 +340,11 @@ export function DataTable({ search }: { search: string }) {
       },
     },
     {
-      accessorKey: "assigned_to.name",
+      accessorKey: "current_assigned?.user_id?.name",
       header: "Lead Owner",
-      cell: ({ row }) => <div>{row.original.assigned_to?.name}</div>,
+      cell: ({ row }) => (
+        <div>{row.original.current_assigned?.user_id?.name}</div>
+      ),
     },
     {
       id: "actions",
@@ -360,7 +390,7 @@ export function DataTable({ search }: { search: string }) {
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedAssignTo(row.original?.assigned_to.id);
-                  setLeadModel(row.original.status);
+                  setLeadModel(row.original?.current_status?.name);
                   setSelectedLeadId(row.original._id);
                   setOpen(true);
                 }}
@@ -527,8 +557,8 @@ export function DataTable({ search }: { search: string }) {
               <TabsTrigger className="cursor-pointer" value="initial">
                 Initial ({stageCounts?.initial || "0"})
               </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="followup">
-                Follow Up ({stageCounts?.followup || "0"})
+              <TabsTrigger className="cursor-pointer" value="follow up">
+                Follow Up ({stageCounts?.["follow up"] || "0"})
               </TabsTrigger>
               <TabsTrigger className="cursor-pointer" value="warm">
                 Warm ({stageCounts?.warm || "0"})
@@ -539,7 +569,7 @@ export function DataTable({ search }: { search: string }) {
               <TabsTrigger className="cursor-pointer" value="dead">
                 Dead ({stageCounts?.dead || "0"})
               </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="all">
+              <TabsTrigger className="cursor-pointer" value="">
                 All ({stageCounts?.all || "0"})
               </TabsTrigger>
             </TabsList>
@@ -608,7 +638,7 @@ export function DataTable({ search }: { search: string }) {
         </div>
       </div>
 
-      <div className="rounded-md border max-h-160 overflow-y-auto">
+      <div className="rounded-md border h-[calc(100vh-290px)] overflow-y-auto">
         <Table>
           <TableHeader className="bg-gray-400">
             {table.getHeaderGroups().map((headerGroup) => (

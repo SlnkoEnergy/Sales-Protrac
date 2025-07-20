@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -53,30 +48,11 @@ export default function NotesCard() {
 
   const fetchNotes = async () => {
     try {
-      const res = await getNotesByLeadId({ lead_id });
+      const params = { lead_id };
+      const res = await getNotesByLeadId(params);
       setData(res.data);
     } catch (error) {
       console.error("Error fetching notes:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotes();
-  }, [lead_id]);
-
-  const handleSubmit = async () => {
-    if (!description.trim()) {
-      toast.warning("Note cannot be empty");
-      return;
-    }
-    try {
-      await createNotes({ lead_id, user_id, description });
-      toast.success("Note created");
-      setDescription("");
-      setOpenDialog(false);
-      fetchNotes();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create note");
     }
   };
 
@@ -85,25 +61,66 @@ export default function NotesCard() {
     setEditText(note.description);
   };
 
+  const handleDelete = async () => {
+    try {
+      await deleteNotes(deleteId);
+      toast.success("Note deleted");
+      setData((prev) => prev.filter((n) => n._id !== deleteId));
+      setDeleteId(null);
+    } catch (err) {
+      toast.error("Failed to delete");
+    }
+  };
+
   const handleEditSave = async (noteId) => {
     try {
       await editNotes(noteId, { description: editText });
       toast.success("Note updated");
+      setData((prev) =>
+        prev.map((n) =>
+          n?._id === noteId
+            ? {
+                ...n,
+                description: editText,
+                updatedAt: new Date().toISOString(),
+              }
+            : n
+        )
+      );
       setEditId(null);
-      fetchNotes();
     } catch (err: any) {
       toast.error(err.message || "Failed to update note");
     }
   };
 
-  const handleDelete = async () => {
+  useEffect(() => {
+    fetchNotes();
+  }, [lead_id]);
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const handleSubmit = async () => {
+    if (!description.trim()) {
+      toast.warning("Note cannot be empty");
+      return;
+    }
+
     try {
-      await deleteNotes(deleteId);
-      toast.success("Note deleted");
-      setDeleteId(null);
-      fetchNotes();
-    } catch (err) {
-      toast.error("Failed to delete");
+      const newNote = await createNotes({ lead_id, user_id, description });
+      const localNote = {
+        _id: newNote?.data?._id,
+        description: description,
+        user_id: {
+          name: user?.name || "You",
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      toast.success("Note created");
+      setData((prev) => [localNote, ...prev]);
+      setDescription("");
+      setOpenDialog(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create note");
     }
   };
 
@@ -113,7 +130,7 @@ export default function NotesCard() {
         <CardTitle className="text-lg font-medium">Internal Notes</CardTitle>
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" className="cursor-pointer" size="sm">
               <Plus className="w-4 h-4 mr-1" /> Add Note
             </Button>
           </DialogTrigger>
@@ -129,10 +146,10 @@ export default function NotesCard() {
               onChange={(e) => setDescription(e.target.value)}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setOpenDialog(false)}>
+              <Button variant="ghost" className="cursor-pointer" onClick={() => setOpenDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit}>Submit</Button>
+              <Button onClick={handleSubmit} className="cursor-pointer">Submit</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -194,10 +211,16 @@ export default function NotesCard() {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction className="cursor-pointer" onClick={handleDelete}>
+                      <AlertDialogAction
+                        className="cursor-pointer"
+                        onClick={handleDelete}
+                      >
                         Delete
                       </AlertDialogAction>
-                      <AlertDialogCancel className="cursor-pointer" onClick={() => setDeleteId(null)}>
+                      <AlertDialogCancel
+                        className="cursor-pointer"
+                        onClick={() => setDeleteId(null)}
+                      >
                         Cancel
                       </AlertDialogCancel>
                     </AlertDialogFooter>

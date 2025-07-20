@@ -1,19 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  CalendarClock,
   CheckSquare,
   ChevronLeft,
   Mail,
-  MessageSquare,
-  Phone,
 } from "lucide-react";
 import { TabsContent } from "@radix-ui/react-tabs";
 import TaskForm from "./TaskForm";
 import { Button } from "../ui/button";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-export default function AddTask({idModal, leadIdModal, nameModal, onClose}) {
+export default function AddTask({idModal, leadIdModal, nameModal, onClose, onTaskCreated}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const id = searchParams.get("id") || null;
@@ -21,8 +18,9 @@ export default function AddTask({idModal, leadIdModal, nameModal, onClose}) {
   const leadId = searchParams.get("leadId") || null;
 
   const location = window.location.pathname;
-
   const isFromModal = location === "/leadProfile";
+
+  console.log({onTaskCreated});
 
   return (
     <div className="w-full p-4">
@@ -40,33 +38,20 @@ export default function AddTask({idModal, leadIdModal, nameModal, onClose}) {
         <CardContent className="p-6">
           <h2 className="text-lg font-semibold mb-4">Add Task</h2>
 
-          <Tabs defaultValue="email" className="mb-4">
-            <TabsList className="grid grid-cols-4 w-full gap-1">
-              <TabsTrigger className="cursor-pointer" value="email">
-                <Mail className="w-5 h-5 text-muted-foreground" /> Email
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="call">
-                <Phone className="w-5 h-5 text-muted-foreground" /> Call
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="meeting">
-                <CalendarClock className="w-5 h-5 text-muted-foreground" />{" "}
-                Meeting
+          <Tabs defaultValue="assign" className="mb-4">
+            <TabsList className="grid grid-cols-2 w-full gap-1">
+              <TabsTrigger className="cursor-pointer" value="assign">
+                <Mail className="w-5 h-5 text-muted-foreground" /> Assign
               </TabsTrigger>
               <TabsTrigger className="cursor-pointer" value="todo">
                 <CheckSquare className="w-5 h-5 text-muted-foreground" /> To-Do
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="email">
-              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="email" />
-            </TabsContent>
-            <TabsContent value="call">
-              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="call" />
-            </TabsContent>
-            <TabsContent value="meeting">
-              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="meeting" />
+            <TabsContent value="assign">
+              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} onTaskCreated={onTaskCreated} type="email" />
             </TabsContent>
             <TabsContent value="todo">
-              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} type="todo" />
+              <TaskForm id = {isFromModal ? idModal: id} name={isFromModal? nameModal: name} leadId={isFromModal? leadIdModal: leadId} onClose={onClose} onTaskCreated={onTaskCreated} type="todo" />
             </TabsContent>
           </Tabs>
         </CardContent>

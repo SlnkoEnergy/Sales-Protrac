@@ -34,23 +34,55 @@ import {
 import LeadDocuments from "../components/LeadDocument";
 
 export type Lead = {
+  _id: string;
   id: string;
-  status: "initial" | "followUp" | "warm" | "won" | "dead";
-  leadId: string;
-  c_name: string;
-  mobile: string;
-  state: string;
-  scheme: string;
-  capacity: string;
-  distance: string;
-  entry_date: string;
-  submitted_by: string;
-  email: string;
-  village: string;
-  district: string;
-  source: string;
-  company: string;
-  other_remarks: string;
+  current_status: {
+    name: string;
+    stage: string;
+    remarks: string;
+  };
+  name: string;
+  contact_details: {
+    mobile: string[];
+    email: string;
+  };
+  address: {
+    district: string;
+    village: string;
+    state: string;
+  };
+  company_name: string;
+  createdAt: Date;
+  current_assigned: {
+    user_id: {
+      name: string;
+    };
+    status: {
+      string;
+    };
+  };
+  project_details: {
+    capacity: string;
+    land_type: string;
+    scheme: string;
+    tarrif: string;
+    available_land: {
+      unit: string;
+      value: string;
+    };
+    distance_from_substation: {
+      unit: string;
+      value: string;
+    };
+  };
+  assigned_to: {
+    id: string;
+    name: string;
+  };
+  source: {
+    from: string;
+    sub_source: string;
+  };
 };
 export default function LeadProfile() {
   const navigate = useNavigate();
@@ -120,14 +152,15 @@ export default function LeadProfile() {
             <ChevronLeft />
           </Button>
           <CardTitle className="text-xl font-semibold">
-            {data?.c_name}
+            {data?.name}
           </CardTitle>
         </div>
 
         <div className="flex gap-2">
           <Button
-            className="bg-blue-500 cursor-pointer"
+            className="cursor-pointer"
             size="sm"
+            variant="outline"
             onClick={() => {
               navigate(`/editlead?id=${id}&lead_model=${status}`);
             }}
@@ -153,34 +186,34 @@ export default function LeadProfile() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="cursor-pointer">
-                  Cancel
-                </AlertDialogCancel>
                 <AlertDialogAction
                   className="cursor-pointer"
                   onClick={handleDelete}
                 >
                   Yes, delete
                 </AlertDialogAction>
+                <AlertDialogCancel className="cursor-pointer">
+                  Cancel
+                </AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>
       </div>
-      <div className="flex gap-4">
-        <Card className="min-w-[450px]">
+      <div className="flex gap-4 h-[calc(100vh-200px)]">
+        <Card className="min-w-[450px] max-h-full overflow-hidden">
           <CardHeader className="flex justify-center flex-col items-center">
             <Avatar className="h-14 w-14">
               <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>KR</AvatarFallback>
             </Avatar>
-            <CardTitle className="mb-2">{data?.c_name}</CardTitle>
+            <CardTitle className="mb-2">{data?.name}</CardTitle>
             <CardDescription className="flex items-center gap-3">
               <span className="flex items-center gap-2">
-                <Mail size={18} /> {data?.email || "NA"}
+                <Mail size={18} />  {data?.contact_details?.email || "NA"}
               </span>
               <span className="flex items-center gap-2">
-                <Phone size={18} /> {data?.mobile || "N/A"}
+                <Phone size={18} />  {data?.contact_details?.mobile?.join(", ") || "N/A"}
               </span>
             </CardDescription>
           </CardHeader>
@@ -205,46 +238,52 @@ export default function LeadProfile() {
                         : ""
                     }`}
                   >
-                    {status}
+                     {data?.current_status?.name}
                   </Badge>
                 </CardTitle>
                 <CardDescription className="text-black capitalize flex gap-1 items-center">
                   <MapPin size={16} />{" "}
-                  <span>
-                    {data?.village}, {data?.district}, {data?.state}
+                 <span>
+                    {data?.address?.village}, {data?.address?.district},{" "}
+                    {data?.address?.state}
                   </span>{" "}
                 </CardDescription>
-                <p>
-                  <strong>Source:</strong> {data?.source}
+                 <p>
+                  <strong>Source:</strong> {data?.source?.from}
+                  {data?.source?.from && data?.source?.sub_source !== " "
+                    ? " - "
+                    : ""}
+                  {data?.source?.sub_source}
+                </p>
+                  <p>
+                  <strong>Capacity:</strong> {data?.project_details?.capacity}
                 </p>
                 <p>
-                  <strong>Capacity:</strong> {data?.capacity}
+                  <strong>Scheme:</strong> {data?.project_details?.scheme}
                 </p>
                 <p>
-                  <strong>Scheme:</strong> {data?.scheme}
+                  <strong>Company:</strong> {data?.company_name}
                 </p>
                 <p>
-                  <strong>Company:</strong> {data?.company}
-                </p>
-                <p>
-                  <strong>Description:</strong> {data?.other_remarks}
+                  <strong>Description:</strong> {data?.current_status?.remarks}
                 </p>
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 items-start">
             <Separator />
-            Owner: {data?.submitted_by}
+            Owner: {data?.current_assigned?.user_id?.name}
           </CardFooter>
         </Card>
         <div  className="w-full overflow-y-auto pr-2 flex flex-col gap-4">
           <NotesCard />
           <TasksCard
             leadId={data?.id}
-            name={data?.c_name}
+            name={data?.name}
             id={id}
             taskData={taskData}
           />
+          <LeadDocuments />
           <LeadDocuments />
         </div>
       </div>
