@@ -14,9 +14,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { DateFilterProvider } from "./modules/dashboard/components/DateFilterContext";
 import Layout from "./components/layout/Layout";
 import Team from "./modules/team/pages/TeamDashboard";
+import DocumentViewer from "./components/lead/DocumentViewer";
+
 
 function App() {
-
   return (
     <DateFilterProvider>
       <Router>
@@ -32,6 +33,7 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="leads" element={<Leads />} />
+            <Route path="document-viewer" element={<DocumentViewer />} /> {/* ✅ FIXED */}
             <Route path="leadProfile" element={<LeadProfile />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="addtask" element={<AddTasks />} />

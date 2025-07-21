@@ -31,12 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import LeadDocuments from "../components/LeadDocument";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import HandoverForm from "../components/Handover";
 import Leads from "./Leads";
 
@@ -260,9 +255,16 @@ export default function LeadProfile() {
                 <CardDescription className="text-black capitalize flex gap-1 items-center">
                   <MapPin size={16} />{" "}
                   <span>
-                    {data?.address?.village}, {data?.address?.district},{" "}
+                    {data?.address?.village}
+                    {data?.address?.village && data?.address?.district
+                      ? ", "
+                      : ""}
+                    {data?.address?.district}
+                    {data?.address?.district && data?.address?.state
+                      ? ", "
+                      : ""}
                     {data?.address?.state}
-                  </span>{" "}
+                  </span>
                 </CardDescription>
                 <p>
                   <strong>Source:</strong> {data?.source?.from}
@@ -299,16 +301,15 @@ export default function LeadProfile() {
                 id={id}
                 taskData={taskData}
               />
-              <LeadDocuments />
+              <LeadDocuments data={data} />
             </div>
           </div>
         </TabsContent>
 
         {/* Handover Tab */}
         <TabsContent value="handover">
-  <HandoverForm />
-</TabsContent>
-
+          <HandoverForm />
+        </TabsContent>
 
         {/* Timeline Tab */}
         <TabsContent value="timeline">

@@ -13,7 +13,15 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Phone } from "lucide-react";
+import {
+  ArrowUpDown,
+  Calendar,
+  CalendarDays,
+  ChevronDown,
+  MoreHorizontal,
+  Pencil,
+  Phone,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,8 +41,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import { getLeads, transferLead } from "@/services/leads/LeadService";
+import {
+  getLeads,
+  transferLead,
+  updateExpectedClosingDate,
+} from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -53,6 +64,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Select,
@@ -71,6 +83,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import StatusCell from "./StatusCell";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export type Lead = {
   _id: string;
@@ -116,7 +134,8 @@ export type Lead = {
     name: string;
   };
   lastModifiedTask: Date;
-  leadAgeing: string
+  leadAgeing: string;
+  expected_closing_date: Date;
 };
 
 export type stageCounts = {
@@ -154,6 +173,7 @@ export function DataTable({ search }: { search: string }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -185,29 +205,15 @@ export function DataTable({ search }: { search: string }) {
     {
       accessorKey: "current_status.name",
       header: "Status",
-      cell: ({ row }) => {
-        const status = row.original.current_status?.name as string;
-
-        const normalizedStatus = status?.toLowerCase();
-
-        const statusColors: Record<string, string> = {
-          initial: "text-gray-500",
-          "follow up": "text-blue-600",
-          warm: "text-orange-500",
-          won: "text-green-600",
-          dead: "text-red-600",
-        };
-
-        const colorClass = statusColors[normalizedStatus] || "text-gray-700";
-
-        return (
-          <div className={`capitalize font-medium ${colorClass}`}>
-            {status || "N/A"}
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <StatusCell
+          leadId={row.original._id}
+          status={row.original.current_status?.name}
+          currentStatus={row.original.current_status?.name}
+          expected_closing_date={row.original?.expected_closing_date}
+        />
+      ),
     },
-
     {
       accessorKey: "id",
       header: ({ column }) => (
@@ -371,43 +377,102 @@ export function DataTable({ search }: { search: string }) {
       },
     },
     {
-  accessorKey: "leadAging",
-  header: ({ column }) => (
-    <Button
-      variant="ghost"
-      onClick={() =>
-        column.toggleSorting(column.getIsSorted() === "asc")
-      }
-    >
-      Lead Aging <ArrowUpDown className="ml-2 h-4 w-4" />
-    </Button>
-  ),
-  sortingFn: (rowA, rowB) => {
-    const a = new Date(rowA.original.createdAt).getTime();
-    const b = new Date(rowB.original.createdAt).getTime();
-    return a - b; // Older createdAt → lower (more aged)
-  },
-  cell: ({ row }) => {
-    const createdAt = row.original.createdAt;
-    const date = new Date(createdAt);
+      accessorKey: "leadAging",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Lead Aging <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      sortingFn: (rowA, rowB) => {
+        const a = new Date(rowA.original.createdAt).getTime();
+        const b = new Date(rowB.original.createdAt).getTime();
+        return a - b;
+      },
+      cell: ({ row }) => {
+        const createdAt = row.original.createdAt;
+        const expectedClosing = row.original.expected_closing_date;
+        const leadId = row.original._id;
 
-    let relativeRaw = formatDistanceToNow(date, { addSuffix: true });
-    if (!relativeRaw.toLowerCase().includes("ago")) {
-      relativeRaw += " ago";
-    }
+        const [pendingDate, setPendingDate] = React.useState<string | null>(
+          null
+        );
+        const [open, setOpen] = React.useState(false);
 
-    const relative =
-      relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-    const formatted = format(date, "MMM d, yyyy");
+        const createdDate = new Date(createdAt);
+        let relativeRaw = formatDistanceToNow(createdDate, { addSuffix: true });
+        if (!relativeRaw.toLowerCase().includes("ago")) {
+          relativeRaw += " ago";
+        }
+        const relative =
+          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
 
-    return (
-      <div>
-        {relative}
-      </div>
-    );
-  },
-}
-,
+        const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const selected = e.target.value;
+          if (selected) {
+            setPendingDate(selected);
+            setOpen(true);
+          }
+        };
+
+        const handleConfirm = async () => {
+          if (!pendingDate) return;
+          try {
+            await updateExpectedClosingDate(leadId, pendingDate);
+            toast.success("Expected closing date updated");
+          } catch (error: any) {
+            toast.error(error.message || "Failed to update date");
+          } finally {
+            setOpen(false);
+          }
+        };
+
+        return (
+          <div>
+            <div>{relative}</div>
+            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-1">
+              <CalendarDays className="w-3.5 h-3.5" />
+              {expectedClosing && expectedClosing !== "-" ? (
+                <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+              ) : (
+                <>
+                  <input
+                    type="date"
+                    className="border rounded text-xs px-1 py-0.5"
+                    onChange={handleDateChange}
+                  />
+
+                  <AlertDialog open={open} onOpenChange={setOpen}>
+                    <AlertDialogTrigger asChild />
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you sure you want to set the expected closing
+                          date?
+                        </AlertDialogTitle>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogAction
+                          className="cursor-pointer"
+                          onClick={handleConfirm}
+                        >
+                          Yes, Confirm
+                        </AlertDialogAction>
+                        <AlertDialogCancel className="cursor-pointer">
+                          Cancel
+                        </AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
