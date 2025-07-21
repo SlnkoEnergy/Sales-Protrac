@@ -41,12 +41,13 @@ export const getLeadbyId = async (params = {}) => {
 
 export const createBdLead = async ({ data }: { data: any }) => {
   try {
-    const response = await Axios.post(`/create-bd-lead`, data);
+    const response = await Axios.post(`/bddashboard/lead`, data);
     return response.data;
   } catch (error: any) {
     throw error.response?.data || error.message;
   }
 };
+
 
 export const editBdLead = async (params = {}, body = {}) => {
   const { _id, ...queryParams } = params;

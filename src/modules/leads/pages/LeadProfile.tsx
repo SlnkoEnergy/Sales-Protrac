@@ -42,6 +42,7 @@ export type Lead = {
     stage: string;
     remarks: string;
   };
+  comments:string;
   name: string;
   contact_details: {
     mobile: string[];
@@ -275,7 +276,8 @@ export default function LeadProfile() {
                   <strong>Company:</strong> {data?.company_name}
                 </p>
                 <p>
-                  <strong>Description:</strong> {data?.current_status?.remarks}
+                  <strong>Description:</strong>{" "}
+                  {data?.comments}
                 </p>
               </CardContent>
               <CardFooter className="flex flex-col gap-2 items-start">
