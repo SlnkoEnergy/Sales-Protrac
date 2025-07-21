@@ -40,7 +40,24 @@ export default function AddLead() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+  const requiredFields = [
+    "customerName",
+    "groupName",
+    "mobile",
+    "village",
+    "district",
+    "state",
+    "capacity",
+    "creationDate",
+    "comments",
+  ];
 
+  const missing = requiredFields.filter((key) => !formData[key]);
+
+  if (missing.length > 0 || !source) {
+    toast.error(`Please fill all required fields.`);
+    return;
+  }
     try {
    const payload = {
   name: formData.customerName,
@@ -213,7 +230,7 @@ export default function AddLead() {
                     </Select>
                   </div>
 
-                  {["Marketing", "Referred By", "Social media"].includes(source) && (
+                  {["Marketing", "Referred By", "Social Media"].includes(source) && (
   <div className="flex-1 space-y-1.5">
     <Label htmlFor="subSource">Sub-Source</Label>
     <Select onValueChange={setSubSource}>
