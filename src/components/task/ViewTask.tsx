@@ -30,7 +30,7 @@ export type Task = {
   _id: string;
   title: string;
   type: "meeting" | "call" | "sms" | "email" | "todo";
-  current_status: "draft" | "completed" | "in progress" | "pending";
+  current_status:  "completed" | "in progress" | "pending";
   priority: "high" | "medium" | "low";
   description: string;
   deadline: string;
@@ -68,7 +68,7 @@ export default function ViewTask() {
   const [data, setData] = useState<Task | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedRemarks, setSelectedRemarks] = useState("");
-  const allStatuses = ["draft", "pending", "in progress", "completed"];
+  const allStatuses = ["pending", "in progress", "completed"];
   const currentStatus = data?.current_status;
   const otherStatuses = allStatuses.filter(
     (status) => status !== currentStatus
@@ -322,8 +322,6 @@ export default function ViewTask() {
                                 ? "text-red-500"
                                 : entry.status === "in progress"
                                 ? "text-orange-500"
-                                : entry.status === "draft"
-                                ? "text-blue-500"
                                 : entry.status === "completed"
                                 ? "text-green-600"
                                 : ""

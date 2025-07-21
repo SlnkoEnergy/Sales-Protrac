@@ -1,10 +1,6 @@
 "use client";
 
 import { ChevronLeft, Search } from "lucide-react";
-import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
-import { DateRange } from "react-date-range";
-import { useEffect, useRef } from "react";
-import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
@@ -26,10 +22,6 @@ export default function SearchBarLeads({
   searchValue,
   onSearchChange,
 }: SearchBarLeadsProps) {
-  const { selectedFilter, dateRange, setDateRange, showPicker, setShowPicker } =
-    useDateFilter();
-
-  const pickerRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
   const handleExportToCsv = async () => {
@@ -40,24 +32,6 @@ export default function SearchBarLeads({
       toast.error(error.message || "Failed to export CSV");
     }
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(event.target as Node)
-      ) {
-        setShowPicker(false);
-      }
-    };
-
-    if (showPicker) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showPicker]);
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -111,21 +85,6 @@ export default function SearchBarLeads({
           </span>
         </div>
       </div>
-
-      {selectedFilter === "Custom" && showPicker && (
-        <div
-          ref={pickerRef}
-          className="absolute top-full right-10 mt-2 z-50 shadow-lg"
-        >
-          <DateRange
-            editableDateInputs
-            onChange={(item) => setDateRange([item.selection])}
-            moveRangeOnFirstSelection={false}
-            ranges={dateRange}
-            maxDate={new Date()}
-          />
-        </div>
-      )}
     </div>
   );
 }

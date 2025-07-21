@@ -16,9 +16,9 @@ import {
 import {
   ArrowUpDown,
   ChevronDown,
-  ChevronLeft,
   Clock,
   MoreHorizontal,
+  User,
   Users,
 } from "lucide-react";
 
@@ -33,7 +33,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -42,26 +41,57 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getAllTask } from "@/services/task/Task";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { format } from "date-fns";
+import { DateRange } from "react-date-range";
+import { format, parseISO } from "date-fns";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
 
 export type Task = {
   _id: string;
-  lead_id: string;
+  lead: {
+    name: string;
+    id: string;
+  };
   leadname: string;
   priority: "high" | "medium" | "low";
   title: string;
-  assigned_to: string;
+  assigned_user: {
+    name: string;
+  };
   type: "todo" | "meeting" | "call" | "sms" | "email";
-  current_status: "draft" | "pending" | "completed" | "in progress";
+  current_status:  "pending" | "completed" | "in progress";
   deadline: Date;
 };
 
-export function TaskTable() {
+export function TaskTable({ search }: { search: string }) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const statusFromUrl = searchParams.get("status") || "";
+  const [total, setTotal] = React.useState(0);
+
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = parseInt(searchParams.get("pageSize") || "100");
+  const [tab, setTab] = React.useState(statusFromUrl || "pending");
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -69,6 +99,20 @@ export function TaskTable() {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [showPicker, setShowPicker] = React.useState(false);
+  const [fromDeadline, setFromDeadline] = React.useState<string | null>(null);
+  const [toDeadline, setToDeadline] = React.useState<string | null>(null);
+const fromDeadlineParam = searchParams.get("fromDeadline");
+const toDeadlineParam = searchParams.get("toDeadline");
+const [range, setRange] = React.useState([
+  {
+    startDate: fromDeadlineParam ? parseISO(fromDeadlineParam) : null,
+    endDate: toDeadlineParam ? parseISO(toDeadlineParam) : null,
+    key: "selection",
+  },
+]);
+
+  const totalPages = Math.ceil(total / pageSize);
 
   const columns: ColumnDef<Task>[] = [
     {
@@ -114,7 +158,7 @@ export function TaskTable() {
           }[priority] || "text-gray-600";
 
         return (
-          <div className={`lowercase font-medium ${color}`}>{priority}</div>
+          <div className={`capitalize font-medium ${color}`}>{priority}</div>
         );
       },
     },
@@ -126,19 +170,19 @@ export function TaskTable() {
       ),
     },
     {
-      accessorKey: "lead_id",
+      accessorKey: "lead",
       header: "Lead ID",
       cell: ({ row }) => {
-        const lead = row.getValue("lead_id") as any;
+        const lead = row.getValue("lead") as any;
         return <div>{lead?.id}</div>;
       },
     },
     {
-      accessorKey: "leadname",
+      accessorKey: "lead",
       header: "Lead Name",
       cell: ({ row }) => {
-        const lead = row.getValue("lead_id") as any;
-        return <div>{lead?.c_name}</div>;
+        const lead = row.getValue("lead") as any;
+        return <div>{lead?.name}</div>;
       },
     },
 
@@ -156,8 +200,49 @@ export function TaskTable() {
       ),
       cell: ({ row }) => {
         const assignees = row.getValue("assigned_to") as { name: string }[];
-        const names = assignees?.map((a) => a.name).join(", ");
-        return <div className="capitalize">{names}</div>;
+        if (!assignees || assignees.length === 0) return "-";
+
+        const first = assignees[0]?.name;
+        const remainingCount = assignees.length - 1;
+
+        const tooltipContent = (
+          <div className="flex flex-col gap-1">
+            {assignees.map((a, i) => (
+              <div className="flex gap-2">
+                <User size={14} /> <span key={i}>{a.name}</span>
+              </div>
+            ))}
+          </div>
+        );
+
+        return (
+          <div className="capitalize">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex gap-1">
+                    <div>{first}</div>
+                    <div className="cursor-default">
+                      {remainingCount > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="cursor-default text-xs px-2 py-0.5"
+                        >
+                          +{remainingCount}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                {remainingCount > 0 && (
+                  <TooltipContent side="bottom" align="start">
+                    {tooltipContent}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        );
       },
     },
     {
@@ -201,7 +286,6 @@ export function TaskTable() {
 
         const statusColor =
           {
-            draft: "text-blue-600",
             pending: "text-red-600",
             "in progress": "text-orange-500",
             completed: "text-green-600",
@@ -243,11 +327,41 @@ export function TaskTable() {
       },
     },
   ];
+ const handleDateChange = (from: string, to: string) => {
+  setFromDeadline(from);
+  setToDeadline(to);
+
+  const updatedParams = new URLSearchParams(searchParams.toString());
+
+  updatedParams.set("fromDeadline", from);
+  updatedParams.set("toDeadline", to);
+
+  setSearchParams(updatedParams);
+};
+ const handleSelect = (ranges: any) => {
+  const { startDate, endDate } = ranges.selection;
+  setRange([ranges.selection]);
+
+  if (startDate && endDate) {
+    const from = new Date(startDate).toISOString();
+    const to = new Date(endDate).toISOString();
+    handleDateChange(from, to);
+  }
+};
 
   React.useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await getAllTask();
+        const params = {
+          status: statusFromUrl,
+          page,
+          limit: pageSize,
+          search,
+          fromDeadline: fromDeadline,
+          toDeadline: toDeadline,
+        };
+        const res = await getAllTask(params);
+        setTotal(res?.total || 0);
         setData(res.data);
       } catch (err) {
         console.error("Error fetching leads:", err);
@@ -255,7 +369,54 @@ export function TaskTable() {
     };
 
     fetchTasks();
-  }, []);
+  }, [statusFromUrl, page, pageSize, search, fromDeadline, toDeadline]);
+
+  console.log({ search });
+
+  const handlePageChange = (direction: "prev" | "next") => {
+    const newPage = direction === "next" ? page + 1 : page - 1;
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("page", newPage.toString());
+      return params;
+    });
+  };
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  React.useEffect(() => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+      if (debouncedSearch) {
+        updated.set("search", debouncedSearch);
+      } else {
+        updated.delete("search");
+      }
+      return updated;
+    });
+  }, [debouncedSearch]);
+
+  const handleTabChange = (value: string) => {
+    setTab(value);
+    React.startTransition(() => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("status", value);
+        return newParams;
+      });
+    });
+  };
+
+  const [pagination, setPagination] = React.useState({
+    pageIndex: page - 1,
+    pageSize: pageSize,
+  });
 
   const table = useReactTable({
     data,
@@ -268,67 +429,143 @@ export function TaskTable() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
 
+  const handleLimitChange = (newLimit: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("pageSize", newLimit.toString());
+    params.set("page", "1");
+    setSearchParams(params);
+  };
+
   return (
     <div className="w-full">
-      <Button className="cursor-pointer" onClick={() => navigate(-1)}>
-        <ChevronLeft />
-      </Button>
-      <div className="flex items-center py-4">
-        <div className="flex gap-4">
-          <Input
-            placeholder="Filter Priority..."
-            value={
-              (table.getColumn("priority")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(event) =>
-              table.getColumn("priority")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-          <Button
-            variant="outline"
-            className="cursor-pointer"
-            onClick={() => navigate("/addtask")}
-          >
-            + Add Task
-          </Button>
+      <div className="flex justify-between items-center py-4 px-2">
+        <div>
+          <Tabs value={tab} onValueChange={handleTabChange}>
+            <TabsList className="gap-2">
+              <TabsTrigger className="cursor-pointer" value="pending">
+                Pending
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="in progress">
+                In Progress
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="completed">
+                Completed
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="">
+                All
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
+        <div className="flex flex-wrap items-center gap-4 justify-between py-2">
+          {/* Deadline Date Range Picker */}
+          <div className="relative inline-block text-left">
+            <button
+              onClick={() => setShowPicker((prev) => !prev)}
+              className="border px-3 py-1.5 rounded-md text-sm flex items-center gap-2 bg-white shadow-sm"
+            >
+              <span>
+                {range[0].startDate && range[0].endDate
+                  ? `${format(range[0].startDate, "MMM d")} - ${format(
+                      range[0].endDate,
+                      "MMM d"
+                    )}`
+                  : "Select Deadline"}
+              </span>
+            </button>
+
+            {showPicker && (
+              <div className="absolute z-50 mt-2 bg-white rounded-md shadow-lg">
+                <DateRange
+                  editableDateInputs={true}
+                  onChange={handleSelect}
+                  moveRangeOnFirstSelection={false}
+                  ranges={range}
+                  className="border rounded-md"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Rows per page */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="limit" className="text-sm font-medium">
+              Rows per page:
+            </label>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => handleLimitChange(Number(value))}
+            >
+              <SelectTrigger className="w-24 h-9 text-sm">
+                <SelectValue placeholder="Select limit" />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50, 100].map((limit) => (
+                  <SelectItem
+                    key={limit}
+                    value={limit.toString()}
+                    className="text-sm"
                   >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Columns Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="text-sm flex items-center gap-1"
+              >
+                Columns <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  const colHeader = column.columnDef.header;
+                  const label =
+                    column.id === "id"
+                      ? "Lead ID"
+                      : column.id === "name"
+                      ? "Name"
+                      : typeof colHeader === "string"
+                      ? colHeader
+                      : column.id;
+
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                      className="capitalize text-sm"
+                    >
+                      {label}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -381,24 +618,25 @@ export function TaskTable() {
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
         <div className="space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => handlePageChange("prev")}
+            disabled={page === 1}
+            className="cursor-pointer"
           >
             Previous
           </Button>
+          <span>
+            Page {page} of page {totalPages}
+          </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => handlePageChange("next")}
+            disabled={page === totalPages || totalPages === 0}
+            className="cursor-pointer"
           >
             Next
           </Button>

@@ -119,7 +119,7 @@ export default function Header() {
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
             isActiveTask ? "bg-white text-[#214b7b] font-medium" : ""
           }`}
-          onClick={() => navigate("/tasks")}
+          onClick={() => navigate("/tasks?status=pending")}
         >
           <ClipboardList size={18} />
           <span>Tasks</span>

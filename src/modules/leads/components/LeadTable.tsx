@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -63,8 +63,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, formatDistanceToNow } from "date-fns";
-import { is } from "date-fns/locale";
 import Loader from "@/components/loader/Loader";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 export type Lead = {
   _id: string;
@@ -109,7 +115,8 @@ export type Lead = {
     id: string;
     name: string;
   };
-  lastModifiedTaskDate: Date;
+  lastModifiedTask: Date;
+  leadAgeing: string
 };
 
 export type stageCounts = {
@@ -120,7 +127,6 @@ export type stageCounts = {
   dead: number;
   all: number;
 };
-
 export function DataTable({ search }: { search: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
@@ -135,6 +141,7 @@ export function DataTable({ search }: { search: string }) {
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [stageCounts, setStageCounts] = React.useState("");
+  const [tab, setTab] = React.useState(stageFromUrl || "lead_without_task");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
     null
   );
@@ -144,14 +151,16 @@ export function DataTable({ search }: { search: string }) {
   const [leadModel, setLeadModel] = React.useState<string | null>(null);
   const department = "BD";
   const [isLoading, setIsLoading] = React.useState(false);
-
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const isValidDate = (d: any) => {
+    const parsed = new Date(d);
+    return d && !isNaN(parsed.getTime());
+  };
   const navigate = useNavigate();
   const columns: ColumnDef<Lead>[] = [
     {
@@ -227,17 +236,47 @@ export function DataTable({ search }: { search: string }) {
           navigate(`/leadProfile?id=${row.original._id}`);
         };
 
+        const mobile = row.original?.contact_details?.mobile;
+        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
+        const first = mobiles[0];
+        const remaining = mobiles.slice(1);
+        const remainingContent = mobile.slice(0);
+        const remainingCount = remaining.length;
+        const tooltipContent = remainingContent.join(", ");
+
         return (
           <div
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
             <div className="font-medium">{row?.original?.name}</div>
-            <div className="text-sm text-gray-500">
-              {Array.isArray(row?.original?.contact_details?.mobile)
-                ? row.original?.contact_details?.mobile.join(", ")
-                : row.original?.contact_details?.mobile ?? "-"}
-            </div>
+
+            {mobiles.length > 0 ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex gap-1 text-sm text-gray-500 items-center">
+                      <div>{first}</div>
+                      {remainingCount > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs px-2 py-0.5 cursor-default"
+                        >
+                          <Phone size={14} />+{remainingCount}
+                        </Badge>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  {remainingCount > 0 && (
+                    <TooltipContent side="bottom" align="start">
+                      {tooltipContent}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <div className="text-sm text-gray-500">-</div>
+            )}
           </div>
         );
       },
@@ -285,7 +324,7 @@ export function DataTable({ search }: { search: string }) {
       },
     },
     {
-      accessorKey: "lastModifiedTaskDate",
+      accessorKey: "lastModifiedTask",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -295,29 +334,33 @@ export function DataTable({ search }: { search: string }) {
         </Button>
       ),
       sortingFn: (rowA, rowB) => {
-        const a = rowA.original.lastModifiedTaskDate || rowA.original.createdAt;
-        const b = rowB.original.lastModifiedTaskDate || rowB.original.createdAt;
+        const a = isValidDate(rowA.original.lastModifiedTask)
+          ? new Date(rowA.original.lastModifiedTask)
+          : new Date(rowA.original.createdAt);
 
-        const dateA = new Date(a).getTime();
-        const dateB = new Date(b).getTime();
+        const b = isValidDate(rowB.original.lastModifiedTask)
+          ? new Date(rowB.original.lastModifiedTask)
+          : new Date(rowB.original.createdAt);
 
-        return dateA - dateB;
+        return a.getTime() - b.getTime();
       },
       cell: ({ row }) => {
-        const modified = row.getValue("lastModifiedTaskDate");
+        const modified = row.getValue("lastModifiedTask");
         const created = row.original.createdAt;
 
-        const fallbackDate = created ? new Date(created) : new Date();
-        const date = modified ? new Date(modified) : fallbackDate;
+        const usedDate = isValidDate(modified)
+          ? new Date(modified)
+          : new Date(created);
 
-        let relativeRaw = formatDistanceToNow(date, { addSuffix: true });
+        const now = new Date();
+        let relativeRaw = formatDistanceToNow(usedDate, { addSuffix: true });
         if (!relativeRaw.toLowerCase().includes("ago")) {
           relativeRaw += " ago";
         }
 
         const relative =
           relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-        const formatted = format(date, "MMM d, yyyy");
+        const formatted = format(usedDate, "MMM d, yyyy");
 
         return (
           <div>
@@ -327,6 +370,44 @@ export function DataTable({ search }: { search: string }) {
         );
       },
     },
+    {
+  accessorKey: "leadAging",
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() =>
+        column.toggleSorting(column.getIsSorted() === "asc")
+      }
+    >
+      Lead Aging <ArrowUpDown className="ml-2 h-4 w-4" />
+    </Button>
+  ),
+  sortingFn: (rowA, rowB) => {
+    const a = new Date(rowA.original.createdAt).getTime();
+    const b = new Date(rowB.original.createdAt).getTime();
+    return a - b; // Older createdAt → lower (more aged)
+  },
+  cell: ({ row }) => {
+    const createdAt = row.original.createdAt;
+    const date = new Date(createdAt);
+
+    let relativeRaw = formatDistanceToNow(date, { addSuffix: true });
+    if (!relativeRaw.toLowerCase().includes("ago")) {
+      relativeRaw += " ago";
+    }
+
+    const relative =
+      relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
+    const formatted = format(date, "MMM d, yyyy");
+
+    return (
+      <div>
+        {relative}
+      </div>
+    );
+  },
+}
+,
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
@@ -411,37 +492,38 @@ export function DataTable({ search }: { search: string }) {
 
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
-
- React.useEffect(() => {
-  const fetchLeads = async () => {
+  React.useEffect(() => {
     setIsLoading(true);
-    try {
-      const params = {
-        stage: stageFromUrl,
-        page,
-        limit: pageSize,
-        search,
-        lead_without_task: stageFromUrl === "lead_without_task" ? "true" : undefined,
-      };
+  }, [stageFromUrl]);
 
-      if (fromDate) params.fromDate = fromDate;
-      if (toDate) params.toDate = toDate;
+  React.useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const params = {
+          stage: stageFromUrl,
+          page,
+          limit: pageSize,
+          search,
+          lead_without_task:
+            stageFromUrl === "lead_without_task" ? "true" : undefined,
+        };
 
-      const res = await getLeads(params);
-      setTotal(res?.total || 0);
-      setData(res.leads);
-      setStageCounts(res.stageCounts);
-    } catch (err) {
-      console.error("Error fetching leads:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        if (fromDate) params.fromDate = fromDate;
+        if (toDate) params.toDate = toDate;
 
-  fetchLeads();
-}, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
- 
+        const res = await getLeads(params);
+        setTotal(res?.total || 0);
+        setData(res.leads);
+        setStageCounts(res.stageCounts);
+      } catch (err) {
+        console.error("Error fetching leads:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
+    fetchLeads();
+  }, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -452,7 +534,6 @@ export function DataTable({ search }: { search: string }) {
   }, [search]);
 
   React.useEffect(() => {
-    table.getColumn("name")?.setFilterValue(debouncedSearch);
     setSearchParams((prev) => {
       const updated = new URLSearchParams(prev);
       if (debouncedSearch) {
@@ -551,9 +632,7 @@ export function DataTable({ search }: { search: string }) {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const [tab, setTab] = React.useState(stageFromUrl || "lead_without_task");
-  
-  if(isLoading) return <Loader />
+  if (isLoading) return <Loader />;
 
   return (
     <div className="w-full">
@@ -626,7 +705,7 @@ export function DataTable({ search }: { search: string }) {
                 .map((column) => {
                   let label = column.id;
                   if (column.id === "id") label = "Lead Id";
-                  else if (column.id === "c_name") label = "Name";
+                  else if (column.id === "name") label = "Name";
                   else if (typeof column.columnDef.header === "string")
                     label = column.columnDef.header;
 
@@ -648,7 +727,7 @@ export function DataTable({ search }: { search: string }) {
         </div>
       </div>
 
-      <div className="rounded-md border h-[calc(100vh-290px)] overflow-y-auto">
+      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
         <Table>
           <TableHeader className="bg-gray-400">
             {table.getHeaderGroups().map((headerGroup) => (

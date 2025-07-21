@@ -57,7 +57,7 @@ export type Task = {
   lead_model: string;
   assigned_to: string;
   type: "meeting";
-  current_status: "draft" | "pending" | "completed" | "in progress";
+  current_status: "pending" | "completed" | "in progress";
   deadline: Date;
 };
 
@@ -203,7 +203,6 @@ export function MeetingTable() {
 
         const statusColor =
           {
-            draft: "text-blue-600",
             pending: "text-red-600",
             "in progress": "text-orange-500",
             completed: "text-green-600",

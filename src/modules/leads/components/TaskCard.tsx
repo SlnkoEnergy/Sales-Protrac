@@ -357,8 +357,6 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                                             ? "text-red-500"
                                             : entry.status === "in progress"
                                             ? "text-orange-500"
-                                            : entry.status === "draft"
-                                            ? "text-blue-500"
                                             : entry.status === "completed"
                                             ? "text-green-600"
                                             : ""
@@ -439,7 +437,6 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>

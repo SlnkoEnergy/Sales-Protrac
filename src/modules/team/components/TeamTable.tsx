@@ -55,7 +55,7 @@ export type Team = {
   title: string;
   assigned_to: string;
   type: "todo" | "meeting" | "call" | "sms" | "email";
-  current_status: "draft" | "pending" | "completed" | "in progress";
+  current_status:  "pending" | "completed" | "in progress";
   deadline: Date;
 };
 
@@ -201,7 +201,6 @@ export function TeamTable() {
 
         const statusColor =
           {
-            draft: "text-blue-600",
             pending: "text-red-600",
             "in progress": "text-orange-500",
             completed: "text-green-600",

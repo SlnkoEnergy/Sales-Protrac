@@ -39,15 +39,18 @@ export const  getAllUser = async (params = {}) => {
   return response.data;
 };
 
-export const getAllTask = async () => {
+export const getAllTask = async (params = {}) => {
   try {
-    const response = await Axios.get("/bddashboard/all-tasks"); 
-    return response.data; 
+    const response = await Axios.get("/bddashboard/all-tasks", {
+      params,
+    });
+    return response.data;
   } catch (error) {
-    console.error("Error fetching leads:", error);
-    return [];
+    console.error("Error fetching tasks:", error);
+    return { success: false, data: [], total: 0 };
   }
 };
+
 
 export const getTaskById = async (_id) => {
   try {

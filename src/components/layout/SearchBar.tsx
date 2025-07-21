@@ -1,6 +1,5 @@
 "use client";
 
-import { Search, Filter } from "lucide-react";
 import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
 import { DateRange } from "react-date-range";
 import { useEffect, useRef } from "react";
