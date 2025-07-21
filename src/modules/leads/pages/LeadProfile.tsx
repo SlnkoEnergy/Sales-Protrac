@@ -33,6 +33,7 @@ import {
 import LeadDocuments from "../components/LeadDocument";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import HandoverForm from "../components/Handover";
+import Leads from "./Leads";
 
 export type Lead = {
   _id: string;
@@ -147,24 +148,30 @@ export default function LeadProfile() {
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex gap-3 items-center">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ChevronLeft />
-          </Button>
+  <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+    <ChevronLeft />
+  </Button>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger className="cursor-pointer" value="info">
-                Lead Info
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="handover">
-                Handover
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="timeline">
-                Timeline
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+  <Tabs value={activeTab} onValueChange={setActiveTab}>
+    <TabsList>
+      <TabsTrigger className="cursor-pointer" value="info">
+        Lead Info
+      </TabsTrigger>
+
+      {data?.current_status?.name === "won" && (
+        <TabsTrigger className="cursor-pointer" value="handover">
+          Handover
+        </TabsTrigger>
+      )}
+
+      <TabsTrigger className="cursor-pointer" value="timeline">
+        Timeline
+      </TabsTrigger>
+    </TabsList>
+  </Tabs>
+</div>
+
+
 
         <div className="flex gap-2">
           <Button
