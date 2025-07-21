@@ -190,3 +190,36 @@ export const updateExpectedClosingDate = async (
     );
   }
 };
+
+export const createHandover = async (
+  id: string,
+  customer_details: any,
+  order_details: any,
+  project_detail: any,
+  commercial_details: any,
+  other_details: any,
+  invoice_detail: any,
+  submitted_by: string,
+  status_of_handoversheet: string = "draft",
+  is_locked: string = "locked"
+) => {
+  try {
+    const payload = {
+      id,
+      customer_details,
+      order_details,
+      project_detail,
+      commercial_details,
+      other_details,
+      invoice_detail,
+      submitted_by,
+      status_of_handoversheet,
+      is_locked,
+    };
+
+    const response = await Axios.post("/create-hand-over-sheet", payload);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to create handover sheet");
+  }
+};

@@ -300,9 +300,15 @@ export default function LeadProfile() {
         </TabsContent>
 
         {/* Handover Tab */}
-        <TabsContent value="handover">
-          <HandoverForm />
-        </TabsContent>
+    <TabsContent
+  value="handover"
+  
+>
+ 
+   <HandoverForm />
+
+</TabsContent>
+
 
         {/* Timeline Tab */}
         <TabsContent value="timeline">
