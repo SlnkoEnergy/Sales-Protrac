@@ -369,7 +369,7 @@ export function DataTable({ search }: { search: string }) {
         return (
           <div>
             {relative}{" "}
-            <span className="text-gray-500 text-xs">({formatted})</span>
+            
           </div>
         );
       },
