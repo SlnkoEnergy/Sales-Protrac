@@ -66,7 +66,7 @@ const StatusCell: React.FC<Props> = ({
     // use pendingDate if expected_closing_date is undefined
     const dateToSend = expected_closing_date ?? pendingDate;
 
-    if (stage === "warm" && !dateToSend) {
+    if (stage === "warm" && !dateToSend && expected_closing_date === undefined) {
       toast.error("Expected Closing Date is required");
       return;
     }
@@ -97,12 +97,15 @@ const StatusCell: React.FC<Props> = ({
     if (!leadId || !selectedStatus) return;
 
     if (
-      selectedStatus === "warm" &&
-      (!pendingDate || isNaN(pendingDate.getTime()))
+      selectedStatus === "warm"  &&
+      (!pendingDate || isNaN(pendingDate.getTime()) &&
+      expected_closing_date === undefined)
     ) {
       toast.error("Expected Closing Date is required for Warm status");
       return;
     }
+
+    console.log({expected_closing_date});
 
     try {
       await updateLeadStatus(

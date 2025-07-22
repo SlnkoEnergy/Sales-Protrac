@@ -118,6 +118,8 @@ export const uploadDocuments = async (
 ) => {
   try {
     const formData = new FormData();
+
+    // Append JSON metadata
     formData.append(
       "data",
       JSON.stringify({
@@ -129,8 +131,10 @@ export const uploadDocuments = async (
       })
     );
 
+
     formData.append("file_0", file);
 
+    // Make PUT request
     const response = await Axios.put(`/bddashboard/uploadDocuments`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
