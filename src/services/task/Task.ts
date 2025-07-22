@@ -115,3 +115,27 @@ export const toggleViewTask = async (_id: string) => {
   }
 };
 
+
+
+export const exportToCsvTask = async (selectedIds: string[]) => {
+  try {
+    const response = await Axios.post(
+      "/bddashboard/task-export",
+      { Ids: selectedIds },
+      {
+        responseType: "blob",
+      }
+    );
+
+    const blob = new Blob([response.data], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "tasks.csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to export CSV");
+  }
+};

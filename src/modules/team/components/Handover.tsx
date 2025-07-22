@@ -13,14 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  ChevronLeft,
-  Clock,
-  MoreHorizontal,
-  Users,
-} from "lucide-react";
+import { ArrowUpDown, ChevronDown, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,12 +21,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -42,11 +31,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { getAllHandover } from "@/services/leads/LeadService";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type Handover = {
   _id: string;
@@ -67,13 +68,26 @@ export type Handover = {
   status_of_handoversheet: string;
 };
 
-export function HandoverTable() {
+export function HandoverTable({
+  search,
+  onSelectionChange,
+}: {
+  search: string;
+  onSelectionChange: (ids: string[]) => void;
+}) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [data, setData] = React.useState<Handover[]>([]);
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const statusFromUrl = searchParams.get("statusFilter") || "";
+  const [tab, setTab] = React.useState(statusFromUrl || "Rejected");
+  const [total, setTotal] = React.useState(0);
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = parseInt(searchParams.get("pageSize") || "100");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -150,24 +164,23 @@ export function HandoverTable() {
       },
     },
     {
-  accessorKey: "project_kwp",
-  header: "Capacity (kWp)",
-  cell: ({ row }) => {
-    const kwp = row.getValue("project_kwp");
-    const proposed = row.original?.proposed_dc_capacity;
+      accessorKey: "project_kwp",
+      header: "Capacity (kWp)",
+      cell: ({ row }) => {
+        const kwp = row.getValue("project_kwp");
+        const proposed = row.original?.proposed_dc_capacity;
 
-    if (!kwp && !proposed) {
-      return <div className="capitalize">NA</div>;
-    }
+        if (!kwp && !proposed) {
+          return <div className="capitalize">NA</div>;
+        }
 
-    return (
-      <div className="capitalize">
-        {kwp || "-"} / {proposed || "-"}
-      </div>
-    );
-  },
-}
-,
+        return (
+          <div className="capitalize">
+            {kwp || "-"} / {proposed || "-"}
+          </div>
+        );
+      },
+    },
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
@@ -194,66 +207,105 @@ export function HandoverTable() {
         return dateA - dateB;
       },
     },
-    
-   {
-  accessorKey: "status_of_handoversheet",
-  header: "Status",
-  cell: ({ row }) => {
-    const rawStatus = row.getValue("status_of_handoversheet") as string;
-    const comment = row.original?.comment;
-    const status = rawStatus === "draft" ? "Submitted" : rawStatus;
 
-    const statusColor =
-      {
-        Rejected: "text-red-600",
-        Approved: "text-green-600",
-        Submitted: "text-blue-500",
-      }[status] || "text-gray-600";
+    {
+      accessorKey: "status_of_handoversheet",
+      header: "Status",
+      cell: ({ row }) => {
+        const rawStatus = row.getValue("status_of_handoversheet") as string;
+        const comment = row.original?.comment;
+        const status = rawStatus === "draft" ? "Submitted" : rawStatus;
 
-    const statusText = (
-      <div className={`capitalize cursor-pointer font-medium ${statusColor}`}>
-        {status}
-      </div>
-    );
+        const statusColor =
+          {
+            Rejected: "text-red-600",
+            Approved: "text-green-600",
+            Submitted: "text-blue-500",
+          }[status] || "text-gray-600";
 
-    if (status === "Rejected" && comment) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>{statusText}</TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              align="start"
-              className="max-w-xs whitespace-pre-line"
-            >
-              {comment}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
+        const statusText = (
+          <div
+            className={`capitalize cursor-pointer font-medium ${statusColor}`}
+          >
+            {status}
+          </div>
+        );
 
-    return statusText;
-  },
-}
-,
+        if (status === "Rejected" && comment) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>{statusText}</TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  align="start"
+                  className="max-w-xs whitespace-pre-line"
+                >
+                  {comment}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+
+        return statusText;
+      },
+    },
   ];
 
+  const [pagination, setPagination] = React.useState({
+    pageIndex: page - 1,
+    pageSize: pageSize,
+  });
+  const totalPages = Math.ceil(total / pageSize);
   React.useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchHandover = async () => {
       try {
         const params = {
-          status: "draft,Rejected",
+          status: statusFromUrl,
+          search,
+          page,
+          limit: pageSize,
         };
         const res = await getAllHandover(params);
         setData(res.data);
+        setTotal(res?.meta?.total || 0);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
     };
 
-    fetchTasks();
-  }, []);
+    fetchHandover();
+  }, [search, pageSize, statusFromUrl]);
+
+  const handlePageChange = (direction: "prev" | "next") => {
+    const newPage = direction === "next" ? page + 1 : page - 1;
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("page", newPage.toString());
+      return params;
+    });
+  };
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  React.useEffect(() => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+      if (debouncedSearch) {
+        updated.set("search", debouncedSearch);
+      } else {
+        updated.delete("search");
+      }
+      return updated;
+    });
+  }, [debouncedSearch]);
 
   const table = useReactTable({
     data,
@@ -266,58 +318,112 @@ export function HandoverTable() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
 
+  React.useEffect(() => {
+    const selectedIds = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original._id);
+
+    onSelectionChange(selectedIds);
+  }, [table.getSelectedRowModel().rows, onSelectionChange]);
+
+  const handleLimitChange = (newLimit: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("pageSize", newLimit.toString());
+    params.set("page", "1");
+    setSearchParams(params);
+  };
+
+  const handleTabChange = (value: string) => {
+    setTab(value);
+    React.startTransition(() => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("statusFilter", value);
+        return newParams;
+      });
+    });
+  };
+
   return (
     <div className="w-full">
-      <Button className="cursor-pointer" onClick={() => navigate(-1)}>
-        <ChevronLeft />
-      </Button>
-      <div className="flex items-center py-4">
-        <div className="flex gap-4">
-          <Input
-            placeholder="Filter Lead ID..."
-            value={
-              (table.getColumn("priority")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(event) =>
-              table.getColumn("priority")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
+      <div className="flex justify-between items-center py-4 px-2">
+        <div>
+          <Tabs value={tab} onValueChange={handleTabChange}>
+            <TabsList className="gap-2">
+              <TabsTrigger className="cursor-pointer" value="Rejected">
+                Rejected
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="draft">
+                Submitted
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="">
+                All
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
+        <div className="flex flex-wrap items-center gap-4 justify-between py-2">
+          <div className="flex items-center gap-2">
+            <label htmlFor="limit" className="text-sm font-medium">
+              Rows per page:
+            </label>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => handleLimitChange(Number(value))}
+            >
+              <SelectTrigger className="w-24 h-9 text-sm">
+                <SelectValue placeholder="Select limit" />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 20, 50, 100].map((limit) => (
+                  <SelectItem
+                    key={limit}
+                    value={limit.toString()}
+                    className="text-sm"
                   >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -370,24 +476,25 @@ export function HandoverTable() {
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="text-muted-foreground flex-1 text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
         <div className="space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => handlePageChange("prev")}
+            disabled={page === 1}
+            className="cursor-pointer"
           >
             Previous
           </Button>
+          <span>
+            Page {page} of page {totalPages}
+          </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => handlePageChange("next")}
+            disabled={page === totalPages || totalPages === 0}
+            className="cursor-pointer"
           >
             Next
           </Button>

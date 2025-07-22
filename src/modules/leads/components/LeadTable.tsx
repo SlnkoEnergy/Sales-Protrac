@@ -18,8 +18,10 @@ import {
   Calendar,
   CalendarDays,
   ChevronDown,
+  EyeIcon,
   MoreHorizontal,
   Pencil,
+  PencilIcon,
   Phone,
 } from "lucide-react";
 
@@ -131,6 +133,7 @@ export type Lead = {
   lastModifiedTask: Date;
   leadAgeing: string;
   expected_closing_date: Date;
+  handover: boolean;
 };
 
 export type stageCounts = {
@@ -417,6 +420,10 @@ export function DataTable({ search }: { search: string }) {
           try {
             await updateExpectedClosingDate(leadId, pendingDate);
             toast.success("Expected closing date updated");
+
+            setTimeout(() => {
+              location.reload();
+            }, 300); // 300ms delay
           } catch (error: any) {
             toast.error(error.message || "Failed to update date");
           } finally {
@@ -482,6 +489,37 @@ export function DataTable({ search }: { search: string }) {
         const dateValue = row.getValue("createdAt");
         const date = dateValue ? new Date(dateValue) : null;
         return <div>{date ? date.toLocaleDateString() : "-"}</div>;
+      },
+    },
+    {
+      accessorKey: "handover",
+      header: "Handover",
+      cell: ({ row }) => {
+        const isHandoverDone = row.original?.handover;
+        const leadId = row.original?._id;
+        const status = row.original?.current_status?.name;
+
+        if (status !== "won") return null;
+
+        const handleClick = () => {
+          navigate(`/leadProfile?id=${leadId}&tab=handover`);
+        };
+
+        return (
+          <div
+            className="flex items-center justify-center cursor-pointer"
+            onClick={handleClick}
+            title={isHandoverDone ? "View Handover" : "Add Handover"}
+          >
+            {isHandoverDone === true ? (
+              <EyeIcon className="w-4 h-4 text-green-600" />
+            ) : isHandoverDone === false ? (
+              <PencilIcon className="w-4 h-4 text-gray-500" />
+            ) : (
+              <span className="text-xs text-gray-400">NA</span>
+            )}
+          </div>
+        );
       },
     },
     {
@@ -649,18 +687,25 @@ export function DataTable({ search }: { search: string }) {
   };
 
   const handleTransferLead = async () => {
-    if (!selectedLeadId || !selectedUser) return;
+    if (!selectedLeadId || !selectedUser) {
+      toast.error("Missing lead or user selection");
+      return;
+    }
+
     try {
-      const payload = { assigned_to: selectedUser };
-      await transferLead(selectedLeadId, leadModel, payload);
+      await transferLead(selectedLeadId, selectedUser._id);
       toast.success("Lead transferred successfully");
+
       setOpen(false);
+
       setTimeout(() => {
         location.reload();
       }, 300);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to transfer lead");
+    } catch (error: any) {
+      console.error("Transfer lead failed:", error);
+      const message =
+        error?.response?.data?.message || "Failed to transfer lead";
+      toast.error(message);
     }
   };
 
@@ -792,16 +837,26 @@ export function DataTable({ search }: { search: string }) {
           <TableHeader className="bg-gray-400">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead className="text-left" key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
+                {headerGroup.headers
+                  .filter((header) => {
+                    // Hide the column if it's "handover" and no won leads exist
+                    if (header.column.id === "handover") {
+                      return data.some(
+                        (lead) => lead.current_status?.name === "won"
+                      );
+                    }
+                    return true;
+                  })
+                  .map((header) => (
+                    <TableHead className="text-left" key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -813,14 +868,24 @@ export function DataTable({ search }: { search: string }) {
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell className="text-left" key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+                  {row
+                    .getVisibleCells()
+                    .filter((cell) => {
+                      if (cell.column.id === "handover") {
+                        return data.some(
+                          (lead) => lead.current_status?.name === "won"
+                        );
+                      }
+                      return true;
+                    })
+                    .map((cell) => (
+                      <TableCell className="text-left" key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
                 </TableRow>
               ))
             ) : (

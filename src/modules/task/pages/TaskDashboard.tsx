@@ -8,6 +8,7 @@ export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 400);
@@ -44,9 +45,10 @@ export default function Tasks() {
         selectedStatus={selectedStatus}
         onValueChange={handleValueChange}
         clearFilters={handleClickFilter}
+        selectedIds={selectedIds}
       />
       <div className="h-[calc(100%-4rem)] p-4 overflow-auto">
-        <TaskTable  search={searchQuery}/>
+        <TaskTable  search={searchQuery} onSelectionChange={setSelectedIds}/>
       </div>
     </div>
   );

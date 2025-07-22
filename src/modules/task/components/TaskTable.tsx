@@ -61,7 +61,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
 
 export type Task = {
   _id: string;
@@ -76,11 +75,17 @@ export type Task = {
     name: string;
   };
   type: "todo" | "meeting" | "call" | "sms" | "email";
-  current_status:  "pending" | "completed" | "in progress";
+  current_status: "pending" | "completed" | "in progress";
   deadline: Date;
 };
 
-export function TaskTable({ search }: { search: string }) {
+export function TaskTable({
+  search,
+  onSelectionChange,
+}: {
+  search: string;
+  onSelectionChange: (ids: string[]) => void;
+}) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -102,15 +107,15 @@ export function TaskTable({ search }: { search: string }) {
   const [showPicker, setShowPicker] = React.useState(false);
   const [fromDeadline, setFromDeadline] = React.useState<string | null>(null);
   const [toDeadline, setToDeadline] = React.useState<string | null>(null);
-const fromDeadlineParam = searchParams.get("fromDeadline");
-const toDeadlineParam = searchParams.get("toDeadline");
-const [range, setRange] = React.useState([
-  {
-    startDate: fromDeadlineParam ? parseISO(fromDeadlineParam) : null,
-    endDate: toDeadlineParam ? parseISO(toDeadlineParam) : null,
-    key: "selection",
-  },
-]);
+  const fromDeadlineParam = searchParams.get("fromDeadline");
+  const toDeadlineParam = searchParams.get("toDeadline");
+  const [range, setRange] = React.useState([
+    {
+      startDate: fromDeadlineParam ? parseISO(fromDeadlineParam) : null,
+      endDate: toDeadlineParam ? parseISO(toDeadlineParam) : null,
+      key: "selection",
+    },
+  ]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -166,7 +171,12 @@ const [range, setRange] = React.useState([
       accessorKey: "title",
       header: "Title",
       cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("title")}</div>
+        <div
+          onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
+          className="capitalize cursor-pointer hover:text-[#214b7b]"
+        >
+          {row.getValue("title")}
+        </div>
       ),
     },
     {
@@ -327,27 +337,27 @@ const [range, setRange] = React.useState([
       },
     },
   ];
- const handleDateChange = (from: string, to: string) => {
-  setFromDeadline(from);
-  setToDeadline(to);
+  const handleDateChange = (from: string, to: string) => {
+    setFromDeadline(from);
+    setToDeadline(to);
 
-  const updatedParams = new URLSearchParams(searchParams.toString());
+    const updatedParams = new URLSearchParams(searchParams.toString());
 
-  updatedParams.set("fromDeadline", from);
-  updatedParams.set("toDeadline", to);
+    updatedParams.set("fromDeadline", from);
+    updatedParams.set("toDeadline", to);
 
-  setSearchParams(updatedParams);
-};
- const handleSelect = (ranges: any) => {
-  const { startDate, endDate } = ranges.selection;
-  setRange([ranges.selection]);
+    setSearchParams(updatedParams);
+  };
+  const handleSelect = (ranges: any) => {
+    const { startDate, endDate } = ranges.selection;
+    setRange([ranges.selection]);
 
-  if (startDate && endDate) {
-    const from = new Date(startDate).toISOString();
-    const to = new Date(endDate).toISOString();
-    handleDateChange(from, to);
-  }
-};
+    if (startDate && endDate) {
+      const from = new Date(startDate).toISOString();
+      const to = new Date(endDate).toISOString();
+      handleDateChange(from, to);
+    }
+  };
 
   React.useEffect(() => {
     const fetchTasks = async () => {
@@ -438,6 +448,14 @@ const [range, setRange] = React.useState([
       pagination,
     },
   });
+
+  React.useEffect(() => {
+    const selectedIds = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original._id);
+
+    onSelectionChange(selectedIds);
+  }, [table.getSelectedRowModel().rows, onSelectionChange]);
 
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
@@ -591,8 +609,6 @@ const [range, setRange] = React.useState([
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

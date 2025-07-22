@@ -79,15 +79,9 @@ export const deleteLead = async (_id: string, lead_model: string) => {
   return response.data;
 };
 
-export const transferLead = async (
-  _id: string,
-  lead_model: string,
-  assigned_to
-) => {
-  const url = `/bddashboard/assign-to/${_id}?lead_model=${encodeURIComponent(
-    lead_model
-  )}`;
-  const response = await Axios.put(url, assigned_to);
+export const transferLead = async (_id: string, assigned_to: string) => {
+  const url = `/bddashboard/assign-to/${_id}`;
+  const response = await Axios.put(url, { assigned_to });
   return response.data;
 };
 
@@ -270,4 +264,27 @@ export const getAllHandover = async (params = {}) => {
   }
   const response = await Axios.get(url);
   return response.data;
+};
+
+export const exportToCsvHandover = async (selectedIds: string[]) => {
+  try {
+    const response = await Axios.post(
+      "/bddashboard/handover-export",
+      { Ids: selectedIds },
+      {
+        responseType: "blob",
+      }
+    );
+
+    const blob = new Blob([response.data], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "tasks.csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to export CSV");
+  }
 };

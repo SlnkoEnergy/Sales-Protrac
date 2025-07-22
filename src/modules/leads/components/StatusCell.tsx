@@ -16,20 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  updateExpectedClosingDate,
   updateLeadStatus,
   uploadDocuments,
 } from "@/services/leads/LeadService";
@@ -51,7 +40,6 @@ const StatusCell: React.FC<Props> = ({
   const [openModal, setOpenModal] = React.useState<
     "LOI" | "LOA" | "PPA" | null
   >(null);
-  const [confirmLabel, setConfirmLabel] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [uploading, setUploading] = React.useState<boolean>(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -59,7 +47,6 @@ const StatusCell: React.FC<Props> = ({
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [remarks, setRemarks] = useState("");
   const normalizedStatus = currentStatus?.toLowerCase();
-  const [openDateDialog, setOpenDateDialog] = useState(false);
   const [pendingDate, setPendingDate] = useState("");
   const statusColors: Record<string, string> = {
     initial: "text-gray-500",
@@ -96,6 +83,9 @@ const StatusCell: React.FC<Props> = ({
       );
       toast.success(`File uploaded & status updated to ${stage}`);
       setOpenModal(null);
+      setTimeout(() => {
+        location.reload();
+      }, 300);
     } catch (error: any) {
       toast.error(error.message || "❌ Upload failed");
     } finally {
@@ -103,30 +93,32 @@ const StatusCell: React.FC<Props> = ({
     }
   };
 
-  const handleConfirm = async () => {
-    if (!pendingDate) return;
-    try {
-      await updateExpectedClosingDate(leadId, pendingDate);
-      toast.success("Expected closing date updated");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update date");
-    } finally {
-      setOpenDateDialog(false);
-    }
-  };
-
   const submitStatusUpdate = async () => {
     if (!leadId || !selectedStatus) return;
+
+    // Check for 'won' status without a valid pendingDate
+    if (
+      selectedStatus === "warm" &&
+      (!pendingDate || isNaN(pendingDate.getTime()))
+    ) {
+      toast.error("Expected Closing Date is required for Warm status");
+      return;
+    }
+
     try {
       await updateLeadStatus(
         leadId,
         selectedStatus,
         selectedLabel,
-        remarks || ""
+        remarks || "",
+        pendingDate // optional: include this if backend needs it
       );
       toast.success(`Status updated to ${selectedStatus}`);
       setStatusDialogOpen(false);
       setRemarks("");
+      setTimeout(() => {
+        location.reload();
+      }, 300);
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -137,8 +129,6 @@ const StatusCell: React.FC<Props> = ({
     setSelectedLabel(label);
     setStatusDialogOpen(true);
   };
-
-  const expected_status = "";
 
   return (
     <>
@@ -232,18 +222,22 @@ const StatusCell: React.FC<Props> = ({
             onChange={(e) => setRemarks(e.target.value)}
           />
           {expected_closing_date === undefined &&
+            // Case 1: warm status with label NOT in ["as per choice", "won", "token money"]
             ((selectedStatus === "warm" &&
               !["as per choice", "won"].includes(
-                selectedLabel?.toLowerCase()
+                selectedLabel?.toLowerCase?.()
               ) &&
               selectedLabel !== "token money") ||
+              // Case 2: follow up with "as per choice"
               (selectedStatus === "follow up" &&
-                selectedLabel?.toLowerCase() === "as per choice") ||
+                selectedLabel?.toLowerCase?.() === "as per choice") ||
+              // Case 3: warm with "as per choice"
               (selectedStatus === "warm" &&
-                selectedLabel?.toLowerCase() === "as per choice")) && (
+                selectedLabel?.toLowerCase?.() === "as per choice")) && (
               <Input
                 type="date"
                 placeholder="Expected Closing Date"
+                required
                 value={
                   pendingDate instanceof Date && !isNaN(pendingDate.getTime())
                     ? pendingDate.toISOString().split("T")[0]

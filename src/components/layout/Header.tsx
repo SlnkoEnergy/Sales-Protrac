@@ -36,7 +36,7 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isActiveMeeting = location.pathname === "/meeting";
+  const isActiveHandover = location.pathname === "/handover";
   const isActiveTask = location.pathname === "/tasks";
   const isActiveLead = location.pathname === "/leads";
   const isActiveDashboard = location.pathname === "/";
@@ -124,7 +124,7 @@ export default function Header() {
           <ClipboardList size={18} />
           <span>Tasks</span>
         </div>
-        <div
+        {/* <div
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
             isActiveMeeting ? "bg-white text-[#214b7b] font-medium" : ""
           }`}
@@ -132,13 +132,17 @@ export default function Header() {
         >
           <Calendar size={18} />
           <span>Meetings</span>
+        </div> */}
+        <div
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveHandover ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
+          onClick={() => navigate("/handover")}
+        >
+            <File size={18} />
+          <span>Handover</span>
         </div>
-        <div className="flex items-center gap-2">
-          <File size={18} />
-          <span className="cursor-pointer" onClick={() => navigate("/handover")}>
-            Handover
-          </span>
-        </div>
+        
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">

@@ -7,11 +7,10 @@ import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
-import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
-import { exportToCsvTask } from "@/services/task/Task";
+import { exportToCsvHandover } from "@/services/leads/LeadService";
 
-interface SearchBarTasksProps {
+interface SearchBarHandoverProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   selectedStatus: string;
@@ -20,26 +19,26 @@ interface SearchBarTasksProps {
   selectedIds: string[];
 }
 
-export default function SearchBarTasks({
+export default function SearchBarHandover({
   searchValue,
   onSearchChange,
   selectedIds
-}: SearchBarTasksProps) {
+}: SearchBarHandoverProps) {
   const navigate = useNavigate();
 
- const handleExportToCsv = async (selectedIds: string[]) => {
-   if (!selectedIds?.length) {
-     toast.error("No tasks selected for export.");
-     return;
-   }
- 
-   try {
-     await exportToCsvTask(selectedIds);
-     toast.success("CSV exported successfully");
-   } catch (error: any) {
-     toast.error(error.message || "Failed to export CSV");
-   }
- };
+const handleExportToCsv = async (selectedIds: string[]) => {
+  if (!selectedIds?.length) {
+    toast.error("No tasks selected for export.");
+    return;
+  }
+
+  try {
+    await exportToCsvHandover(selectedIds);
+    toast.success("CSV exported successfully");
+  } catch (error: any) {
+    toast.error(error.message || "Failed to export CSV");
+  }
+};
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -58,7 +57,7 @@ export default function SearchBarTasks({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search Tasks"
+            placeholder="Search Handover"
             className="pl-8"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -87,9 +86,9 @@ export default function SearchBarTasks({
           />
           <span
             className="cursor-pointer text-black hover:underline"
-            onClick={()=> handleExportToCsv(selectedIds)}
+            onClick={()=>handleExportToCsv(selectedIds)}
           >
-            Export Tasks
+            Export Handover
           </span>
         </div>
       </div>
