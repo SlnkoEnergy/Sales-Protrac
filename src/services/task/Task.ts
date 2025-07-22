@@ -39,15 +39,18 @@ export const  getAllUser = async (params = {}) => {
   return response.data;
 };
 
-export const getAllTask = async () => {
+export const getAllTask = async (params = {}) => {
   try {
-    const response = await Axios.get("/bddashboard/all-tasks"); 
-    return response.data; 
+    const response = await Axios.get("/bddashboard/all-tasks", {
+      params,
+    });
+    return response.data;
   } catch (error) {
-    console.error("Error fetching leads:", error);
-    return [];
+    console.error("Error fetching tasks:", error);
+    return { success: false, data: [], total: 0 };
   }
 };
+
 
 export const getTaskById = async (_id) => {
   try {
@@ -112,3 +115,27 @@ export const toggleViewTask = async (_id: string) => {
   }
 };
 
+
+
+export const exportToCsvTask = async (selectedIds: string[]) => {
+  try {
+    const response = await Axios.post(
+      "/bddashboard/task-export",
+      { Ids: selectedIds },
+      {
+        responseType: "blob",
+      }
+    );
+
+    const blob = new Blob([response.data], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "tasks.csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to export CSV");
+  }
+};

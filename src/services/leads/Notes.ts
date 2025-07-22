@@ -9,7 +9,7 @@ export const createNotes = async (noteData) => {
   }
 };
 
-export const  getNotesByLeadId = async (params = {}) => {
+export const getNotesByLeadId = async (params = {}) => {
   let url = "/bddashboard/bd-notes";
 
   const query = Object.entries(params)
@@ -31,18 +31,21 @@ export const  getNotesByLeadId = async (params = {}) => {
 
 export const editNotes = async (_id, updatedData) => {
   try {
-    const response = await Axios.put(`/bddashboard/bd-notes/${_id}`, updatedData);
+    const response = await Axios.put(
+      `/bddashboard/bd-notes/${_id}`,
+      updatedData
+    );
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || "Failed to update note");
   }
 };
 
-export const deleteNotes = async(_id) => {
-    try {
-        const response = await Axios.delete(`/bddashboard/bd-notes/${_id}`);
-        return response.data;
-    } catch (error) {
-        throw new Error(error.response?.data?.message || "Failed to delete note");
-    }
-}
+export const deleteNotes = async (_id) => {
+  try {
+    const response = await Axios.delete(`/bddashboard/bd-notes/${_id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to delete note");
+  }
+};
