@@ -93,6 +93,14 @@ export default function NotesCard() {
     }
   };
 
+  const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
   useEffect(() => {
     fetchNotes();
   }, [lead_id]);
@@ -179,16 +187,14 @@ export default function NotesCard() {
                         onChange={(e) => setEditText(e.target.value)}
                         className="resize-none"
                       />
-                  
-                       <Button
+
+                      <Button
                         size="sm"
                         className="mt-1"
                         onClick={() => handleEditSave(note._id)}
                       >
                         Save
                       </Button>
-                     
-                   
                     </>
                   ) : (
                     <>
@@ -201,16 +207,24 @@ export default function NotesCard() {
                   )}
                 </div>
                 <div className="ml-auto flex gap-1">
-                  <Pencil
-                    className="h-4 w-4 text-muted-foreground cursor-pointer"
-                    onClick={() => handleEdit(note)}
-                  />
+                  {(getCurrentUser().name === "admin" ||
+                    getCurrentUser().name === "superadmin" ||
+                    getCurrentUser().name === "Deepak Manodi") && (
+                    <Pencil
+                      className="h-4 w-4 text-muted-foreground cursor-pointer"
+                      onClick={() => handleEdit(note)}
+                    />
+                  )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Trash
-                        className="h-4 w-4 text-muted-foreground cursor-pointer"
-                        onClick={() => setDeleteId(note._id)}
-                      />
+                      {(getCurrentUser().name === "admin" ||
+                        getCurrentUser().name === "superadmin" ||
+                        getCurrentUser().name === "Deepak Manodi") && (
+                        <Trash
+                          className="h-4 w-4 text-muted-foreground cursor-pointer"
+                          onClick={() => setDeleteId(note._id)}
+                        />
+                      )}
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>

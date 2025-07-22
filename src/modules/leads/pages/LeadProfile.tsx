@@ -213,16 +213,7 @@ export default function LeadProfile() {
 
         {activeTab === "info" && (
           <div className="flex gap-2">
-            <Button
-              className="cursor-pointer"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                navigate(`/editlead?id=${id}&lead_model=${status}`);
-              }}
-            >
-              Edit Details
-            </Button>
+           
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
