@@ -8,6 +8,7 @@ export default function Leads() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStages, setSelectedStages] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 400);
@@ -43,10 +44,11 @@ export default function Leads() {
         selectedStage={selectedStages}
         onValueChange={handleValueChange}
         clearFilters={handleClickFilter}
+        selectedIds={selectedIds}
       />
 
       <div className="h-[calc(100%-4rem)] p-4 overflow-auto">
-        <DataTable search={searchQuery} />
+        <DataTable search={searchQuery} onSelectionChange={setSelectedIds}/>
       </div>
     </div>
   );

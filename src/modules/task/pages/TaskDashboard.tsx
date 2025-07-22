@@ -48,7 +48,7 @@ export default function Tasks() {
         selectedIds={selectedIds}
       />
       <div className="h-[calc(100%-4rem)] p-4 overflow-auto">
-        <TaskTable  search={searchQuery} onSelectionChange={setSelectedIds}/>
+        <TaskTable search={searchQuery} onSelectionChange={setSelectedIds}/>
       </div>
     </div>
   );

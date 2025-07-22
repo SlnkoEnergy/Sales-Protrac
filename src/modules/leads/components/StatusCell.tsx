@@ -96,7 +96,6 @@ const StatusCell: React.FC<Props> = ({
   const submitStatusUpdate = async () => {
     if (!leadId || !selectedStatus) return;
 
-    // Check for 'won' status without a valid pendingDate
     if (
       selectedStatus === "warm" &&
       (!pendingDate || isNaN(pendingDate.getTime()))
@@ -111,7 +110,7 @@ const StatusCell: React.FC<Props> = ({
         selectedStatus,
         selectedLabel,
         remarks || "",
-        pendingDate // optional: include this if backend needs it
+        pendingDate 
       );
       toast.success(`Status updated to ${selectedStatus}`);
       setStatusDialogOpen(false);

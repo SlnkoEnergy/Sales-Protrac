@@ -137,7 +137,7 @@ export default function Header() {
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
             isActiveHandover ? "bg-white text-[#214b7b] font-medium" : ""
           }`}
-          onClick={() => navigate("/handover")}
+          onClick={() => navigate("/handover?statusFilter=Rejected")}
         >
             <File size={18} />
           <span>Handover</span>
