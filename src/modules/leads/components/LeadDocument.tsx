@@ -37,7 +37,7 @@ export default function LeadDocuments({ data }) {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedViewDoc, setSelectedViewDoc] = useState<string>("");
   const [customDocName, setCustomDocName] = useState("");
-
+  const [expectedDate, setExpectedDate] = useState<Date | null>(null);
   const uploadedDocTypes =
     data?.documents?.map((d) => d?.name?.toLowerCase()) || [];
 
@@ -64,30 +64,43 @@ export default function LeadDocuments({ data }) {
     setEditIndex(null);
   };
 
-  const handleFileUpload = async (itemType: string) => {
-    if (!selectedFile || !itemType || !data._id) return;
+const handleFileUpload = async (itemType: string) => {
+  if (!selectedFile || !itemType || !data._id) return;
 
-    const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
+  const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
+  const docType = itemType.toLowerCase();
 
-    try {
-      setUploading(true);
-      await uploadDocuments(
-        data._id,
-        stage,
-        itemType.toLowerCase(),
-        customDocName,
-        selectedFile
-      );
+  // Validate expected date only for loa/ppa when it's not already in backend
+  if (
+    !data.expected_closing_date &&
+    (docType === "loa" || docType === "ppa") &&
+    !expectedDate
+  ) {
+    toast.error("Expected Closing Date is required for LOA and PPA.");
+    return;
+  }
 
-      console.log({ customDocName });
-      toast.success(`✅ File Uploaded Successfully`);
-      setSelectedFile(null);
-    } catch (error) {
-      toast.error("❌ Upload failed.");
-    } finally {
-      setUploading(false);
-    }
-  };
+  try {
+    setUploading(true);
+    await uploadDocuments(
+      data._id,
+      stage,
+      docType as "loi" | "loa" | "ppa",
+      customDocName,
+      !data.expected_closing_date ? expectedDate : undefined,
+      selectedFile,
+    );
+
+    console.log({ customDocName });
+    toast.success("✅ File Uploaded Successfully");
+    setSelectedFile(null);
+  } catch (error) {
+    toast.error("❌ Upload failed.");
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   console.log(data?.documents?.length)
 
@@ -123,85 +136,106 @@ export default function LeadDocuments({ data }) {
             >
               <div className="text-sm w-1/3 font-medium">{item.type}</div>
               <div className="w-2/3 flex gap-2 items-center flex-wrap">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="file"
-                    hidden
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setSelectedFile(e.target.files[0]);
-                        setEditIndex(index);
-                      }
-                    }}
-                  />
+  <label className="flex items-center gap-2 cursor-pointer">
+    <input
+      type="file"
+      hidden
+      onChange={(e) => {
+        if (e.target.files?.[0]) {
+          setSelectedFile(e.target.files[0]);
+          setEditIndex(index);
+        }
+      }}
+    />
 
-                  {selectedFile === null && (
-                    <div className="flex gap-2">
-                      <Upload className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Choose file
-                      </span>
-                    </div>
-                  )}
-                </label>
+    {selectedFile === null && (
+      <div className="flex gap-2">
+        <Upload className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Choose file</span>
+      </div>
+    )}
+  </label>
 
-                {selectedFile !== null && editIndex === index && (
-                  <div className="text-sm text-gray-700 truncate max-w-[200px]">
-                    {selectedFile.name}
-                  </div>
-                )}
+  {selectedFile !== null && editIndex === index && (
+    <div className="text-sm text-gray-700 truncate max-w-[200px]">
+      {selectedFile.name}
+    </div>
+  )}
 
-                {item.type === "Other" && (
-                  <Input
-                    placeholder="Enter document name"
-                    value={customDocName}
-                    onChange={(e) => setCustomDocName(e.target.value)}
-                    className="w-[180px]"
-                  />
-                )}
+  {item.type === "Other" && (
+    <Input
+      placeholder="Enter document name"
+      value={customDocName}
+      onChange={(e) => setCustomDocName(e.target.value)}
+      className="w-[180px]"
+    />
+  )}
 
-                <Button
-                  onClick={() => handleFileUpload(item.type)}
-                  disabled={!selectedFile || editIndex !== index || uploading}
-                  size="sm"
-                  variant="outline"
-                >
-                  {uploading ? "Uploading..." : "Upload"}
-                </Button>
+  {/* Expected Closing Date input if missing and required */}
+  {!data?.expected_closing_date &&
+    ["loa", "ppa", "loi"].includes(item.type.toLowerCase()) && (
+      <Input
+        type="date"
+        required={["loa", "ppa"].includes(item.type.toLowerCase())}
+        className="w-[160px]"
+        value={
+          expectedDate instanceof Date && !isNaN(expectedDate.getTime())
+            ? expectedDate.toISOString().split("T")[0]
+            : ""
+        }
+        onChange={(e) => setExpectedDate(new Date(e.target.value))}
+      />
+  )}
 
-                <Pencil
-                  className="h-4 w-4 text-muted-foreground cursor-pointer"
-                  onClick={() =>
-                    document
-                      .querySelectorAll("input[type='file']")
-                      [index]?.click()
-                  }
-                />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Trash
-                      className="h-4 w-4 text-muted-foreground cursor-pointer"
-                      onClick={() => setEditIndex(index)}
-                    />
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will remove the document entry.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogAction onClick={() => handleDelete(index)}>
-                        Delete
-                      </AlertDialogAction>
-                      <AlertDialogCancel onClick={() => setEditIndex(null)}>
-                        Cancel
-                      </AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+  <Button
+    onClick={() => handleFileUpload(item.type)}
+    disabled={
+      !selectedFile ||
+      editIndex !== index ||
+      uploading ||
+      (["loa", "ppa"].includes(item.type.toLowerCase()) &&
+        !data?.expected_closing_date &&
+        !expectedDate)
+    }
+    size="sm"
+    variant="outline"
+  >
+    {uploading ? "Uploading..." : "Upload"}
+  </Button>
+
+  <Pencil
+    className="h-4 w-4 text-muted-foreground cursor-pointer"
+    onClick={() =>
+      document.querySelectorAll("input[type='file']")[index]?.click()
+    }
+  />
+
+  <AlertDialog>
+    <AlertDialogTrigger asChild>
+      <Trash
+        className="h-4 w-4 text-muted-foreground cursor-pointer"
+        onClick={() => setEditIndex(index)}
+      />
+    </AlertDialogTrigger>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+        <AlertDialogDescription>
+          This will remove the document entry.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogAction onClick={() => handleDelete(index)}>
+          Delete
+        </AlertDialogAction>
+        <AlertDialogCancel onClick={() => setEditIndex(null)}>
+          Cancel
+        </AlertDialogCancel>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+</div>
+
             </div>
           ))}
         </ScrollArea>
