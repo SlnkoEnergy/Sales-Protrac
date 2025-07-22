@@ -13,14 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  Clock,
-  MoreHorizontal,
-  User,
-  Users,
-} from "lucide-react";
+import { ArrowUpDown, ChevronDown, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,9 +21,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -42,11 +32,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getAllTask } from "@/services/task/Task";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { DateRange } from "react-date-range";
-import { format, parseISO } from "date-fns";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { getAllHandover } from "@/services/leads/LeadService";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -54,32 +47,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export type Task = {
+export type Handover = {
   _id: string;
-  lead: {
-    name: string;
+  id: string;
+  is_locked: string;
+  customer_details: {
+    customer: string;
+    p_group: string;
+    state: string;
+  };
+  leadDetails: {
+    _id: string;
     id: string;
   };
-  leadname: string;
-  priority: "high" | "medium" | "low";
-  title: string;
-  assigned_user: {
-    name: string;
-  };
-  type: "todo" | "meeting" | "call" | "sms" | "email";
-  current_status: "pending" | "completed" | "in progress";
-  deadline: Date;
+  createdAt: Date;
+  project_kwp: string;
+  proposed_dc_capacity: string;
+  status_of_handoversheet: string;
 };
 
-export function TaskTable({
+export function HandoverTable({
   search,
   onSelectionChange,
 }: {
@@ -89,37 +78,21 @@ export function TaskTable({
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sorting, setSorting] = React.useState<SortingState>([]);
-
-  const [debouncedSearch, setDebouncedSearch] = React.useState("");
-  const statusFromUrl = searchParams.get("status") || "";
-  const [total, setTotal] = React.useState(0);
-
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "100");
-  const [tab, setTab] = React.useState(statusFromUrl || "pending");
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [data, setData] = React.useState<Task[]>([]);
+  const [data, setData] = React.useState<Handover[]>([]);
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const statusFromUrl = searchParams.get("statusFilter") || "";
+  const [tab, setTab] = React.useState(statusFromUrl || "Rejected");
+  const [total, setTotal] = React.useState(0);
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = parseInt(searchParams.get("pageSize") || "100");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const [showPicker, setShowPicker] = React.useState(false);
-  const [fromDeadline, setFromDeadline] = React.useState<string | null>(null);
-  const [toDeadline, setToDeadline] = React.useState<string | null>(null);
-  const fromDeadlineParam = searchParams.get("fromDeadline");
-  const toDeadlineParam = searchParams.get("toDeadline");
-  const [range, setRange] = React.useState([
-    {
-      startDate: fromDeadlineParam ? parseISO(fromDeadlineParam) : null,
-      endDate: toDeadlineParam ? parseISO(toDeadlineParam) : null,
-      key: "selection",
-    },
-  ]);
 
-  const totalPages = Math.ceil(total / pageSize);
-
-  const columns: ColumnDef<Task>[] = [
+  const columns: ColumnDef<Handover>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -143,132 +116,85 @@ export function TaskTable({
       enableHiding: false,
     },
     {
-      accessorKey: "priority",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Priority
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const priority = row.getValue("priority") as string;
-        const color =
-          {
-            low: "text-green-600",
-            medium: "text-orange-500",
-            high: "text-red-600",
-          }[priority] || "text-gray-600";
-
-        return (
-          <div className={`capitalize font-medium ${color}`}>{priority}</div>
-        );
-      },
-    },
-    {
-      accessorKey: "title",
-      header: "Title",
+      accessorKey: "leadDetails.id",
+      header: "Lead Id",
       cell: ({ row }) => (
         <div
-          onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
-          className="capitalize cursor-pointer hover:text-[#214b7b]"
+          className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
+          onClick={() =>
+            navigate(
+              `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
+            )
+          }
         >
-          {row.getValue("title")}
+          {row.original.leadDetails?.id || "-"}
         </div>
       ),
     },
     {
-      accessorKey: "lead",
-      header: "Lead ID",
-      cell: ({ row }) => {
-        const lead = row.getValue("lead") as any;
-        return <div>{lead?.id}</div>;
-      },
-    },
-    {
-      accessorKey: "lead",
-      header: "Lead Name",
-      cell: ({ row }) => {
-        const lead = row.getValue("lead") as any;
-        return <div>{lead?.name}</div>;
-      },
-    },
-
-    {
-      accessorKey: "assigned_to",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarFallback>
-              <Users className="h-4 w-4" />
-            </AvatarFallback>
-          </Avatar>
-          <span>Assignees</span>
+      accessorKey: "customer_details.customer",
+      header: "Name",
+      cell: ({ row }) => (
+        <div
+          className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
+          onClick={() =>
+            navigate(
+              `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
+            )
+          }
+        >
+          {row.original.customer_details?.customer || "-"}
         </div>
       ),
+    },
+    {
+      accessorKey: "customer_details.p_group",
+      header: "Group",
       cell: ({ row }) => {
-        const assignees = row.getValue("assigned_to") as { name: string }[];
-        if (!assignees || assignees.length === 0) return "-";
+        const pGroup = row.original.customer_details?.p_group;
+        return <div>{pGroup?.id || pGroup || "-"}</div>;
+      },
+    },
+    {
+      accessorKey: "customer_details.state",
+      header: "State",
+      cell: ({ row }) => {
+        const state = row.original.customer_details?.state;
+        return <div>{state || "-"}</div>;
+      },
+    },
+    {
+      accessorKey: "project_kwp",
+      header: "Capacity (kWp)",
+      cell: ({ row }) => {
+        const kwp = row.getValue("project_kwp");
+        const proposed = row.original?.proposed_dc_capacity;
 
-        const first = assignees[0]?.name;
-        const remainingCount = assignees.length - 1;
-
-        const tooltipContent = (
-          <div className="flex flex-col gap-1">
-            {assignees.map((a, i) => (
-              <div className="flex gap-2">
-                <User size={14} /> <span key={i}>{a.name}</span>
-              </div>
-            ))}
-          </div>
-        );
+        if (!kwp && !proposed) {
+          return <div className="capitalize">NA</div>;
+        }
 
         return (
           <div className="capitalize">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex gap-1">
-                    <div>{first}</div>
-                    <div className="cursor-default">
-                      {remainingCount > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="cursor-default text-xs px-2 py-0.5"
-                        >
-                          +{remainingCount}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </TooltipTrigger>
-                {remainingCount > 0 && (
-                  <TooltipContent side="bottom" align="start">
-                    {tooltipContent}
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+            {kwp || "-"} / {proposed || "-"}
           </div>
         );
       },
     },
     {
-      accessorKey: "deadline",
+      accessorKey: "createdAt",
       header: ({ column }) => (
         <button
           className="flex items-center gap-2"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           <Clock className="h-4 w-4" />
-          Deadline
+          Created At
           <ArrowUpDown className="ml-1 h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => {
-        const value = row.getValue("deadline");
+        const value = row.getValue("createdAt");
         const formatted =
           value && typeof value === "string"
             ? format(new Date(value), "dd MMMM yyyy")
@@ -281,107 +207,76 @@ export function TaskTable({
         return dateA - dateB;
       },
     },
+
     {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("type")}</div>
-      ),
-    },
-    {
-      accessorKey: "current_status",
-      header: "Stage",
+      accessorKey: "status_of_handoversheet",
+      header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("current_status") as string;
+        const rawStatus = row.getValue("status_of_handoversheet") as string;
+        const comment = row.original?.comment;
+        const status = rawStatus === "draft" ? "Submitted" : rawStatus;
 
         const statusColor =
           {
-            pending: "text-red-600",
-            "in progress": "text-orange-500",
-            completed: "text-green-600",
+            Rejected: "text-red-600",
+            Approved: "text-green-600",
+            Submitted: "text-blue-500",
           }[status] || "text-gray-600";
 
-        return (
-          <div className={`capitalize font-medium ${statusColor}`}>
+        const statusText = (
+          <div
+            className={`capitalize cursor-pointer font-medium ${statusColor}`}
+          >
             {status}
           </div>
         );
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const task = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(task.lead_id)}
-              >
-                Copy Lead ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>View Task Detail</DropdownMenuItem>
-              <DropdownMenuItem>View Lead Detail</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
+
+        if (status === "Rejected" && comment) {
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>{statusText}</TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  align="start"
+                  className="max-w-xs whitespace-pre-line"
+                >
+                  {comment}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        }
+
+        return statusText;
       },
     },
   ];
-  const handleDateChange = (from: string, to: string) => {
-    setFromDeadline(from);
-    setToDeadline(to);
 
-    const updatedParams = new URLSearchParams(searchParams.toString());
-
-    updatedParams.set("fromDeadline", from);
-    updatedParams.set("toDeadline", to);
-
-    setSearchParams(updatedParams);
-  };
-  const handleSelect = (ranges: any) => {
-    const { startDate, endDate } = ranges.selection;
-    setRange([ranges.selection]);
-
-    if (startDate && endDate) {
-      const from = new Date(startDate).toISOString();
-      const to = new Date(endDate).toISOString();
-      handleDateChange(from, to);
-    }
-  };
-
+  const [pagination, setPagination] = React.useState({
+    pageIndex: page - 1,
+    pageSize: pageSize,
+  });
+  const totalPages = Math.ceil(total / pageSize);
   React.useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchHandover = async () => {
       try {
         const params = {
           status: statusFromUrl,
+          search,
           page,
           limit: pageSize,
-          search,
-          fromDeadline: fromDeadline,
-          toDeadline: toDeadline,
         };
-        const res = await getAllTask(params);
-        setTotal(res?.total || 0);
+        const res = await getAllHandover(params);
         setData(res.data);
+        setTotal(res?.meta?.total || 0);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
     };
 
-    fetchTasks();
-  }, [statusFromUrl, page, pageSize, search, fromDeadline, toDeadline]);
-
-  console.log({ search });
+    fetchHandover();
+  }, [search, pageSize, statusFromUrl]);
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
@@ -411,22 +306,6 @@ export function TaskTable({
       return updated;
     });
   }, [debouncedSearch]);
-
-  const handleTabChange = (value: string) => {
-    setTab(value);
-    React.startTransition(() => {
-      setSearchParams((prev) => {
-        const newParams = new URLSearchParams(prev);
-        newParams.set("status", value);
-        return newParams;
-      });
-    });
-  };
-
-  const [pagination, setPagination] = React.useState({
-    pageIndex: page - 1,
-    pageSize: pageSize,
-  });
 
   const table = useReactTable({
     data,
@@ -464,20 +343,28 @@ export function TaskTable({
     setSearchParams(params);
   };
 
+  const handleTabChange = (value: string) => {
+    setTab(value);
+    React.startTransition(() => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("statusFilter", value);
+        return newParams;
+      });
+    });
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center py-4 px-2">
         <div>
           <Tabs value={tab} onValueChange={handleTabChange}>
             <TabsList className="gap-2">
-              <TabsTrigger className="cursor-pointer" value="pending">
-                Pending
+              <TabsTrigger className="cursor-pointer" value="Rejected">
+                Rejected
               </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="in progress">
-                In Progress
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="completed">
-                Completed
+              <TabsTrigger className="cursor-pointer" value="draft">
+                Submitted
               </TabsTrigger>
               <TabsTrigger className="cursor-pointer" value="">
                 All
@@ -486,36 +373,6 @@ export function TaskTable({
           </Tabs>
         </div>
         <div className="flex flex-wrap items-center gap-4 justify-between py-2">
-          {/* Deadline Date Range Picker */}
-          <div className="relative inline-block text-left">
-            <button
-              onClick={() => setShowPicker((prev) => !prev)}
-              className="border px-3 py-1.5 rounded-md text-sm flex items-center gap-2 bg-white shadow-sm"
-            >
-              <span>
-                {range[0].startDate && range[0].endDate
-                  ? `${format(range[0].startDate, "MMM d")} - ${format(
-                      range[0].endDate,
-                      "MMM d"
-                    )}`
-                  : "Select Deadline"}
-              </span>
-            </button>
-
-            {showPicker && (
-              <div className="absolute z-50 mt-2 bg-white rounded-md shadow-lg">
-                <DateRange
-                  editableDateInputs={true}
-                  onChange={handleSelect}
-                  moveRangeOnFirstSelection={false}
-                  ranges={range}
-                  className="border rounded-md"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Rows per page */}
           <div className="flex items-center gap-2">
             <label htmlFor="limit" className="text-sm font-medium">
               Rows per page:
@@ -540,42 +397,27 @@ export function TaskTable({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Columns Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="text-sm flex items-center gap-1"
-              >
-                Columns <ChevronDown className="h-4 w-4" />
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end">
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
                 .map((column) => {
-                  const colHeader = column.columnDef.header;
-                  const label =
-                    column.id === "id"
-                      ? "Lead ID"
-                      : column.id === "name"
-                      ? "Name"
-                      : typeof colHeader === "string"
-                      ? colHeader
-                      : column.id;
-
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
+                      className="capitalize"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
                       }
-                      className="capitalize text-sm"
                     >
-                      {label}
+                      {column.id}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -583,7 +425,7 @@ export function TaskTable({
           </DropdownMenu>
         </div>
       </div>
-      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
