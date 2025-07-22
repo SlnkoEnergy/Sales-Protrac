@@ -48,11 +48,15 @@ export default function TaskForm({
   id,
   name,
   leadId,
+  onClose,
+  onTaskCreated,
 }: {
   type: "email" | "call" | "meeting" | "todo";
-  id: String;
-  name: String;
-  leadId: String;
+  id: string;
+  name: string;
+  leadId: string;
+  onClose?: () => void;
+  onTaskCreated?: (newTask: any) => void; 
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -60,12 +64,12 @@ export default function TaskForm({
   const [open, setOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState("");
   const [user, setUser] = useState([]);
+  const [taskData, setTaskData] = useState([]);
   const department = "BD";
   const [formData, setFormData] = useState({
     title: "",
     lead_id: "",
     lead_name: "",
-    contact_info: "",
     priority: "",
     due_date: "",
     assigned_to: [] as string[],
@@ -73,6 +77,9 @@ export default function TaskForm({
   });
 
   console.log(id, name, leadId);
+  const location = window.location.pathname;
+
+  const isFromModal = location === "/leadProfile";
 
   const toggle = (id: string) =>
     setSelected((prev) =>
@@ -131,63 +138,58 @@ export default function TaskForm({
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const payload = {
-        title: formData.title,
-        lead_id: formData.lead_id,
-        user_id: getUserIdFromToken(),
-        type,
-        assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
-        deadline: formData.due_date,
-        contact_info: formData.contact_info,
-        priority: formData.priority,
-        description: formData.description,
-      };
+ const handleSave = async () => {
+  try {
+    const payload = {
+      title: formData.title,
+      lead_id: formData.lead_id,
+      user_id: getUserIdFromToken(),
+      type,
+      assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
+      deadline: formData.due_date,
+      priority: formData.priority,
+      description: formData.description,
+    };
 
-      await createTask(payload);
-      toast.success("Task Created Successfully");
-      setFormData({
-        title: "",
-        lead_id: "",
-        lead_name: "",
-        contact_info: "",
-        priority: "",
-        due_date: "",
-        assigned_to: [],
-        description: "",
-      });
-      setSelected([]);
+    const res = await createTask(payload); 
+    const createdTask = res.task;
+
+    toast.success("Task Created Successfully");
+
+    // Clear form
+    setFormData({ title: "", lead_id: "", lead_name: "", priority: "", due_date: "", assigned_to: [], description: "" });
+    setSelected([]);
+
+    onTaskCreated?.(createdTask);
+
+    if (isFromModal) {
+      onClose?.();
+    } else {
       navigate("/tasks");
-    } catch (err) {
-      toast.error("Failed to create Task. Please fill all the fields");
     }
-  };
-  const isDisabled = id && name && leadId;
+  } catch (err) {
+    toast.error("Failed to create Task. Please fill all the fields");
+  }
+};
+
+  const isDisabled = !!(id && name && leadId);
 
   useEffect(() => {
     if (id && name && leadId && leads.length > 0) {
       const matchedLead = leads.find(
         (lead) => lead._id === id || lead.id === leadId
       );
-  
+
       if (matchedLead) {
-        setSelectedLead(matchedLead.id); // display in dropdown
+        setSelectedLead(matchedLead.id);
         setFormData({
           ...formData,
-          lead_id: matchedLead._id, // for backend
-          lead_name: matchedLead.c_name,
-          contact_info:
-            type === "email"
-              ? matchedLead.email || ""
-              : type === "call"
-              ? matchedLead.mobile || ""
-              : "",
+          lead_id: matchedLead._id,
+          lead_name: matchedLead.name,
         });
       }
     }
   }, [id, name, leadId, leads]);
-  
 
   const handleMarkDone = async () => {
     try {
@@ -199,7 +201,6 @@ export default function TaskForm({
         status: "completed",
         assigned_to: selected,
         deadline: formData.due_date,
-        contact_info: formData.contact_info,
         priority: formData.priority,
         description: formData.description,
       };
@@ -209,7 +210,6 @@ export default function TaskForm({
         title: "",
         lead_id: "",
         lead_name: "",
-        contact_info: "",
         priority: "",
         due_date: "",
         assigned_to: [],
@@ -260,13 +260,7 @@ export default function TaskForm({
                           setFormData({
                             ...formData,
                             lead_id: lead._id,
-                            lead_name: lead.c_name,
-                            contact_info:
-                              type === "email"
-                                ? lead.email || ""
-                                : type === "call"
-                                ? lead.mobile || ""
-                                : "",
+                            lead_name: lead.name,
                           });
 
                           setOpen(false);
@@ -289,21 +283,6 @@ export default function TaskForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {(type === "email" || type === "call") && (
-          <div>
-            <Label className="mb-2">
-              {type === "email" ? "Email" : "Phone Number"}
-            </Label>
-            <Input value={formData.contact_info ?? ""} disabled />
-          </div>
-        )}
-        {type === "meeting" && (
-          <div>
-            <Label className="mb-2">Location</Label>
-            <Input placeholder="Enter Location" />
-          </div>
-        )}
-
         <div>
           <Label className="mb-2">Priority</Label>
           <Select
@@ -321,22 +300,19 @@ export default function TaskForm({
             </SelectContent>
           </Select>
         </div>
-
-        {type === "todo" && (
-          <div>
-            <Label className="mb-2">Type</Label>
-            <Select>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose one" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="call">Call</SelectItem>
-                <SelectItem value="meeting">Meeting</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div>
+          <Label className="mb-2">Type</Label>
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose one" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="call">Call</SelectItem>
+              <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -448,7 +424,6 @@ export default function TaskForm({
                     title: "",
                     lead_id: "",
                     lead_name: "",
-                    contact_info: "",
                     priority: "",
                     due_date: "",
                     assigned_to: [],

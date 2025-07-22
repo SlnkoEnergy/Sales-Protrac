@@ -7,31 +7,38 @@ import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
-import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
+import { exportToCsvHandover } from "@/services/leads/LeadService";
 
-interface SearchBarLeadsProps {
+interface SearchBarHandoverProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
-  selectedStage: string;
+  selectedStatus: string;
   onValueChange: (value: string) => void;
   clearFilters: () => void;
+  selectedIds: string[];
 }
 
-export default function SearchBarLeads({
+export default function SearchBarHandover({
   searchValue,
   onSearchChange,
-}: SearchBarLeadsProps) {
+  selectedIds
+}: SearchBarHandoverProps) {
   const navigate = useNavigate();
 
-  const handleExportToCsv = async () => {
-    try {
-      await exportToCsv();
-      toast.success("CSV exported successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to export CSV");
-    }
-  };
+const handleExportToCsv = async (selectedIds: string[]) => {
+  if (!selectedIds?.length) {
+    toast.error("No tasks selected for export.");
+    return;
+  }
+
+  try {
+    await exportToCsvHandover(selectedIds);
+    toast.success("CSV exported successfully");
+  } catch (error: any) {
+    toast.error(error.message || "Failed to export CSV");
+  }
+};
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -50,7 +57,7 @@ export default function SearchBarLeads({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search Leads"
+            placeholder="Search Handover"
             className="pl-8"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -79,9 +86,9 @@ export default function SearchBarLeads({
           />
           <span
             className="cursor-pointer text-black hover:underline"
-            onClick={handleExportToCsv}
+            onClick={()=>handleExportToCsv(selectedIds)}
           >
-            Export Leads
+            Export Handover
           </span>
         </div>
       </div>

@@ -21,9 +21,9 @@ export default function AddLead() {
   const [subSource, setSubSource] = useState("");
   const navigate = useNavigate();
   const subSourceOptions: Record<string, string[]> = {
-    "social media": ["Instagram", "LinkedIn", "Whatsapp"],
-    "referred by": ["Directors", "Clients", "Team members", "E-mail"],
-    marketing: ["Youtube", "Advertisements"],
+    "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
+    "Referred By": ["Directors", "Clients", "Team members", "E-mail"],
+    Marketing: ["Youtube", "Advertisements"],
   };
 
   const handleChange = (key: string, value: string) => {
@@ -40,35 +40,68 @@ export default function AddLead() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    const requiredFields = [
+      "customerName",
+      "groupName",
+      "mobile",
+      "village",
+      "district",
+      "state",
+      "capacity",
+      "comments",
+    ];
 
+    const missing = requiredFields.filter((key) => !formData[key]);
+
+    if (missing.length > 0 || !source) {
+      toast.error(`Please fill all required fields.`);
+      return;
+    }
     try {
       const payload = {
-        c_name: formData.customerName,
-        email: formData.email,
-        mobile: formData.mobile,
-        alt_mobile: formData.altMobile,
-        company: formData.companyName,
-        village: formData.village,
-        district: formData.district,
-        state: formData.state,
-        scheme: formData.scheme,
-        capacity: formData.capacity,
-        distance: formData.subStationDistance,
-        tarrif: formData.tariff,
-        land: formData.land,
-        entry_date: formData.creationDate,
-        interest: "",
-        comment: formData.comments,
-        loi: "",
-        ppa: "",
-        loa: "",
-        other_remarks: "",
-        submitted_by: getCurrentUser().name,
+        name: formData.customerName,
+        contact_details: {
+          email: formData.email,
+          mobile: [formData.mobile, formData.altMobile].filter(Boolean),
+        },
+        company_name: formData.companyName,
+
+        address: {
+          district: formData.district,
+          state: formData.state,
+          postalCode: formData.pincode || "",
+          country: formData.country || "India",
+        },
+
+        project_details: {
+          capacity: formData.capacity,
+          distance_from_substation: {
+            value: formData.subStationDistance,
+            unit: "km",
+          },
+          available_land: {
+            value: formData.land,
+            unit: "km",
+          },
+          tarrif: formData.tariff,
+          scheme: formData.scheme,
+          land_type: formData.landType || "Owned",
+        },
+
+        source: {
+          from: source,
+          sub_source: subSource || "",
+        },
+
+        comments: formData.comments,
+        current_status: {
+          name: "initial",
+        },
+        submitted_by: getCurrentUser()._id,
+
+        documents: [],
         token_money: "",
-        group: formData.groupName,
-        reffered_by: subSource || "",
-        source: source,
-        remark: "",
+        interest: "",
       };
 
       await createBdLead({ data: payload });
@@ -124,7 +157,6 @@ export default function AddLead() {
               "select",
               [
                 "Andhra Pradesh",
-
                 "Arunachal Pradesh",
                 "Assam",
                 "Bihar",
@@ -158,19 +190,17 @@ export default function AddLead() {
             ["Sub Station Distance (KM)", "subStationDistance", false],
             ["Tariff (Per Unit)", "tariff", false],
             ["Available Land (acres)", "land", false],
-            ["Creation Date", "creationDate", true, "date"],
             [
               "Scheme",
               "scheme",
               false,
               "select",
-              ["Kusum A", "Kusum C", "Kusum C2", "Other"],
+              ["KUSUM A", "KUSUM C", "KUSUM C2", "Other"],
             ],
             ["Land Types", "landType", false, "select", ["Leased", "Owned"]],
             ["Comments", "comments", true, "textarea"],
           ].map(([label, name, required, type = "input", options], idx) => {
             const isSource = name === "source";
-
             if (isSource) {
               return (
                 <div
@@ -187,7 +217,7 @@ export default function AddLead() {
                       </SelectTrigger>
                       <SelectContent>
                         {(options as string[]).map((opt, i) => (
-                          <SelectItem value={opt.toLowerCase()} key={i}>
+                          <SelectItem value={opt} key={i}>
                             {opt}
                           </SelectItem>
                         ))}
@@ -195,7 +225,7 @@ export default function AddLead() {
                     </Select>
                   </div>
 
-                  {["marketing", "referred by", "social media"].includes(
+                  {["Marketing", "Referred By", "Social Media"].includes(
                     source
                   ) && (
                     <div className="flex-1 space-y-1.5">
@@ -205,8 +235,8 @@ export default function AddLead() {
                           <SelectValue placeholder="Select Sub-Source" />
                         </SelectTrigger>
                         <SelectContent>
-                          {subSourceOptions[source].map((sub, idx) => (
-                            <SelectItem key={idx} value={sub.toLowerCase()}>
+                          {subSourceOptions[source]?.map((sub, idx) => (
+                            <SelectItem key={idx} value={sub}>
                               {sub}
                             </SelectItem>
                           ))}
@@ -259,7 +289,7 @@ export default function AddLead() {
                     </SelectTrigger>
                     <SelectContent>
                       {(options as string[]).map((opt, i) => (
-                        <SelectItem value={opt.toLowerCase()} key={i}>
+                        <SelectItem value={opt} key={i}>
                           {opt}
                         </SelectItem>
                       ))}
@@ -272,7 +302,9 @@ export default function AddLead() {
         </div>
 
         <div className="mt-8 flex justify-end">
-          <Button type="submit" className="cursor-pointer">Submit</Button>
+          <Button type="submit" className="cursor-pointer">
+            Submit
+          </Button>
         </div>
       </form>
     </div>
