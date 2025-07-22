@@ -40,73 +40,69 @@ export default function AddLead() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-  const requiredFields = [
-    "customerName",
-    "groupName",
-    "mobile",
-    "village",
-    "district",
-    "state",
-    "capacity",
-    "creationDate",
-    "comments",
-  ];
+    const requiredFields = [
+      "customerName",
+      "groupName",
+      "mobile",
+      "village",
+      "district",
+      "state",
+      "capacity",
+      "comments",
+    ];
 
-  const missing = requiredFields.filter((key) => !formData[key]);
+    const missing = requiredFields.filter((key) => !formData[key]);
 
-  if (missing.length > 0 || !source) {
-    toast.error(`Please fill all required fields.`);
-    return;
-  }
+    if (missing.length > 0 || !source) {
+      toast.error(`Please fill all required fields.`);
+      return;
+    }
     try {
-   const payload = {
-  name: formData.customerName,
-  contact_details: {
-    email: formData.email,
-    mobile: [formData.mobile, formData.altMobile].filter(Boolean),
-  },
-  company_name: formData.companyName,
+      const payload = {
+        name: formData.customerName,
+        contact_details: {
+          email: formData.email,
+          mobile: [formData.mobile, formData.altMobile].filter(Boolean),
+        },
+        company_name: formData.companyName,
 
-  address: {
+        address: {
+          district: formData.district,
+          state: formData.state,
+          postalCode: formData.pincode || "",
+          country: formData.country || "India",
+        },
 
-    district: formData.district,
-    state: formData.state,
-    postalCode: formData.pincode || "",
-    country: formData.country || "India",
-  },
+        project_details: {
+          capacity: formData.capacity,
+          distance_from_substation: {
+            value: formData.subStationDistance,
+            unit: "km",
+          },
+          available_land: {
+            value: formData.land,
+            unit: "km",
+          },
+          tarrif: formData.tariff,
+          scheme: formData.scheme,
+          land_type: formData.landType || "Owned",
+        },
 
-  project_details: {
-    capacity: formData.capacity,
-    distance_from_substation: {
-      value: formData.subStationDistance,
-      unit: "km",
-    },
-    available_land: {
-      value: formData.land,
-      unit: "km",
-    },
-    tarrif: formData.tariff,
-    scheme: formData.scheme,
-    land_type: formData.landType || "Owned",
-  },
+        source: {
+          from: source,
+          sub_source: subSource || "",
+        },
 
-  source: {
-  from: source,
-  sub_source: subSource || "",
-},
+        comments: formData.comments,
+        current_status: {
+          name: "initial",
+        },
+        submitted_by: getCurrentUser()._id,
 
-
-  comments: formData.comments,
-  current_status: {
-    name: "initial",
-  },
-  submitted_by: getCurrentUser()._id,
-
-  documents: [],
-  token_money: "",
-  interest: "",
-};
-
+        documents: [],
+        token_money: "",
+        interest: "",
+      };
 
       await createBdLead({ data: payload });
       toast.success("Lead Created Successfully!");
@@ -194,7 +190,6 @@ export default function AddLead() {
             ["Sub Station Distance (KM)", "subStationDistance", false],
             ["Tariff (Per Unit)", "tariff", false],
             ["Available Land (acres)", "land", false],
-            ["Creation Date", "creationDate", true, "date"],
             [
               "Scheme",
               "scheme",
@@ -230,24 +225,25 @@ export default function AddLead() {
                     </Select>
                   </div>
 
-                  {["Marketing", "Referred By", "Social Media"].includes(source) && (
-  <div className="flex-1 space-y-1.5">
-    <Label htmlFor="subSource">Sub-Source</Label>
-    <Select onValueChange={setSubSource}>
-      <SelectTrigger id="subSource">
-        <SelectValue placeholder="Select Sub-Source" />
-      </SelectTrigger>
-      <SelectContent>
-        {subSourceOptions[source]?.map((sub, idx) => (
-          <SelectItem key={idx} value={sub}>
-            {sub}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  </div>
-)}
-
+                  {["Marketing", "Referred By", "Social Media"].includes(
+                    source
+                  ) && (
+                    <div className="flex-1 space-y-1.5">
+                      <Label htmlFor="subSource">Sub-Source</Label>
+                      <Select onValueChange={setSubSource}>
+                        <SelectTrigger id="subSource">
+                          <SelectValue placeholder="Select Sub-Source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subSourceOptions[source]?.map((sub, idx) => (
+                            <SelectItem key={idx} value={sub}>
+                              {sub}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               );
             }
@@ -306,7 +302,9 @@ export default function AddLead() {
         </div>
 
         <div className="mt-8 flex justify-end">
-          <Button type="submit" className="cursor-pointer">Submit</Button>
+          <Button type="submit" className="cursor-pointer">
+            Submit
+          </Button>
         </div>
       </form>
     </div>

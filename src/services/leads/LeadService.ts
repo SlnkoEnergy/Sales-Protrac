@@ -223,3 +223,51 @@ export const createHandover = async (
     throw new Error(error?.response?.data?.message || "Failed to create handover sheet");
   }
 };
+
+export const getHandoverByLeadId = async (params = {}) => {
+  let url = "/get-handoversheet";
+
+  const query = Object.entries(params)
+    .map(([key, val]) => {
+      if (Array.isArray(val)) {
+        return val.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
+      }
+      return `${key}=${encodeURIComponent(val)}`;
+    })
+    .join("&");
+
+  if (query) {
+    url += `?${query}`;
+  }
+  const response = await Axios.get(url);
+  return response.data;
+};
+
+export const editHandover = async(_id, updatedData) => {
+  try {
+    const response = await Axios.put(`/edit-hand-over-sheet/${_id}`, updatedData);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to update handover");
+  }
+}
+
+
+export const getAllHandover = async (params = {}) => {
+  let url = "/get-all-handover-sheet";
+
+  const query = Object.entries(params)
+    .map(([key, val]) => {
+      if (Array.isArray(val)) {
+        return val.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
+      }
+      return `${key}=${encodeURIComponent(val)}`;
+    })
+    .join("&");
+
+  if (query) {
+    url += `?${query}`;
+  }
+  const response = await Axios.get(url);
+  return response.data;
+};

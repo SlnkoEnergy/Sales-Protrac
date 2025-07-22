@@ -8,9 +8,9 @@ import {
   Menu,
   X,
   Trash,
-  UserRound,
   LogOut,
   User2,
+  File,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -134,9 +134,9 @@ export default function Header() {
           <span>Meetings</span>
         </div>
         <div className="flex items-center gap-2">
-          <UserRound size={18} />
-          <span className="cursor-pointer" onClick={() => navigate("/team")}>
-            Team
+          <File size={18} />
+          <span className="cursor-pointer" onClick={() => navigate("/handover")}>
+            Handover
           </span>
         </div>
       </div>

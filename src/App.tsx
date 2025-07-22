@@ -13,8 +13,8 @@ import PrivateRoute from "./utils/PrivateRoutes";
 import { Toaster } from "@/components/ui/sonner";
 import { DateFilterProvider } from "./modules/dashboard/components/DateFilterContext";
 import Layout from "./components/layout/Layout";
-import Team from "./modules/team/pages/TeamDashboard";
 import DocumentViewer from "./components/lead/DocumentViewer";
+import Handover from "./modules/team/pages/HandoverDashboard";
 
 
 function App() {
@@ -41,7 +41,7 @@ function App() {
             <Route path="addlead" element={<AddLead />} />
             <Route path="editlead" element={<EditLead />} />
             <Route path="meeting" element={<Meetings />} />
-            <Route path="team" element={<Team />} />
+            <Route path="handover" element={<Handover />} />
           </Route>
         </Routes>
       </Router>

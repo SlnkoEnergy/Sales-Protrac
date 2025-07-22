@@ -43,34 +43,42 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
-import { getAllTask } from "@/services/task/Task";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { format } from "date-fns";
+import { getAllHandover } from "@/services/leads/LeadService";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export type Team = {
+
+export type Handover = {
   _id: string;
-  lead_id: string;
-  leadname: string;
-  priority: "high" | "medium" | "low";
-  title: string;
-  assigned_to: string;
-  type: "todo" | "meeting" | "call" | "sms" | "email";
-  current_status:  "pending" | "completed" | "in progress";
-  deadline: Date;
+  id: string;
+  is_locked: string;
+  customer_details: {
+    customer: string;
+    p_group: string;
+    state: string;
+  };
+  leadDetails: {
+    _id: string;
+    id: string;
+  };
+  createdAt: Date;
+  project_kwp: string;
+  proposed_dc_capacity: string;
+  status_of_handoversheet: string;
 };
 
-export function TeamTable() {
+export function HandoverTable() {
   const navigate = useNavigate();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [data, setData] = React.useState<Team[]>([]);
+  const [data, setData] = React.useState<Handover[]>([]);
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
-  const columns: ColumnDef<Team>[] = [
+  const columns: ColumnDef<Handover>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -94,86 +102,86 @@ export function TeamTable() {
       enableHiding: false,
     },
     {
-      accessorKey: "priority",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Priority
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const priority = row.getValue("priority") as string;
-        const color =
-          {
-            low: "text-green-600",
-            medium: "text-orange-500",
-            high: "text-red-600",
-          }[priority] || "text-gray-600";
-
-        return (
-          <div className={`lowercase font-medium ${color}`}>{priority}</div>
-        );
-      },
-    },
-    {
-      accessorKey: "title",
-      header: "Title",
+      accessorKey: "leadDetails.id",
+      header: "Lead Id",
       cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("title")}</div>
-      ),
-    },
-    {
-      accessorKey: "lead_id",
-      header: "Lead ID",
-      cell: ({ row }) => {
-        const lead = row.getValue("lead_id") as any;
-        return <div>{lead?.id}</div>;
-      },
-    },
-    {
-      accessorKey: "leadname",
-      header: "Lead Name",
-      cell: ({ row }) => {
-        const lead = row.getValue("lead_id") as any;
-        return <div>{lead?.c_name}</div>;
-      },
-    },
-
-    {
-      accessorKey: "assigned_to",
-      header: () => (
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarFallback>
-              <Users className="h-4 w-4" />
-            </AvatarFallback>
-          </Avatar>
-          <span>Assignees</span>
+        <div
+          className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
+          onClick={() =>
+            navigate(
+              `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
+            )
+          }
+        >
+          {row.original.leadDetails?.id || "-"}
         </div>
       ),
+    },
+    {
+      accessorKey: "customer_details.customer",
+      header: "Name",
+      cell: ({ row }) => (
+        <div
+          className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
+          onClick={() =>
+            navigate(
+              `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
+            )
+          }
+        >
+          {row.original.customer_details?.customer || "-"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "customer_details.p_group",
+      header: "Group",
       cell: ({ row }) => {
-        const assignees = row.getValue("assigned_to") as { name: string }[];
-        const names = assignees?.map((a) => a.name).join(", ");
-        return <div className="capitalize">{names}</div>;
+        const pGroup = row.original.customer_details?.p_group;
+        return <div>{pGroup?.id || pGroup || "-"}</div>;
       },
     },
     {
-      accessorKey: "deadline",
+      accessorKey: "customer_details.state",
+      header: "State",
+      cell: ({ row }) => {
+        const state = row.original.customer_details?.state;
+        return <div>{state || "-"}</div>;
+      },
+    },
+    {
+  accessorKey: "project_kwp",
+  header: "Capacity (kWp)",
+  cell: ({ row }) => {
+    const kwp = row.getValue("project_kwp");
+    const proposed = row.original?.proposed_dc_capacity;
+
+    if (!kwp && !proposed) {
+      return <div className="capitalize">NA</div>;
+    }
+
+    return (
+      <div className="capitalize">
+        {kwp || "-"} / {proposed || "-"}
+      </div>
+    );
+  },
+}
+,
+    {
+      accessorKey: "createdAt",
       header: ({ column }) => (
         <button
           className="flex items-center gap-2"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           <Clock className="h-4 w-4" />
-          Deadline
+          Created At
           <ArrowUpDown className="ml-1 h-3 w-3" />
         </button>
       ),
       cell: ({ row }) => {
-        const value = row.getValue("deadline");
+        const value = row.getValue("createdAt");
         const formatted =
           value && typeof value === "string"
             ? format(new Date(value), "dd MMMM yyyy")
@@ -186,66 +194,58 @@ export function TeamTable() {
         return dateA - dateB;
       },
     },
-    {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("type")}</div>
-      ),
-    },
-    {
-      accessorKey: "current_status",
-      header: "Stage",
-      cell: ({ row }) => {
-        const status = row.getValue("current_status") as string;
+    
+   {
+  accessorKey: "status_of_handoversheet",
+  header: "Status",
+  cell: ({ row }) => {
+    const rawStatus = row.getValue("status_of_handoversheet") as string;
+    const comment = row.original?.comment;
+    const status = rawStatus === "draft" ? "Submitted" : rawStatus;
 
-        const statusColor =
-          {
-            pending: "text-red-600",
-            "in progress": "text-orange-500",
-            completed: "text-green-600",
-          }[status] || "text-gray-600";
+    const statusColor =
+      {
+        Rejected: "text-red-600",
+        Approved: "text-green-600",
+        Submitted: "text-blue-500",
+      }[status] || "text-gray-600";
 
-        return (
-          <div className={`capitalize font-medium ${statusColor}`}>
-            {status}
-          </div>
-        );
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const team = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(team.lead_id)}
-              >
-                Copy Member ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>View Member Detail</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
+    const statusText = (
+      <div className={`capitalize cursor-pointer font-medium ${statusColor}`}>
+        {status}
+      </div>
+    );
+
+    if (status === "Rejected" && comment) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>{statusText}</TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              align="start"
+              className="max-w-xs whitespace-pre-line"
+            >
+              {comment}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return statusText;
+  },
+}
+,
   ];
 
   React.useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await getAllTask();
+        const params = {
+          status: "draft,Rejected",
+        };
+        const res = await getAllHandover(params);
         setData(res.data);
       } catch (err) {
         console.error("Error fetching leads:", err);
@@ -282,7 +282,7 @@ export function TeamTable() {
       <div className="flex items-center py-4">
         <div className="flex gap-4">
           <Input
-            placeholder="Filter Priority..."
+            placeholder="Filter Lead ID..."
             value={
               (table.getColumn("priority")?.getFilterValue() as string) ?? ""
             }
@@ -291,13 +291,6 @@ export function TeamTable() {
             }
             className="max-w-sm"
           />
-          <Button
-            variant="outline"
-            className="cursor-pointer"
-            onClick={() => navigate("/addtask")}
-          >
-            + Add Task
-          </Button>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -352,8 +345,6 @@ export function TeamTable() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
