@@ -16,22 +16,29 @@ interface SearchBarLeadsProps {
   selectedStage: string;
   onValueChange: (value: string) => void;
   clearFilters: () => void;
+  selectedIds: string[];
 }
 
 export default function SearchBarLeads({
   searchValue,
   onSearchChange,
+  selectedIds
 }: SearchBarLeadsProps) {
   const navigate = useNavigate();
 
-  const handleExportToCsv = async () => {
-    try {
-      await exportToCsv();
-      toast.success("CSV exported successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to export CSV");
-    }
-  };
+ const handleExportToCsv = async (selectedIds: string[]) => {
+   if (!selectedIds?.length) {
+     toast.error("No tasks selected for export.");
+     return;
+   }
+ 
+   try {
+     await exportToCsv(selectedIds);
+     toast.success("CSV exported successfully");
+   } catch (error: any) {
+     toast.error(error.message || "Failed to export CSV");
+   }
+ };
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -79,7 +86,7 @@ export default function SearchBarLeads({
           />
           <span
             className="cursor-pointer text-black hover:underline"
-            onClick={handleExportToCsv}
+            onClick={()=> handleExportToCsv(selectedIds)}
           >
             Export Leads
           </span>
