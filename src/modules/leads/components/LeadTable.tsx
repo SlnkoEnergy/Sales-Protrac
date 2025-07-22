@@ -237,6 +237,7 @@ export function DataTable({ search }: { search: string }) {
       ),
       cell: ({ row }) => {
         const navigateToLeadProfile = () => {
+          
           navigate(`/leadProfile?id=${row.original._id}`);
         };
 
@@ -594,6 +595,8 @@ export function DataTable({ search }: { search: string }) {
     setIsLoading(true);
   }, [stageFromUrl]);
 
+  
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -715,6 +718,7 @@ export function DataTable({ search }: { search: string }) {
   });
 
   const totalPages = Math.ceil(total / pageSize);
+  
 
   const table = useReactTable({
     data,

@@ -89,7 +89,7 @@ export default function LeadDocuments({ data }) {
     }
   };
 
-  console.log(data?.documents?.length)
+  
 
   return (
     <Card>

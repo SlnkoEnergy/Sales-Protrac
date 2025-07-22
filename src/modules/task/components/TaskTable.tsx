@@ -65,6 +65,7 @@ import { Badge } from "@/components/ui/badge";
 export type Task = {
   _id: string;
   lead: {
+    _id : string;
     name: string;
     id: string;
   };
@@ -153,6 +154,17 @@ export function TaskTable({
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
+      sortingFn: (rowA, rowB, columnId) => {
+        const order = {low : 0, high: 2, medium: 1};
+        
+        const a = rowA.getValue(columnId) || "";
+        const b = rowB.getValue(columnId) || "";
+
+        const aIndex = order[(a as string).toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
+        const bIndex = order[(b as string).toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
+
+        return aIndex-bIndex;
+      },
       cell: ({ row }) => {
         const priority = row.getValue("priority") as string;
         const color =
@@ -324,13 +336,19 @@ export function TaskTable({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(task.lead_id)}
+                onClick={() => navigator.clipboard.writeText(task.lead.id)}
               >
                 Copy Lead ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>View Task Detail</DropdownMenuItem>
-              <DropdownMenuItem>View Lead Detail</DropdownMenuItem>
+              <DropdownMenuItem
+              onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
+              >View Task Detail</DropdownMenuItem>
+              <DropdownMenuItem
+              onClick={() =>{
+                navigate(`/leadProfile?id=${row.original.lead._id}`);
+              }}
+              >View Lead Detail</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -380,8 +398,6 @@ export function TaskTable({
 
     fetchTasks();
   }, [statusFromUrl, page, pageSize, search, fromDeadline, toDeadline]);
-
-  console.log({ search });
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
@@ -464,6 +480,21 @@ export function TaskTable({
     setSearchParams(params);
   };
 
+  const pickerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() =>{
+    const handleClickOutside = (event: MouseEvent) =>{
+      if(pickerRef.current && !pickerRef.current.contains(event.target as Node)){
+        setShowPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>{
+      document.removeEventListener("mousedown",handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center py-4 px-2">
@@ -487,7 +518,7 @@ export function TaskTable({
         </div>
         <div className="flex flex-wrap items-center gap-4 justify-between py-2">
           {/* Deadline Date Range Picker */}
-          <div className="relative inline-block text-left">
+          <div className="relative inline-block text-left" ref={pickerRef}>
             <button
               onClick={() => setShowPicker((prev) => !prev)}
               className="border px-3 py-1.5 rounded-md text-sm flex items-center gap-2 bg-white shadow-sm"
