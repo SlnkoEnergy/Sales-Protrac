@@ -72,6 +72,12 @@ export default function SearchBarLeads({
         >
           + Add Lead
         </span>
+        <span
+          className="cursor-pointer text-black hover:underline"
+          onClick={() => navigate("/addgroup")}
+        >
+          + Add Group
+        </span>
         <div>
           <img
             src={exportImg}

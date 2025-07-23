@@ -56,7 +56,7 @@ export default function TaskForm({
   name: string;
   leadId: string;
   onClose?: () => void;
-  onTaskCreated?: (newTask: any) => void; 
+  onTaskCreated?: (newTask: any) => void;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const navigate = useNavigate();
@@ -66,6 +66,8 @@ export default function TaskForm({
   const [user, setUser] = useState([]);
   const [taskData, setTaskData] = useState([]);
   const department = "BD";
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [formData, setFormData] = useState({
     title: "",
     lead_id: "",
@@ -137,11 +139,17 @@ export default function TaskForm({
       return null;
     }
   };
+const currentUser = getCurrentUser();
+const currentUserId = getUserIdFromToken();
 
 const handleSave = async () => {
   try {
     const currentUser = getCurrentUser(); 
     const userId = currentUser._id;
+      if (type !== "todo" && selected.length === 0) {
+      toast.error("Please select at least one user to assign the task.");
+      return;
+    }
 
     const payload = {
       title: formData.title,
@@ -182,12 +190,12 @@ const handleSave = async () => {
       onClose?.();
     } else {
       navigate("/tasks");
+      }
+    } catch (err) {
+      toast.error("Failed to create Task. Please fill all the fields");
     }
-  } catch (err) {
-    toast.error("Failed to create Task. Please fill all the fields");
-  }
-};
-
+  };
+  
 
   const isDisabled = !!(id && name && leadId);
 
@@ -207,6 +215,14 @@ const handleSave = async () => {
       }
     }
   }, [id, name, leadId, leads]);
+  useEffect(() => {
+  if (type === "todo" && currentUserId) {
+    setSelected((prev) =>
+      prev.includes(currentUserId) ? prev : [...prev, currentUserId]
+    );
+  }
+}, [type, currentUserId]);
+
 
   const handleMarkDone = async () => {
     try {
@@ -241,16 +257,17 @@ const handleSave = async () => {
   const handleSelectChange = (id: string) => setSelected([id]);
   return (
     <div className="space-y-4">
-      <div>
-        <Label className="mb-2">Title</Label>
-        <Input
-          required
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Enter Title of task..."
-        />
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label className="mb-2">Title</Label>
+          <Input
+            required
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
+            placeholder="Enter Title of task..."
+          />
+        </div>
         <div>
           <Label className="mb-2">Lead Id</Label>
           <Popover open={open} onOpenChange={setOpen}>
@@ -292,13 +309,7 @@ const handleSave = async () => {
             )}
           </Popover>
         </div>
-
-        <div>
-          <Label className="mb-2">Lead Name</Label>
-          <Input value={formData.lead_name ?? ""} disabled={!!isDisabled} />
-        </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label className="mb-2">Priority</Label>
@@ -318,17 +329,8 @@ const handleSave = async () => {
           </Select>
         </div>
         <div>
-          <Label className="mb-2">Type</Label>
-          <Select>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose one" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="call">Call</SelectItem>
-              <SelectItem value="meeting">Meeting</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label className="mb-2">Lead Name</Label>
+          <Input value={formData.lead_name ?? ""} disabled={!!isDisabled} />
         </div>
       </div>
 
@@ -344,71 +346,88 @@ const handleSave = async () => {
             }
           />
         </div>
+        <div>
+          <Label className="mb-2">Type</Label>
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose one" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="call">Call</SelectItem>
+              <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        {type === "todo" ? (
-          <div className="space-y-2">
-            <Label className="mb-2">Assigned to</Label>
-            <Input disabled value={getCurrentUser()?.name || ""} />
-          </div>
-        ) : type === "meeting" ? (
-          <div className="space-y-2">
-            <Label className="mb-2">Assigned to</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left"
-                >
-                  {selected.length > 0
-                    ? selected
-                        .map((id) => user?.find((u) => u._id === id)?.name)
-                        .filter(Boolean)
-                        .join(", ")
-                    : "Select users"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-2 max-h-[300px] overflow-auto">
-                <div className="grid gap-2">
-                  {user?.map((u) => (
-                    <label
-                      key={u._id}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={selected.includes(u._id)}
-                        onCheckedChange={() => toggle(u._id)}
-                      />
-                      <span>{u.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <Label className="mb-2">Assigned to</Label>
-            <Select
-              value={selected[0] || ""}
-              onValueChange={handleSelectChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a user" />
-              </SelectTrigger>
+      <div className="space-y-2">
+  <Label className="mb-2">Assigned to</Label>
+  <Popover>
+    <PopoverTrigger asChild>
+      <div className="w-full min-h-[48px] max-h-[150px] overflow-y-auto border rounded-md px-2 py-2 flex flex-wrap gap-1 bg-white cursor-pointer">
+        {/* Show logged in user always for 'todo' */}
+        {type === "todo" && (
+          <span
+            key={currentUserId}
+            className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full"
+          >
+            {currentUser?.name || "You"}
+          </span>
+        )}
 
-              <SelectContent>
-                <div className="max-h-60 overflow-y-auto">
-                  {user?.map((u) => (
-                    <SelectItem key={u._id} value={u._id}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </div>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Show other selected users */}
+        {selected
+          .filter((id) => id !== currentUserId)
+          .map((id) => {
+            const userName = user?.find((u) => u._id === id)?.name;
+            return (
+              <span
+                key={id}
+                className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full"
+              >
+                {userName}
+              </span>
+            );
+          })}
+
+        {type !== "todo" && selected.length === 0 && (
+          <span className="text-gray-400 text-sm">Select users</span>
         )}
       </div>
+    </PopoverTrigger>
+
+    <PopoverContent className="w-full p-2 max-h-[300px] overflow-auto">
+      <Input
+        placeholder="Search users..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-2"
+      />
+      <div className="grid gap-2">
+        {user
+          ?.filter(
+            (u) =>
+              u._id !== currentUserId &&
+              u.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          .map((u) => (
+            <label
+              key={u._id}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Checkbox
+                checked={selected.includes(u._id)}
+                onCheckedChange={() => toggle(u._id)}
+              />
+              <span>{u.name}</span>
+            </label>
+          ))}
+      </div>
+    </PopoverContent>
+  </Popover>
+</div>
+
 
       <Textarea
         placeholder="Log a note..."
@@ -457,11 +476,7 @@ const handleSave = async () => {
         </AlertDialog>
 
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="secondary" className="cursor-pointer">
-              Mark Done
-            </Button>
-          </AlertDialogTrigger>
+          <AlertDialogTrigger asChild></AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
