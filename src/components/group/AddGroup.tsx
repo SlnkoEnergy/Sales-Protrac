@@ -10,7 +10,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { createBdLead } from "@/services/leads/LeadService";
+import { createGroup } from "@/services/group/GroupService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
@@ -39,16 +39,14 @@ export default function GroupDetailForm() {
   };
 
   const handleSubmit = async (e: any) => {
-    e.preventDefault();
+    e?.preventDefault();
     const requiredFields = [
-      ,
-      "groupName",
+      "group_name",
       "mobile",
       "village",
       "district",
       "state",
       "capacity",
-      "comments",
     ];
 
     const missing = requiredFields.filter((key) => !formData[key]);
@@ -59,7 +57,7 @@ export default function GroupDetailForm() {
     }
     try {
       const payload = {
-    
+        group_name: formData.group_name,
         contact_details: {
           email: formData.email,
           mobile: [formData.mobile, formData.altMobile].filter(Boolean),
@@ -67,6 +65,7 @@ export default function GroupDetailForm() {
         company_name: formData.companyName,
 
         address: {
+          village: formData.village,
           district: formData.district,
           state: formData.state,
           postalCode: formData.pincode || "",
@@ -75,40 +74,23 @@ export default function GroupDetailForm() {
 
         project_details: {
           capacity: formData.capacity,
-          distance_from_substation: {
-            value: formData.subStationDistance,
-            unit: "km",
-          },
-          available_land: {
-            value: formData.land,
-            unit: "km",
-          },
-          tarrif: formData.tariff,
+
           scheme: formData.scheme,
-          land_type: formData.landType || "Owned",
         },
 
         source: {
           from: source,
-          sub_source: subSource || "",
+          sub_source: subSource || "N/A",
         },
-
-        comments: formData.comments,
-        current_status: {
-          name: "initial",
-        },
-        submitted_by: getCurrentUser()._id,
-
-        documents: [],
-        token_money: "",
-        interest: "",
+        createdBy: getCurrentUser()._id,
       };
 
-      await createBdLead({ data: payload });
-      toast.success("Lead Created Successfully!");
+      await createGroup({ data: payload });
+
+      toast.success("Group Created Successfully!");
       navigate("/leads");
     } catch (err) {
-      toast.error("Failed to create Lead");
+      toast.error("Failed to create Group");
     }
   };
 
@@ -126,16 +108,17 @@ export default function GroupDetailForm() {
         className="max-w-5xl mx-auto p-8 rounded-xl shadow-md border bg-white"
         onSubmit={handleSubmit}
       >
-        <h2 className="text-3xl font-bold mb-6 text-center">Add Group Detail</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center">
+          Add Group Detail
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
-            
-            ["Company Name", "companyName", false],
-            ["Group Name", "groupName", false],
+            ["Company Name", "companyName", true],
+            ["Group Name", "group_name", true],
             [
               "Source",
               "source",
-              true,
+              false,
               "select",
               [
                 "Marketing",
@@ -187,9 +170,6 @@ export default function GroupDetailForm() {
               ],
             ],
             ["Capacity", "capacity", true],
-            ["Sub Station Distance (KM)", "subStationDistance", false],
-            ["Tariff (Per Unit)", "tariff", false],
-            ["Available Land (acres)", "land", false],
             [
               "Scheme",
               "scheme",
@@ -197,8 +177,6 @@ export default function GroupDetailForm() {
               "select",
               ["KUSUM A", "KUSUM C", "KUSUM C2", "Other"],
             ],
-            ["Land Types", "landType", false, "select", ["Leased", "Owned"]],
-            ["Comments", "comments", true, "textarea"],
           ].map(([label, name, required, type = "input", options], idx) => {
             const isSource = name === "source";
             if (isSource) {
