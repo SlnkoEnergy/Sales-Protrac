@@ -296,3 +296,14 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
     throw new Error(error.response?.data?.message || "Failed to export CSV");
   }
 };
+
+export const getAllGroupName = async() =>{
+  try {
+    
+    const response = await Axios.get("/bddashboard/group-drop");
+    console.log(response.data);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+}

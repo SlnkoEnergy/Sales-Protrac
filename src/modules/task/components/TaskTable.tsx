@@ -198,14 +198,16 @@ export function TaskTable({
       ),
     },
     {
-      accessorKey: "lead",
+      id: "Lead ID",
+      accessorFn: (row) => row.lead?.id,
       header: "Lead ID",
-      cell: ({ row }) => {
-        const lead = row.getValue("lead") as any;
-        return <div>{lead?.id}</div>;
+      cell: ({getValue}) => {
+        // const lead = row.getValue("lead") as any;
+        return <div>{String(getValue())}</div>;
       },
     },
     {
+      id: "Lead Name",
       accessorKey: "lead",
       header: "Lead Name",
       cell: ({ row }) => {

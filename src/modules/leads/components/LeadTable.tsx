@@ -831,7 +831,7 @@ export function DataTable({
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
-                      className="capitalize cursor-pointer"
+                      className="capitalize cursor-pointer" 
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
