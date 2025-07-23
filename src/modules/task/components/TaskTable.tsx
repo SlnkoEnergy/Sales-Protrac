@@ -339,13 +339,7 @@ export function TaskTable({
         );
       },
     },
-    {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("type")}</div>
-      ),
-    },
+
     {
       accessorKey: "user_id",
       header: "Created By",
