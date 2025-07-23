@@ -69,10 +69,16 @@ export default function LeadDocuments({ data }) {
 
     const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
     const docType = itemType.toLowerCase();
+    const isExpectedDateValid =
+      expectedDate instanceof Date && !isNaN(expectedDate.getTime());
+
     if (
-      !data.expected_closing_date &&
+      !(
+        data.expected_closing_date instanceof Date &&
+        !isNaN(data.expected_closing_date.getTime())
+      ) &&
       (docType === "loa" || docType === "ppa") &&
-      !expectedDate
+      !isExpectedDateValid
     ) {
       toast.error("Expected Closing Date is required for LOA and PPA.");
       return;
@@ -92,6 +98,9 @@ export default function LeadDocuments({ data }) {
       console.log({ customDocName });
       toast.success("✅ File Uploaded Successfully");
       setSelectedFile(null);
+      setTimeout(() => {
+        location.reload();
+      }, 300);
     } catch (error) {
       toast.error("❌ Upload failed.");
     } finally {
@@ -99,7 +108,6 @@ export default function LeadDocuments({ data }) {
     }
   };
 
-  
   console.log(data?.documents?.length);
 
   return (

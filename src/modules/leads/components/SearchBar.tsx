@@ -74,9 +74,9 @@ export default function SearchBarLeads({
         </span>
         <span
           className="cursor-pointer text-black hover:underline"
-          onClick={() => navigate("/addtask")}
+          onClick={() => navigate("/addgroup")}
         >
-          + Add Task
+          + Add Group
         </span>
         <div>
           <img

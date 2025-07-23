@@ -63,10 +63,22 @@ const StatusCell: React.FC<Props> = ({
 
     const stage = openModal.toLowerCase() === "loi" ? "follow up" : "warm";
 
-    // use pendingDate if expected_closing_date is undefined
-    const dateToSend = expected_closing_date ?? pendingDate;
+    let dateToSend = "";
 
-    if (stage === "warm" && !dateToSend && expected_closing_date === undefined) {
+    if (
+      expected_closing_date instanceof Date &&
+      !isNaN(expected_closing_date.getTime())
+    ) {
+      dateToSend = expected_closing_date.toISOString();
+    } else if (pendingDate instanceof Date && !isNaN(pendingDate.getTime())) {
+      dateToSend = pendingDate.toISOString();
+    }
+
+    if (
+      stage === "warm" &&
+      !dateToSend &&
+      expected_closing_date === undefined
+    ) {
       toast.error("Expected Closing Date is required");
       return;
     }
@@ -97,15 +109,13 @@ const StatusCell: React.FC<Props> = ({
     if (!leadId || !selectedStatus) return;
 
     if (
-      selectedStatus === "warm"  &&
-      (!pendingDate || isNaN(pendingDate.getTime()) &&
-      expected_closing_date === undefined)
+      selectedStatus === "warm" &&
+      (!pendingDate ||
+        (isNaN(pendingDate.getTime()) && expected_closing_date === undefined))
     ) {
       toast.error("Expected Closing Date is required for Warm status");
       return;
     }
-
-    console.log({expected_closing_date});
 
     try {
       await updateLeadStatus(
@@ -113,7 +123,7 @@ const StatusCell: React.FC<Props> = ({
         selectedStatus,
         selectedLabel,
         remarks || "",
-        pendingDate 
+        pendingDate
       );
       toast.success(`Status updated to ${selectedStatus}`);
       setStatusDialogOpen(false);
@@ -161,9 +171,6 @@ const StatusCell: React.FC<Props> = ({
               </ContextMenuItem>
             </>
           )}
-
-          {/* Always show these */}
-          {/* Static options that trigger remarks dialog */}
           {normalizedStatus !== "dead" && (
             <>
               <ContextMenuItem
@@ -224,16 +231,13 @@ const StatusCell: React.FC<Props> = ({
             onChange={(e) => setRemarks(e.target.value)}
           />
           {expected_closing_date === undefined &&
-            // Case 1: warm status with label NOT in ["as per choice", "won", "token money"]
             ((selectedStatus === "warm" &&
               !["as per choice", "won"].includes(
                 selectedLabel?.toLowerCase?.()
               ) &&
               selectedLabel !== "token money") ||
-              // Case 2: follow up with "as per choice"
               (selectedStatus === "follow up" &&
                 selectedLabel?.toLowerCase?.() === "as per choice") ||
-              // Case 3: warm with "as per choice"
               (selectedStatus === "warm" &&
                 selectedLabel?.toLowerCase?.() === "as per choice")) && (
               <Input
@@ -245,7 +249,10 @@ const StatusCell: React.FC<Props> = ({
                     ? pendingDate.toISOString().split("T")[0]
                     : ""
                 }
-                onChange={(e) => setPendingDate(new Date(e.target.value))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPendingDate(val ? new Date(val) : null); // set to null if cleared
+                }}
               />
             )}
 
@@ -275,17 +282,23 @@ const StatusCell: React.FC<Props> = ({
               type="file"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
             />
+
             {expected_closing_date === undefined && (
-              <Input
-                type="date"
-                placeholder="Expected Closing Date"
-                value={
-                  pendingDate instanceof Date && !isNaN(pendingDate.getTime())
-                    ? pendingDate.toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={(e) => setPendingDate(new Date(e.target.value))}
-              />
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Expected Closing Date
+                </label>
+                <Input
+                  type="date"
+                  placeholder="Expected Closing Date"
+                  value={
+                    pendingDate instanceof Date && !isNaN(pendingDate.getTime())
+                      ? pendingDate.toISOString().split("T")[0]
+                      : ""
+                  }
+                  onChange={(e) => setPendingDate(new Date(e.target.value))}
+                />
+              </div>
             )}
 
             <Button
