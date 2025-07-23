@@ -21,3 +21,17 @@ export const getGroupById = async (id) => {
     return { success: false, data: [], total: 0 };
   }
 };
+
+export const updateGroupStatus = async ({ id, status, remarks }) => {
+  try {
+    const response = await Axios.put(`/bddashboard/${id}/updateGroupStatus`, {
+      status,
+      remarks,
+    });
+    return response.data;
+  } catch (error) {
+    const errMsg = error?.response?.data?.message || "Failed to update status";
+    error.message = errMsg;
+    throw error;
+  }
+};

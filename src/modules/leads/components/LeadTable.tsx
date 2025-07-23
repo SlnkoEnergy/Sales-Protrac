@@ -147,9 +147,11 @@ export type stageCounts = {
 export function DataTable({
   search,
   onSelectionChange,
+  group_id
 }: {
   search: string;
   onSelectionChange: (ids: string[]) => void;
+  group_id: string;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
@@ -612,6 +614,7 @@ export function DataTable({
           page,
           limit: pageSize,
           search,
+          group_id: isFromGroup? group_id : ""
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -756,7 +759,7 @@ export function DataTable({
   if (isLoading) return <Loader />;
 
   return (
-  <div className={`${isFromGroup ? "w-[calc(67vw)] overflow-y-auto" : "w-full"}`}>
+  <div className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}>
       <div className="flex justify-between items-center py-4 px-2">
         {!isFromGroup && (
              <div>
