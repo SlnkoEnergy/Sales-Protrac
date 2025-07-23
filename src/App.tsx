@@ -15,6 +15,7 @@ import { DateFilterProvider } from "./modules/dashboard/components/DateFilterCon
 import Layout from "./components/layout/Layout";
 import DocumentViewer from "./components/lead/DocumentViewer";
 import Handover from "./modules/team/pages/HandoverDashboard";
+import Group from "./modules/group/pages/AddGroup";
 
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
             <Route path="editlead" element={<EditLead />} />
             <Route path="meeting" element={<Meetings />} />
             <Route path="handover" element={<Handover />} />
+            <Route path="addgroup" element={<Group />} />
           </Route>
         </Routes>
       </Router>

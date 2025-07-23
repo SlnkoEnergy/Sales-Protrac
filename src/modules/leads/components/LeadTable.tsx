@@ -443,6 +443,7 @@ export function DataTable({ search }: { search: string }) {
                 <>
                   <input
                     type="date"
+                  
                     className="border rounded text-xs px-1 py-0.5"
                     onChange={handleDateChange}
                   />

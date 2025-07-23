@@ -273,17 +273,23 @@ const StatusCell: React.FC<Props> = ({
               type="file"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
             />
+
             {expected_closing_date === undefined && (
-              <Input
-                type="date"
-                placeholder="Expected Closing Date"
-                value={
-                  pendingDate instanceof Date && !isNaN(pendingDate.getTime())
-                    ? pendingDate.toISOString().split("T")[0]
-                    : ""
-                }
-                onChange={(e) => setPendingDate(new Date(e.target.value))}
-              />
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Expected Closing Date
+                </label>
+                <Input
+                  type="date"
+                  placeholder="Expected Closing Date"
+                  value={
+                    pendingDate instanceof Date && !isNaN(pendingDate.getTime())
+                      ? pendingDate.toISOString().split("T")[0]
+                      : ""
+                  }
+                  onChange={(e) => setPendingDate(new Date(e.target.value))}
+                />
+              </div>
             )}
 
             <Button
