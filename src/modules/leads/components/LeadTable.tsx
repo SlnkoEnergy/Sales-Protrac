@@ -134,6 +134,9 @@ export type Lead = {
   leadAgeing: string;
   expected_closing_date: Date;
   handover: boolean;
+  group_code: string;
+  group_name: string;
+  group_id: string;
 };
 
 export type stageCounts = {
@@ -189,6 +192,33 @@ export function DataTable({
   };
   const navigate = useNavigate();
   const isFromGroup = location.pathname === "/groupDetail";
+
+  const groupInfoColumn = {
+    id: "group_info",
+    accessorFn: (row) => row?.name,
+    header: "Group Info",
+    cell: ({ row }) => {
+      const navigateToGroupProfile = () => {
+        navigate(`/groupDetail?id=${row.original.group_id}`);
+      };
+
+      const code = row?.original?.group_code || "";
+      const name = row?.original?.group_name;
+
+      if (!code) return <div className="text-gray-500">-</div>;
+
+      return (
+        <div
+          onClick={navigateToGroupProfile}
+          className="cursor-pointer hover:text-[#214b7b]"
+        >
+          <div className="font-medium">{code}</div>
+          <div className="text-sm text-gray-500">{name}</div>
+        </div>
+      );
+    },
+  };
+
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",
@@ -233,68 +263,69 @@ export function DataTable({
       ),
       cell: ({ row }) => <div>{row.getValue("id")}</div>,
     },
-   {
-  id: "client_info",
-  accessorFn: (row) => row?.name,
-  header: ({ column }) => (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    >
-      Client Info <ArrowUpDown />
-    </Button>
-  ),
-  cell: ({ row }) => {
-    const navigateToLeadProfile = () => {
-      navigate(`/leadProfile?id=${row.original._id}`);
-    };
+    {
+      id: "client_info",
+      accessorFn: (row) => row?.name,
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Client Info <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const navigateToLeadProfile = () => {
+          navigate(`/leadProfile?id=${row.original._id}`);
+        };
 
-    const mobile = row.original?.contact_details?.mobile;
-    const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-    const first = mobiles[0];
-    const remaining = mobiles.slice(1);
-    const tooltipContent = remaining.join(", ");
-    const name = row?.original?.name || "";
-    const truncatedName = name.length > 15 ? `${name.slice(0, 15)}...` : name;
+        const mobile = row.original?.contact_details?.mobile;
+        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
+        const first = mobiles[0];
+        const remaining = mobiles.slice(1);
+        const tooltipContent = remaining.join(", ");
+        const name = row?.original?.name || "";
+        const truncatedName =
+          name.length > 15 ? `${name.slice(0, 15)}...` : name;
 
-    return (
-      <div
-        onClick={navigateToLeadProfile}
-        className="cursor-pointer hover:text-[#214b7b]"
-      >
-        <div className="font-medium">{truncatedName}</div>
+        return (
+          <div
+            onClick={navigateToLeadProfile}
+            className="cursor-pointer hover:text-[#214b7b]"
+          >
+            <div className="font-medium">{truncatedName}</div>
 
-        {mobiles.length > 0 ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex gap-1 text-sm text-gray-500 items-center">
-                  <div>{first}</div>
+            {mobiles.length > 0 ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex gap-1 text-sm text-gray-500 items-center">
+                      <div>{first}</div>
+                      {remaining.length > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs px-2 py-0.5 cursor-default"
+                        >
+                          <Phone size={14} />+{remaining.length}
+                        </Badge>
+                      )}
+                    </div>
+                  </TooltipTrigger>
                   {remaining.length > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs px-2 py-0.5 cursor-default"
-                    >
-                      <Phone size={14} />+{remaining.length}
-                    </Badge>
+                    <TooltipContent side="bottom" align="start">
+                      {tooltipContent}
+                    </TooltipContent>
                   )}
-                </div>
-              </TooltipTrigger>
-              {remaining.length > 0 && (
-                <TooltipContent side="bottom" align="start">
-                  {tooltipContent}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <div className="text-sm text-gray-500">-</div>
-        )}
-      </div>
-    );
-  },
-}
-,
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <div className="text-sm text-gray-500">-</div>
+            )}
+          </div>
+        );
+      },
+    },
+    ...(isFromGroup ? [] : [groupInfoColumn]),
     {
       id: "location_info",
       header: "Location Info",

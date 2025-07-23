@@ -64,6 +64,7 @@ export type Lead = {
   createdAt: Date;
   current_assigned: {
     user_id: {
+      _id: string;
       name: string;
     };
     status: {
@@ -221,6 +222,7 @@ export default function LeadProfile() {
     ? fullComment.slice(0, charLimit) + "..."
     : fullComment;
 
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
@@ -240,16 +242,14 @@ export default function LeadProfile() {
                 Lead Info
               </TabsTrigger>
 
-              {(data?.current_status?.name === "won" &&
-                getUserIdFromToken() ===
-                  data?.current_assigned?.user_id?._id) ||
-                (["admin", "Deepak Manodi"].includes(
-                  getCurrentUser()?.name
-                ) && (
-                  <TabsTrigger className="cursor-pointer" value="handover">
-                    Handover
-                  </TabsTrigger>
-                ))}
+             {((data?.current_status?.name === "won" &&
+   data?.current_assigned?.user_id?._id === getUserIdFromToken()) ||
+  ["admin", "Deepak Manodi"].includes(getCurrentUser()?.name)) && (
+    <TabsTrigger className="cursor-pointer" value="handover">
+      Handover
+    </TabsTrigger>
+)}
+
 
               <TabsTrigger className="cursor-pointer" value="timeline">
                 Timeline

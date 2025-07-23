@@ -20,27 +20,25 @@ export type GroupName = {
   _id: string;
   group_code: string;
   group_name: string;
-  "source": {
-    "from": string;
-    "sub_source": string;
-  },
-  "contact_details": {
-    "email": string;
-    "mobile": string[];
-  }
-  "address": {
-    "village": string;
-    "district": string;
-    "state": string;
-
-  },
-  "project_details": {
-    "scheme": string;
-  }
-  "current_status": {
-    "status": string;
-   
-  }
+  source: {
+    from: string;
+    sub_source: string;
+  };
+  contact_details: {
+    email: string;
+    mobile: string[];
+  };
+  address: {
+    village: string;
+    district: string;
+    state: string;
+  };
+  project_details: {
+    scheme: string;
+  };
+  current_status: {
+    status: string;
+  };
 };
 
 export default function AddLead() {
@@ -51,7 +49,6 @@ export default function AddLead() {
   const [data, setData] = useState<GroupName[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupName | null>(null);
   const navigate = useNavigate();
-
 
   const subSourceOptions: Record<string, string[]> = {
     "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
@@ -83,7 +80,6 @@ export default function AddLead() {
           mobile: [formData.mobile, formData.altMobile].filter(Boolean),
         },
         company_name: formData.companyName,
-
         address: {
           district: formData.district,
           state: formData.state,
@@ -244,7 +240,7 @@ export default function AddLead() {
                         value={formData.source || ""}
                         onValueChange={(val) => {
                           handleChange("source", val);
-                          handleChange("sub_source", ""); // Reset sub-source when source changes
+                          handleChange("sub_source", "");
                         }}
                         disabled={!!selectedGroup}
                       >
@@ -267,18 +263,22 @@ export default function AddLead() {
                         <Label htmlFor="sub_source">Sub-Source</Label>
                         <Select
                           value={formData.sub_source || ""}
-                          onValueChange={(val) => handleChange("sub_source", val)}
+                          onValueChange={(val) =>
+                            handleChange("sub_source", val)
+                          }
                           disabled={!!selectedGroup}
                         >
                           <SelectTrigger id="sub_source">
                             <SelectValue placeholder="Select Sub-Source" />
                           </SelectTrigger>
                           <SelectContent>
-                            {subSourceOptions[formData.source].map((sub, idx) => (
-                              <SelectItem key={idx} value={sub}>
-                                {sub}
-                              </SelectItem>
-                            ))}
+                            {subSourceOptions[formData.source].map(
+                              (sub, idx) => (
+                                <SelectItem key={idx} value={sub}>
+                                  {sub}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -306,6 +306,7 @@ export default function AddLead() {
                   {type === "input" && name !== "groupname" && (
                     <Input
                       id={name as string}
+                      type={name === "capacity" ? "number" : "text"}
                       value={formData[name as string] || ""}
                       onChange={(e) =>
                         handleChange(name as string, e.target.value)
@@ -317,20 +318,20 @@ export default function AddLead() {
                         name !== "subStationDistance" &&
                         name !== "tariff" &&
                         name !== "land" &&
-                        !!selectedGroup}
+                        !!selectedGroup
+                      }
                     />
                   )}
-                  {
-                    type === "input" && name === "groupname" && (
-                      <Input
-                        className="mt-2.5 min-h-11"
-                        id="groupcode"
-                        value={selectedGroup?.group_name || ""}
-                        disabled
-                        placeholder="Group Name"
-                      />
-                    )
-                  }
+
+                  {type === "input" && name === "groupname" && (
+                    <Input
+                      className="mt-2.5 min-h-11"
+                      id="groupcode"
+                      value={selectedGroup?.group_name || ""}
+                      disabled
+                      placeholder="Group Name"
+                    />
+                  )}
 
                   {type === "textarea" && (
                     <Textarea
@@ -351,58 +352,60 @@ export default function AddLead() {
                     />
                   )}
 
-                  {type === "select" && name === "groupcode" && showGroupDropDown && (
-                    <Select
-                      onValueChange={(val) => {
-                        const group = data.find((g) => g._id === val);
-                        setSelectedGroup(group || null);
-                        handleChange(name as string, val);
-                        handleChange("groupname", group?.group_name || "");
+                  {type === "select" &&
+                    name === "groupcode" &&
+                    showGroupDropDown && (
+                      <Select
+                        onValueChange={(val) => {
+                          const group = data.find((g) => g._id === val);
+                          setSelectedGroup(group || null);
+                          handleChange(name as string, val);
+                          handleChange("groupname", group?.group_name || "");
 
-                        if (group) {
-                          setFormData((prev: any) => ({
-                            ...prev,
-                            email: group.contact_details?.email || "",
-                            mobile: group.contact_details?.mobile[0] || "",
-                            altMobile: group.contact_details?.mobile[1] || "",
-                            district: group.address?.district || "",
-                            state: group.address?.state || "",
-                            village: group.address?.village || "",
-                            scheme: group.project_details?.scheme || "",
-                            source: group.source.from || "",
-                            sub_source: group.source.sub_source || "",
-                          }));
+                          if (group) {
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              email: group.contact_details?.email || "",
+                              mobile: group.contact_details?.mobile[0] || "",
+                              altMobile: group.contact_details?.mobile[1] || "",
+                              district: group.address?.district || "",
+                              state: group.address?.state || "",
+                              village: group.address?.village || "",
+                              scheme: group.project_details?.scheme || "",
+                              source: group.source.from || "",
+                              sub_source: group.source.sub_source || "",
+                            }));
 
-                          setSource(group.source.from || "");              // ✅ So subSourceOptions works
-                          setSubSource(group.source.sub_source || "");
-                        }
-                      }}
-                    >
-                      <SelectTrigger id={name as string}>
-                        <SelectValue placeholder={label} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data
-                          .filter((group) => group.current_status.status !== "closed")
-                          .map((group) => (
-                          <SelectItem key={group._id} value={group._id}>
-                            {group.group_code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                            setSource(group.source.from || ""); // ✅ So subSourceOptions works
+                            setSubSource(group.source.sub_source || "");
+                          }
+                        }}
+                      >
+                        <SelectTrigger id={name as string}>
+                          <SelectValue placeholder={label} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {data
+                            .filter(
+                              (group) =>
+                                group.current_status.status !== "closed"
+                            )
+                            .map((group) => (
+                              <SelectItem key={group._id} value={group._id}>
+                                {group.group_code}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
 
                   {type === "select" && name !== "groupcode" && (
                     <Select
-
                       onValueChange={(val) => handleChange(name as string, val)}
                       value={formData[name as string] || ""}
                       disabled={name !== "landType" && !!selectedGroup}
                     >
-                      <SelectTrigger id={name as string}
-
-                      >
+                      <SelectTrigger id={name as string}>
                         <SelectValue placeholder={label} />
                       </SelectTrigger>
                       <SelectContent>
@@ -417,7 +420,6 @@ export default function AddLead() {
                 </div>
               );
             })}
-
         </div>
       </form>
     </div>
