@@ -34,6 +34,12 @@ import LeadDocuments from "../components/LeadDocument";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import HandoverForm from "../components/Handover";
 import Leads from "./Leads";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type Lead = {
   _id: string;
@@ -157,7 +163,6 @@ export default function LeadProfile() {
     formRef.current?.resetForm();
   };
 
-
   React.useEffect(() => {
     const locked = formRef.current?.getStatus?.();
     const status = formRef.current?.updated?.();
@@ -171,13 +176,50 @@ export default function LeadProfile() {
   }, [formRef.current]);
 
   const handleTabChange = (newTab: string) => {
-  setActiveTab(newTab);
-  setSearchParams((prev) => {
-    const updated = new URLSearchParams(prev);
-    updated.set("tab", newTab);
-    return updated;
-  });
-};
+    setActiveTab(newTab);
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+      updated.set("tab", newTab);
+      return updated;
+    });
+  };
+
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
+
+  const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  const fullComment = data?.comments || "";
+  const charLimit = 15;
+  const isTruncated = fullComment.length > charLimit;
+  const displayedComment = isTruncated
+    ? fullComment.slice(0, charLimit) + "..."
+    : fullComment;
 
   return (
     <div className="p-6 space-y-4">
@@ -198,11 +240,16 @@ export default function LeadProfile() {
                 Lead Info
               </TabsTrigger>
 
-              {data?.current_status?.name === "won" && (
-                <TabsTrigger className="cursor-pointer" value="handover">
-                  Handover
-                </TabsTrigger>
-              )}
+              {(data?.current_status?.name === "won" &&
+                getUserIdFromToken() ===
+                  data?.current_assigned?.user_id?._id) ||
+                (["admin", "Deepak Manodi"].includes(
+                  getCurrentUser()?.name
+                ) && (
+                  <TabsTrigger className="cursor-pointer" value="handover">
+                    Handover
+                  </TabsTrigger>
+                ))}
 
               <TabsTrigger className="cursor-pointer" value="timeline">
                 Timeline
@@ -213,12 +260,21 @@ export default function LeadProfile() {
 
         {activeTab === "info" && (
           <div className="flex gap-2">
-           
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="cursor-pointer" variant="destructive" size="sm">
-                  Remove Lead
-                </Button>
+                {(data?.current_assigned?.user_id?._id ===
+                  getUserIdFromToken() ||
+                  ["admin", "Deepak Manodi"].includes(
+                    getCurrentUser()?.name
+                  )) && (
+                  <Button
+                    className="cursor-pointer"
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Remove Lead
+                  </Button>
+                )}
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -229,10 +285,15 @@ export default function LeadProfile() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogAction className="cursor-pointer" onClick={handleDelete}>
+                  <AlertDialogAction
+                    className="cursor-pointer"
+                    onClick={handleDelete}
+                  >
                     Yes, delete
                   </AlertDialogAction>
-                  <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="cursor-pointer">
+                    Cancel
+                  </AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -377,9 +438,24 @@ export default function LeadProfile() {
                 <p>
                   <strong>Company:</strong> {data?.company_name}
                 </p>
-                <p>
-                  <strong>Description:</strong> {data?.comments}
-                </p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-sm text-gray-700 cursor-default max-w-[300px]">
+                        <strong>Description:</strong> {displayedComment}
+                      </p>
+                    </TooltipTrigger>
+                    {isTruncated && (
+                      <TooltipContent side="bottom" align="start">
+                        <div className="whitespace-pre-wrap text-sm max-w-[300px]">
+                          {fullComment.split("\n").map((line, i) => (
+                            <div key={i}>{line}</div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </CardContent>
               <CardFooter className="flex flex-col gap-2 items-start">
                 <Separator />
@@ -395,7 +471,10 @@ export default function LeadProfile() {
                 id={id}
                 taskData={taskData}
               />
-              <LeadDocuments data={data} />
+              {(data?.current_assigned?.user_id?._id === getUserIdFromToken() ||
+                ["admin", "Deepak Manodi"].includes(
+                  getCurrentUser()?.name
+                )) && <LeadDocuments data={data} />}
             </div>
           </div>
         </TabsContent>

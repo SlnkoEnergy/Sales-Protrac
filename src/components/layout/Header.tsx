@@ -11,6 +11,7 @@ import {
   LogOut,
   User2,
   File,
+  Group,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -40,6 +41,7 @@ export default function Header() {
   const isActiveTask = location.pathname === "/tasks";
   const isActiveLead = location.pathname === "/leads";
   const isActiveDashboard = location.pathname === "/";
+  const isActiveGroup = location.pathname === "/group"
 
   const toggleDrawer = () => setShowDrawer(!showDrawer);
   const toggleNotifications = () => setShowNotifications(!showNotifications);
@@ -108,9 +110,18 @@ export default function Header() {
         </div>
         <div
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveGroup ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
+          onClick={() => navigate("/group")}
+        >
+          <Group size={18} />
+          <span>Groups</span>
+        </div>
+        <div
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
             isActiveLead ? "bg-white text-[#214b7b] font-medium" : ""
           }`}
-          onClick={() => navigate("/leads")}
+          onClick={() => navigate("/leads?stage=lead_without_task")}
         >
           <Users size={18} />
           <span>Leads</span>

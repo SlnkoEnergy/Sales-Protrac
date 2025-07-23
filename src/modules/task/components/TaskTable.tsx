@@ -65,7 +65,7 @@ import { Badge } from "@/components/ui/badge";
 export type Task = {
   _id: string;
   lead: {
-    _id : string;
+    _id: string;
     name: string;
     id: string;
   };
@@ -78,9 +78,10 @@ export type Task = {
   type: "todo" | "meeting" | "call" | "sms" | "email";
   current_status: "pending" | "completed" | "in progress";
   deadline: Date;
-  user_id:{
-    name:string;
-  }
+  user_id: {
+    name: string;
+    _id: string;
+  };
 };
 
 export function TaskTable({
@@ -158,15 +159,17 @@ export function TaskTable({
         </Button>
       ),
       sortingFn: (rowA, rowB, columnId) => {
-        const order = {low : 0, high: 2, medium: 1};
-        
+        const order = { low: 0, high: 2, medium: 1 };
+
         const a = rowA.getValue(columnId) || "";
         const b = rowB.getValue(columnId) || "";
 
-        const aIndex = order[(a as string).toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
-        const bIndex = order[(b as string).toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
+        const aIndex =
+          order[(a as string).toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
+        const bIndex =
+          order[(b as string).toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
 
-        return aIndex-bIndex;
+        return aIndex - bIndex;
       },
       cell: ({ row }) => {
         const priority = row.getValue("priority") as string;
@@ -207,7 +210,20 @@ export function TaskTable({
       header: "Lead Name",
       cell: ({ row }) => {
         const lead = row.getValue("lead") as any;
-        return <div>{lead?.name}</div>;
+        const navigate = useNavigate();
+
+        const navigateToLeadProfile = () => {
+          navigate(`/leadProfile?id=${row.original.lead._id}`);
+        };
+
+        return (
+          <div
+            onClick={navigateToLeadProfile}
+            className="cursor-pointer hover:text-[#214b7b]"
+          >
+            {lead?.name}
+          </div>
+        );
       },
     },
 
@@ -331,13 +347,11 @@ export function TaskTable({
       ),
     },
     {
-      accessorKey: "user_id.name",
-      header: "Lead Name",
+      accessorKey: "user_id",
+      header: "Created By",
       cell: ({ row }) => {
         const lead = row.getValue("user_id") as any;
-        return <div>{lead?.name
-        
-        }</div>;
+        return <div>{lead?.name}</div>;
       },
     },
     {
@@ -362,13 +376,17 @@ export function TaskTable({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-              onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
-              >View Task Detail</DropdownMenuItem>
+                onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
+              >
+                View Task Detail
+              </DropdownMenuItem>
               <DropdownMenuItem
-              onClick={() =>{
-                navigate(`/leadProfile?id=${row.original.lead._id}`);
-              }}
-              >View Lead Detail</DropdownMenuItem>
+                onClick={() => {
+                  navigate(`/leadProfile?id=${row.original.lead._id}`);
+                }}
+              >
+                View Lead Detail
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
@@ -502,16 +520,19 @@ export function TaskTable({
 
   const pickerRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() =>{
-    const handleClickOutside = (event: MouseEvent) =>{
-      if(pickerRef.current && !pickerRef.current.contains(event.target as Node)){
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
         setShowPicker(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>{
-      document.removeEventListener("mousedown",handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 

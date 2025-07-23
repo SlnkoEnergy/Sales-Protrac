@@ -138,26 +138,42 @@ export default function TaskForm({
     }
   };
 
- const handleSave = async () => {
+const handleSave = async () => {
   try {
+    const currentUser = getCurrentUser(); 
+    const userId = currentUser._id;
+
     const payload = {
       title: formData.title,
       lead_id: formData.lead_id,
       user_id: getUserIdFromToken(),
       type,
-      assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
+      assigned_to: type === "todo" ? [userId] : selected,
       deadline: formData.due_date,
       priority: formData.priority,
       description: formData.description,
     };
 
-    const res = await createTask(payload); 
+    const res = await createTask(payload);
     const createdTask = res.task;
+
+    createdTask.user_id = {
+      _id: userId,
+      name: currentUser.name,
+    };
 
     toast.success("Task Created Successfully");
 
     // Clear form
-    setFormData({ title: "", lead_id: "", lead_name: "", priority: "", due_date: "", assigned_to: [], description: "" });
+    setFormData({
+      title: "",
+      lead_id: "",
+      lead_name: "",
+      priority: "",
+      due_date: "",
+      assigned_to: [],
+      description: "",
+    });
     setSelected([]);
 
     onTaskCreated?.(createdTask);
@@ -171,6 +187,7 @@ export default function TaskForm({
     toast.error("Failed to create Task. Please fill all the fields");
   }
 };
+
 
   const isDisabled = !!(id && name && leadId);
 

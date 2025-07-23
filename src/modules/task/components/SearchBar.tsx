@@ -73,12 +73,6 @@ export default function SearchBarTasks({
         >
           + Add Lead
         </span>
-        <span
-          className="cursor-pointer text-black hover:underline"
-          onClick={() => navigate("/addtask")}
-        >
-          + Add Task
-        </span>
         <div>
           <img
             src={exportImg}

@@ -32,6 +32,7 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="group" element={<Leads />} />
             <Route path="leads" element={<Leads />} />
             <Route path="document-viewer" element={<DocumentViewer />} /> {/* ✅ FIXED */}
             <Route path="leadProfile" element={<LeadProfile />} />
