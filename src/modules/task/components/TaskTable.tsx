@@ -202,7 +202,6 @@ export function TaskTable({
       accessorFn: (row) => row.lead?.id,
       header: "Lead ID",
       cell: ({getValue}) => {
-        // const lead = row.getValue("lead") as any;
         return <div>{String(getValue())}</div>;
       },
     },
@@ -211,10 +210,11 @@ export function TaskTable({
       accessorKey: "lead",
       header: "Lead Name",
       cell: ({ row }) => {
-        const lead = row.getValue("lead") as any;
+        
         const navigate = useNavigate();
-
+        
         const navigateToLeadProfile = () => {
+          
           navigate(`/leadProfile?id=${row.original.lead._id}`);
         };
 
@@ -223,7 +223,7 @@ export function TaskTable({
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
-            {lead?.name}
+            {row.original.lead?.name}
           </div>
         );
       },
@@ -626,11 +626,7 @@ export function TaskTable({
                 .map((column) => {
                   const colHeader = column.columnDef.header;
                   const label =
-                    column.id === "id"
-                      ? "Lead ID"
-                      : column.id === "name"
-                      ? "Name"
-                      : typeof colHeader === "string"
+                    typeof colHeader === "string"
                       ? colHeader
                       : column.id;
 

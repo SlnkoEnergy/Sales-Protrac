@@ -144,13 +144,7 @@ export type stageCounts = {
   dead: number;
   all: number;
 };
-export function DataTable({
-  search,
-  onSelectionChange,
-}: {
-  search: string;
-  onSelectionChange: (ids: string[]) => void;
-}) {
+export function DataTable({ search }: { search: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
@@ -186,9 +180,6 @@ export function DataTable({
     return d && !isNaN(parsed.getTime());
   };
   const navigate = useNavigate();
-  const isFromGroup = location.pathname === "/groupDetail";
-
-  console.log({isFromGroup});
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",
@@ -246,18 +237,15 @@ export function DataTable({
       ),
       cell: ({ row }) => {
         const navigateToLeadProfile = () => {
+          
           navigate(`/leadProfile?id=${row.original._id}`);
         };
-
-        const fullName = row?.original?.name || "";
-        const displayedName =
-          fullName.length > 50 ? fullName.slice(0, 10) + "..." : fullName;
 
         const mobile = row.original?.contact_details?.mobile;
         const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
         const first = mobiles[0];
         const remaining = mobiles.slice(1);
-        const remainingContent = mobile?.slice(0) || [];
+        const remainingContent = mobile.slice(0);
         const remainingCount = remaining.length;
         const tooltipContent = remainingContent.join(", ");
 
@@ -266,7 +254,7 @@ export function DataTable({
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
-            <div className="font-medium">{displayedName}</div>
+            <div className="font-medium">{row?.original?.name}</div>
 
             {mobiles.length > 0 ? (
               <TooltipProvider>
@@ -379,7 +367,12 @@ export function DataTable({
           relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
         const formatted = format(usedDate, "MMM d, yyyy");
 
-        return <div>{relative} </div>;
+        return (
+          <div>
+            {relative}{" "}
+            <span className="text-gray-500 text-xs">({formatted})</span>
+          </div>
+        );
       },
     },
     {
@@ -450,7 +443,6 @@ export function DataTable({
                 <>
                   <input
                     type="date"
-                  
                     className="border rounded text-xs px-1 py-0.5"
                     onChange={handleDateChange}
                   />
@@ -603,15 +595,18 @@ export function DataTable({
     setIsLoading(true);
   }, [stageFromUrl]);
 
+  
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
         const params = {
-          lead_without_task: isFromGroup ? undefined : (stageFromUrl === "lead_without_task" ? "true" : undefined),
-          stage: isFromGroup ? "" : (stageFromUrl || " "),
+          stage: stageFromUrl,
           page,
           limit: pageSize,
           search,
+          lead_without_task:
+            stageFromUrl === "lead_without_task" ? "true" : undefined,
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -723,6 +718,7 @@ export function DataTable({
   });
 
   const totalPages = Math.ceil(total / pageSize);
+  
 
   const table = useReactTable({
     data,
@@ -745,21 +741,12 @@ export function DataTable({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  React.useEffect(() => {
-    const selectedIds = table
-      .getSelectedRowModel()
-      .rows.map((row) => row.original._id);
-
-    onSelectionChange(selectedIds);
-  }, [table.getSelectedRowModel().rows, onSelectionChange]);
-
   if (isLoading) return <Loader />;
 
   return (
-  <div className={`${isFromGroup ? "w-[calc(67vw)] overflow-y-auto" : "w-full"}`}>
+    <div className="w-full">
       <div className="flex justify-between items-center py-4 px-2">
-        {!isFromGroup && (
-             <div>
+        <div>
           <Tabs value={tab} onValueChange={handleTabChange}>
             <TabsList className="gap-2">
               <TabsTrigger className="cursor-pointer" value="lead_without_task">
@@ -786,7 +773,6 @@ export function DataTable({
             </TabsList>
           </Tabs>
         </div>
-        )}
 
         {/* Right side: Rows per page and Columns */}
         <div className="flex items-center gap-4">
@@ -835,7 +821,7 @@ export function DataTable({
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
-                      className="capitalize cursor-pointer" 
+                      className="capitalize cursor-pointer"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
@@ -850,7 +836,7 @@ export function DataTable({
         </div>
       </div>
 
-<div className={`${isFromGroup ? "h-full" : "max-h-[calc(100vh-290px)]"} rounded-md border overflow-y-auto`}>
+      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
         <Table>
           <TableHeader className="bg-gray-400">
             {table.getHeaderGroups().map((headerGroup) => (
