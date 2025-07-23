@@ -78,6 +78,9 @@ export type Task = {
   type: "todo" | "meeting" | "call" | "sms" | "email";
   current_status: "pending" | "completed" | "in progress";
   deadline: Date;
+  user_id:{
+    name:string;
+  }
 };
 
 export function TaskTable({
@@ -318,6 +321,23 @@ export function TaskTable({
             {status}
           </div>
         );
+      },
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => (
+        <div className="capitalize">{row.getValue("type")}</div>
+      ),
+    },
+    {
+      accessorKey: "user_id.name",
+      header: "Lead Name",
+      cell: ({ row }) => {
+        const lead = row.getValue("user_id") as any;
+        return <div>{lead?.name
+        
+        }</div>;
       },
     },
     {

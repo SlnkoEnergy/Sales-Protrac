@@ -140,12 +140,12 @@ export default function LeadProfile() {
 
   const handleDelete = async () => {
     try {
-      if (!id || !status) {
+      if (!id) {
         toast.error("Missing lead ID or model");
         return;
       }
 
-      await deleteLead(id, status);
+      await deleteLead(id);
       toast.success("Lead deleted successfully!");
       navigate("/leads");
     } catch (error) {
@@ -213,19 +213,10 @@ export default function LeadProfile() {
 
         {activeTab === "info" && (
           <div className="flex gap-2">
-            <Button
-              className="cursor-pointer"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                navigate(`/editlead?id=${id}&lead_model=${status}`);
-              }}
-            >
-              Edit Details
-            </Button>
+           
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button className="cursor-pointer" variant="destructive" size="sm">
                   Remove Lead
                 </Button>
               </AlertDialogTrigger>
@@ -238,10 +229,10 @@ export default function LeadProfile() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogAction onClick={handleDelete}>
+                  <AlertDialogAction className="cursor-pointer" onClick={handleDelete}>
                     Yes, delete
                   </AlertDialogAction>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
