@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -14,11 +14,14 @@ import { createGroup } from "@/services/group/GroupService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { getGroupById } from "@/services/group/GroupService";
+import { updateGroup } from "@/services/group/GroupService";
 
-export default function GroupDetailForm() {
+export default function GroupDetailForm({ groupId }) {
   const [formData, setFormData] = useState<any>({});
   const [source, setSource] = useState("");
   const [subSource, setSubSource] = useState("");
+  const [data, setData] = useState<any>(null);
   const navigate = useNavigate();
   const subSourceOptions: Record<string, string[]> = {
     "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
@@ -38,8 +41,26 @@ export default function GroupDetailForm() {
     }
   };
 
+  const isFromGroup = location.pathname === "/groupDetail";
+
+  useEffect(() => {
+    if (!isFromGroup || !groupId) return;
+
+    const fetchGroup = async () => {
+      try {
+        const res = await getGroupById(groupId);
+        setData(res.data);
+      } catch (error) {
+        console.error("Error fetching Group:", error);
+      }
+    };
+
+    fetchGroup();
+  }, [groupId, isFromGroup]);
+
   const handleSubmit = async (e: any) => {
     e?.preventDefault();
+
     const requiredFields = [
       "group_name",
       "mobile",
@@ -55,61 +76,90 @@ export default function GroupDetailForm() {
       toast.error(`Please fill all required fields.`);
       return;
     }
+
+    const payload = {
+      group_name: formData.group_name,
+      contact_details: {
+        email: formData.email,
+        mobile: [formData.mobile, formData.altMobile].filter(Boolean),
+      },
+      company_name: formData.companyName,
+      address: {
+        village: formData.village,
+        district: formData.district,
+        state: formData.state,
+        postalCode: formData.pincode || "",
+        country: formData.country || "India",
+      },
+      project_details: {
+        capacity: formData.capacity,
+        scheme: formData.scheme,
+      },
+      source: {
+        from: source,
+        sub_source: subSource || "N/A",
+      },
+      createdBy: getCurrentUser()._id,
+    };
+
     try {
-      const payload = {
-        group_name: formData.group_name,
-        contact_details: {
-          email: formData.email,
-          mobile: [formData.mobile, formData.altMobile].filter(Boolean),
-        },
-        company_name: formData.companyName,
-
-        address: {
-          village: formData.village,
-          district: formData.district,
-          state: formData.state,
-          postalCode: formData.pincode || "",
-          country: formData.country || "India",
-        },
-
-        project_details: {
-          capacity: formData.capacity,
-          scheme: formData.scheme,
-        },
-
-        source: {
-          from: source,
-          sub_source: subSource || "N/A",
-        },
-        createdBy: getCurrentUser()._id,
-      };
-
-      await createGroup({ data: payload });
-
-      toast.success("Group Created Successfully!");
+      if (isFromGroup) {
+        // ✅ UPDATE
+        await updateGroup({ id: groupId, data: payload });
+        toast.success("Group Updated Successfully!");
+      } else {
+        // ✅ CREATE
+        await createGroup({ data: payload });
+        toast.success("Group Created Successfully!");
+      }
       navigate("/group");
     } catch (err) {
-      toast.error("Failed to create Group");
+      toast.error("Failed to submit Group");
     }
   };
 
+  useEffect(() => {
+    if (isFromGroup && data) {
+      setFormData({
+        companyName: data.company_name || "",
+        group_name: data.group_name || "",
+        email: data.contact_details?.email || "",
+        mobile: data.contact_details?.mobile?.[0] || "",
+        altMobile: data.contact_details?.mobile?.[1] || "",
+        village: data.address?.village || "",
+        district: data.address?.district || "",
+        state: data.address?.state || "",
+        pincode: data.address?.postalCode || "",
+        country: data.address?.country || "India",
+        capacity: data.project_details?.capacity || "",
+        scheme: data.project_details?.scheme || "",
+      });
+
+      setSource(data.source?.from || "");
+      setSubSource(data.source?.sub_source || "");
+    }
+  }, [data, isFromGroup]);
+
   return (
     <div>
-      <Button
-        className="cursor-pointer"
-        onClick={() => {
-          navigate(-1);
-        }}
-      >
-        <ChevronLeft />
-      </Button>
+      {!isFromGroup && (
+        <Button
+          className="cursor-pointer"
+          onClick={() => {
+            navigate(-1);
+          }}
+        >
+          <ChevronLeft />
+        </Button>
+      )}
       <form
         className="max-w-5xl mx-auto p-8 rounded-xl shadow-md border bg-white"
         onSubmit={handleSubmit}
       >
         <h2 className="text-3xl font-bold mb-6 text-center">
-          Add Group Detail
+          {isFromGroup ? "Update Group Detail" : "Add Group Detail"}
         </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             ["Company Name", "companyName", true],
@@ -169,7 +219,13 @@ export default function GroupDetailForm() {
               ],
             ],
             ["Capacity", "capacity", true],
-            ["Scheme","scheme",false,"select",["KUSUM A", "KUSUM C", "KUSUM C2", "Other"],],
+            [
+              "Scheme",
+              "scheme",
+              false,
+              "select",
+              ["KUSUM A", "KUSUM C", "KUSUM C2", "Other"],
+            ],
           ].map(([label, name, required, type = "input", options], idx) => {
             const isSource = name === "source";
             if (isSource) {
@@ -182,7 +238,10 @@ export default function GroupDetailForm() {
                     <Label htmlFor="source">
                       Source<span className="text-red-500"> *</span>
                     </Label>
-                    <Select onValueChange={(val) => setSource(val)}>
+                    <Select
+                      value={source} // ✅ controlled value
+                      onValueChange={(val) => setSource(val)}
+                    >
                       <SelectTrigger id="source">
                         <SelectValue placeholder="Select Source" />
                       </SelectTrigger>
@@ -201,7 +260,10 @@ export default function GroupDetailForm() {
                   ) && (
                     <div className="flex-1 space-y-1.5">
                       <Label htmlFor="subSource">Sub-Source</Label>
-                      <Select onValueChange={setSubSource}>
+                      <Select
+                        value={subSource} // ✅ This binds the selected value
+                        onValueChange={setSubSource}
+                      >
                         <SelectTrigger id="subSource">
                           <SelectValue placeholder="Select Sub-Source" />
                         </SelectTrigger>
@@ -229,6 +291,8 @@ export default function GroupDetailForm() {
                 {type === "input" && (
                   <Input
                     id={name as string}
+                    type={name === "capacity" ? "number" : "text"} // ✅ Force number input
+                    value={formData[name as string] || ""}
                     onChange={(e) =>
                       handleChange(name as string, e.target.value)
                     }
@@ -237,6 +301,7 @@ export default function GroupDetailForm() {
                 {type === "textarea" && (
                   <Textarea
                     id={name as string}
+                    value={formData[name as string] || ""}
                     onChange={(e) =>
                       handleChange(name as string, e.target.value)
                     }
@@ -246,6 +311,7 @@ export default function GroupDetailForm() {
                   <Input
                     id={name as string}
                     type="date"
+                    value={formData[name as string] || ""}
                     onChange={(e) =>
                       handleChange(name as string, e.target.value)
                     }
@@ -253,6 +319,7 @@ export default function GroupDetailForm() {
                 )}
                 {type === "select" && (
                   <Select
+                    value={formData[name as string] || ""}
                     onValueChange={(val) => handleChange(name as string, val)}
                   >
                     <SelectTrigger id={name as string}>
@@ -274,7 +341,7 @@ export default function GroupDetailForm() {
 
         <div className="mt-8 flex justify-end">
           <Button type="submit" className="cursor-pointer">
-            Submit
+            {isFromGroup ? "Update Group" : "Create Group"}
           </Button>
         </div>
       </form>

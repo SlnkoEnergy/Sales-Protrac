@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getGroupById, updateGroupStatus } from "@/services/group/GroupService";
 import LeadsCard from "./LeadsCard";
+import EditGroupModal from "../../../modules/group/components/EditGroup";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -76,6 +78,7 @@ export default function GroupDetail() {
   const [data, setData] = React.useState<Group | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const id = searchParams.get("id");
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const group_id = searchParams.get("id");
 
   React.useEffect(() => {
@@ -89,6 +92,21 @@ export default function GroupDetail() {
     };
     fetchGroup();
   }, [id]);
+
+  const handleDelete = async () => {
+    try {
+      if (!id) {
+        toast.error("Missing lead ID or model");
+        return;
+      }
+
+      await deleteLead(id);
+      toast.success("Lead deleted successfully!");
+      navigate("/leads");
+    } catch (error) {
+      toast.error("Failed to delete lead");
+    }
+  };
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
@@ -179,6 +197,18 @@ export default function GroupDetail() {
           </Button>
           <p className="text-2xl font-semibold text-[#214b7b]">Group Detail</p>
         </div>
+        <Button variant="default" size="sm" onClick={() => setIsEditOpen(true)}>
+          Edit Group Detail
+        </Button>
+        <EditGroupModal
+          open={isEditOpen}
+          groupId={id}
+          onClose={() => setIsEditOpen(false)}
+          onSuccess={() => {
+            setIsEditOpen(false);
+            // optionally refetch group data
+          }}
+        />
       </div>
 
       <div className="flex gap-4 h-[calc(100vh-200px)]">
