@@ -33,3 +33,14 @@ export const getGroupById = async (id) => {
     return { success: false, data: [], total: 0 };
   }
 };
+
+export const updateGroup = async ({ id, data }: { id: string; data: any }) => {
+  try {
+    const response = await Axios.put(`/bddashboard/group/${id}`, { data });
+    return response.data;
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error || error.message || "Something went wrong";
+    throw new Error(message);
+  }
+};
