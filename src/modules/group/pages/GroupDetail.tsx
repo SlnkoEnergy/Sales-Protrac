@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, Mail, MapPin, Phone } from "lucide-react";
+import { ChevronLeft, Mail, MapPin, Phone, RotateCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { deleteLead } from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +25,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getGroupById } from "@/services/group/GroupService";
+import { getGroupById, updateGroupStatus } from "@/services/group/GroupService";
 import LeadsCard from "./LeadsCard";
 import EditGroupModal from "../../../modules/group/components/EditGroup";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+
 export type Group = {
   _id: string;
   group_code: string;
@@ -61,6 +68,9 @@ export type Group = {
   comments: {
     type: string;
   };
+  total_lead_capacity: {
+    type: string;
+  };
 };
 
 export default function GroupDetail() {
@@ -69,6 +79,8 @@ export default function GroupDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   const id = searchParams.get("id");
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const group_id = searchParams.get("id");
+
   React.useEffect(() => {
     const fetchGroup = async () => {
       try {
@@ -125,18 +137,56 @@ export default function GroupDetail() {
       return {};
     }
   };
+  const nextStatus =
+    data?.current_status?.status === "open" ? "closed" : "open";
 
   const fullComment = data?.comments || "";
   const charLimit = 15;
-  const isTruncated = fullComment.length > charLimit;
+  const isTruncated = fullComment?.length > charLimit;
   const displayedComment = isTruncated
-    ? fullComment.slice(0, charLimit) + "..."
+    ? fullComment?.slice(0, charLimit) + "..."
     : fullComment;
+
+  const handleChange = async (nextStatus) => {
+    try {
+      await updateGroupStatus({
+        id: data._id,
+        status: nextStatus,
+        remarks: `Status changed to ${nextStatus}`,
+      });
+
+      // ✅ Update local status inside `data`
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              current_status: {
+                ...prev.current_status,
+                status: nextStatus,
+                remarks: `Status changed to ${nextStatus}`,
+                // optionally update `user_id` if needed
+              },
+            }
+          : null
+      );
+
+      toast.success(`Status updated to ${nextStatus}`);
+    } catch (error) {
+      console.error("Status update error:", error);
+
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update status";
+
+      toast.error(message);
+    }
+  };
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -182,25 +232,34 @@ export default function GroupDetail() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <CardTitle>
-              Status:{" "}
-              <Badge
-                className={`capitalize ${
-                  status === "won"
-                    ? "bg-green-500"
-                    : status === "followUp"
-                    ? "bg-yellow-400"
-                    : status === "initial"
-                    ? "bg-blue-500"
-                    : status === "dead"
-                    ? "bg-red-500"
-                    : status === "warm"
-                    ? "bg-orange-400"
-                    : ""
-                }`}
-              >
-                {data?.current_status?.status}
-              </Badge>
+            <CardTitle className="flex gap-2">
+              Status:
+              <ContextMenu>
+                <ContextMenuTrigger>
+                  <Badge
+                    variant="default"
+                    className={`capitalize cursor-pointer ${
+                      data?.current_status?.status === "open"
+                        ? "bg-green-500 hover:bg-green-600"
+                        : data?.current_status?.status === "closed"
+                        ? "bg-red-500 hover:bg-red-600"
+                        : "bg-gray-400"
+                    }`}
+                  >
+                    {data?.current_status?.status ?? "N/A"}
+                  </Badge>
+                </ContextMenuTrigger>
+
+                <ContextMenuContent className="w-40">
+                  <ContextMenuItem
+                    onClick={() => handleChange(nextStatus)}
+                    className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  >
+                    <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                    Set to <span className="capitalize">{nextStatus}</span>
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             </CardTitle>
             <CardDescription className="text-black capitalize flex gap-1 items-center">
               <MapPin size={16} />{" "}
@@ -220,8 +279,18 @@ export default function GroupDetail() {
               {data?.source?.sub_source}
             </p>
             <p>
-              <strong>Capacity:</strong> {data?.project_details?.capacity}
+              <strong>Total Capacity:</strong>{" "}
+              {parseFloat(data?.project_details?.capacity || "0").toFixed(2)} MW
             </p>
+            <p>
+              <strong>Left Capacity:</strong>{" "}
+              {(
+                parseFloat(data?.project_details?.capacity || "0") -
+                parseFloat(data?.total_lead_capacity || "0")
+              ).toFixed(2)}{" "}
+              MW
+            </p>
+
             <p>
               <strong>Scheme:</strong> {data?.project_details?.scheme}
             </p>
@@ -253,8 +322,8 @@ export default function GroupDetail() {
           </CardFooter>
         </Card>
 
-        <div className="min-w-[calc(70vw)] overflow-y-auto">
-          <LeadsCard />
+        <div className="min-w-[calc(72vw)] overflow-y-auto">
+          <LeadsCard group_id={group_id} />
         </div>
       </div>
     </div>

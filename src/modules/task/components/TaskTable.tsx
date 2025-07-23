@@ -198,21 +198,23 @@ export function TaskTable({
       ),
     },
     {
-      accessorKey: "lead",
+      id: "Lead ID",
+      accessorFn: (row) => row.lead?.id,
       header: "Lead ID",
-      cell: ({ row }) => {
-        const lead = row.getValue("lead") as any;
-        return <div>{lead?.id}</div>;
+      cell: ({getValue}) => {
+        return <div>{String(getValue())}</div>;
       },
     },
     {
+      id: "Lead Name",
       accessorKey: "lead",
       header: "Lead Name",
       cell: ({ row }) => {
-        const lead = row.getValue("lead") as any;
+        
         const navigate = useNavigate();
-
+        
         const navigateToLeadProfile = () => {
+          
           navigate(`/leadProfile?id=${row.original.lead._id}`);
         };
 
@@ -221,7 +223,7 @@ export function TaskTable({
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
-            {lead?.name}
+            {row.original.lead?.name}
           </div>
         );
       },
@@ -429,7 +431,7 @@ export function TaskTable({
     };
 
     fetchTasks();
-  }, [statusFromUrl, page, pageSize, search, fromDeadline, toDeadline]);
+  }, [statusFromUrl, page, pageSize, searchParams, fromDeadline, toDeadline]);
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
@@ -624,11 +626,7 @@ export function TaskTable({
                 .map((column) => {
                   const colHeader = column.columnDef.header;
                   const label =
-                    column.id === "id"
-                      ? "Lead ID"
-                      : column.id === "name"
-                      ? "Name"
-                      : typeof colHeader === "string"
+                    typeof colHeader === "string"
                       ? colHeader
                       : column.id;
 

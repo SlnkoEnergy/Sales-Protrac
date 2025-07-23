@@ -44,3 +44,16 @@ export const updateGroup = async ({ id, data }: { id: string; data: any }) => {
     throw new Error(message);
   }
 };
+export const updateGroupStatus = async ({ id, status, remarks }) => {
+  try {
+    const response = await Axios.put(`/bddashboard/${id}/updateGroupStatus`, {
+      status,
+      remarks,
+    });
+    return response.data;
+  } catch (error) {
+    const errMsg = error?.response?.data?.message || "Failed to update status";
+    error.message = errMsg;
+    throw error;
+  }
+};
