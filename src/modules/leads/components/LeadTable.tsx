@@ -186,6 +186,9 @@ export function DataTable({
     return d && !isNaN(parsed.getTime());
   };
   const navigate = useNavigate();
+  const isFromGroup = location.pathname === "/groupDetail";
+
+  console.log({isFromGroup});
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",
@@ -604,12 +607,11 @@ export function DataTable({
     const fetchLeads = async () => {
       try {
         const params = {
-          stage: stageFromUrl,
+          lead_without_task: isFromGroup ? undefined : (stageFromUrl === "lead_without_task" ? "true" : undefined),
+          stage: isFromGroup ? "" : (stageFromUrl || " "),
           page,
           limit: pageSize,
           search,
-          lead_without_task:
-            stageFromUrl === "lead_without_task" ? "true" : undefined,
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -754,9 +756,10 @@ export function DataTable({
   if (isLoading) return <Loader />;
 
   return (
-    <div className="w-full">
+  <div className={`${isFromGroup ? "w-[calc(67vw)] overflow-y-auto" : "w-full"}`}>
       <div className="flex justify-between items-center py-4 px-2">
-        <div>
+        {!isFromGroup && (
+             <div>
           <Tabs value={tab} onValueChange={handleTabChange}>
             <TabsList className="gap-2">
               <TabsTrigger className="cursor-pointer" value="lead_without_task">
@@ -783,6 +786,7 @@ export function DataTable({
             </TabsList>
           </Tabs>
         </div>
+        )}
 
         {/* Right side: Rows per page and Columns */}
         <div className="flex items-center gap-4">
@@ -846,7 +850,7 @@ export function DataTable({
         </div>
       </div>
 
-      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
+<div className={`${isFromGroup ? "h-full" : "max-h-[calc(100vh-290px)]"} rounded-md border overflow-y-auto`}>
         <Table>
           <TableHeader className="bg-gray-400">
             {table.getHeaderGroups().map((headerGroup) => (
