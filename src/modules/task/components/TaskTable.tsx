@@ -518,7 +518,7 @@ export function TaskTable({
         </div>
         <div className="flex flex-wrap items-center gap-4 justify-between py-2">
           {/* Deadline Date Range Picker */}
-          <div className="relative inline-block text-left" ref={pickerRef}>
+          <div className="fix inline-block text-left z-50" ref={pickerRef}>
             <button
               onClick={() => setShowPicker((prev) => !prev)}
               className="border px-3 py-1.5 rounded-md text-sm flex items-center gap-2 bg-white shadow-sm"
@@ -534,7 +534,7 @@ export function TaskTable({
             </button>
 
             {showPicker && (
-              <div className="absolute z-50 mt-2 bg-white rounded-md shadow-lg">
+              <div className="absolute  z-50 mt-2 bg-white rounded-md shadow-lg">
                 <DateRange
                   editableDateInputs={true}
                   onChange={handleSelect}
