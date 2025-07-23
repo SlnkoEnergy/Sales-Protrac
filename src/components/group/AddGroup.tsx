@@ -74,7 +74,6 @@ export default function GroupDetailForm() {
 
         project_details: {
           capacity: formData.capacity,
-
           scheme: formData.scheme,
         },
 
@@ -88,7 +87,7 @@ export default function GroupDetailForm() {
       await createGroup({ data: payload });
 
       toast.success("Group Created Successfully!");
-      navigate("/leads");
+      navigate("/group");
     } catch (err) {
       toast.error("Failed to create Group");
     }
@@ -170,13 +169,7 @@ export default function GroupDetailForm() {
               ],
             ],
             ["Capacity", "capacity", true],
-            [
-              "Scheme",
-              "scheme",
-              false,
-              "select",
-              ["KUSUM A", "KUSUM C", "KUSUM C2", "Other"],
-            ],
+            ["Scheme","scheme",false,"select",["KUSUM A", "KUSUM C", "KUSUM C2", "Other"],],
           ].map(([label, name, required, type = "input", options], idx) => {
             const isSource = name === "source";
             if (isSource) {
