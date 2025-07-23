@@ -11,25 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, Lock, Mail, MapPin, Phone, SearchCheck } from "lucide-react";
+import { ChevronLeft, Mail, MapPin, Phone } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getLeadbyId, deleteLead } from "@/services/leads/LeadService";
+import { deleteLead } from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../../leads/components/NotesCard";
-import TasksCard from "../../leads/components/TaskCard";
-import { getTaskByLeadId } from "@/services/task/Task";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getGroupById } from "@/services/group/GroupService";
+import LeadsCard from "./LeadsCard";
 
 export type Group = {
   _id: string;
@@ -161,14 +150,14 @@ export default function GroupDetail() {
       </div>
 
           <div className="flex gap-4 h-[calc(100vh-200px)]">
-            <Card className="min-w-[450px] max-h-full overflow-hidden">
+            <Card className="min-w-[calc(24vw)] max-h-full overflow-hidden">
               <CardHeader className="flex justify-center flex-col items-center">
                 <Avatar className="h-14 w-14">
                   <AvatarImage src="https://github.com/shadcn.png" />
                   <AvatarFallback>KR</AvatarFallback>
                 </Avatar>
                 <CardTitle className="mb-2 capitalize">{data?.group_name}</CardTitle>
-                <CardDescription className="flex items-center gap-3">
+                <CardDescription className="flex items-center gap-3 lg:flex-col">
                   <span className="flex items-center gap-2">
                     <Mail size={18} /> {data?.contact_details?.email || "NA"}
                   </span>
@@ -254,9 +243,8 @@ export default function GroupDetail() {
               </CardFooter>
             </Card>
 
-            <div className="w-full overflow-y-auto pr-2 flex flex-col gap-4">
-              <NotesCard />
-           
+            <div className="min-w-[calc(70vw)] overflow-y-auto">
+              <LeadsCard />
             </div>
           </div>
     </div>

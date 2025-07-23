@@ -298,10 +298,10 @@ export function GroupTable({
 
               <DropdownMenuItem
                 className="cursor-pointer"
-                // onClick={(e) => {
-                //   e.stopPropagation();
-                //   navigate(`/leadProfile?id=${lead._id}&status=${lead.status}`);
-                // }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/groupDetail?id=${row.original._id}`);
+                }}
               >
                 View Group
               </DropdownMenuItem>
