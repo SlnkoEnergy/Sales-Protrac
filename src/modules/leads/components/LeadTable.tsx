@@ -144,7 +144,7 @@ export type stageCounts = {
   dead: number;
   all: number;
 };
-export function DataTable({ search }: { search: string }) {
+export function DataTable({ search, onSelectionChange, }: { search: string, onSelectionChange: (ids: string[]) => void;}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
@@ -370,7 +370,7 @@ export function DataTable({ search }: { search: string }) {
         return (
           <div>
             {relative}{" "}
-            <span className="text-gray-500 text-xs">({formatted})</span>
+            
           </div>
         );
       },
@@ -741,6 +741,14 @@ export function DataTable({ search }: { search: string }) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+    React.useEffect(() => {
+      const selectedIds = table
+        .getSelectedRowModel()
+        .rows.map((row) => row.original._id);
+  
+      onSelectionChange(selectedIds);
+    }, [table.getSelectedRowModel().rows, onSelectionChange]);
 
   if (isLoading) return <Loader />;
 

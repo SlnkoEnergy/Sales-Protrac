@@ -44,7 +44,8 @@ export const createBdLead = async ({ data }: { data: any }) => {
     const response = await Axios.post(`/bddashboard/lead`, data);
     return response.data;
   } catch (error: any) {
-    throw error.response?.data || error.message;
+    const message = error.response?.data?.error || error.message || "Something went wrong";
+    throw new Error(message);
   }
 };
 
@@ -71,10 +72,8 @@ export const editBdLead = async (params = {}, body = {}) => {
   return response.data;
 };
 
-export const deleteLead = async (_id: string, lead_model: string) => {
-  const url = `/bddashboard/lead/${_id}?lead_model=${encodeURIComponent(
-    lead_model
-  )}`;
+export const deleteLead = async (_id: string) => {
+  const url = `/bddashboard/lead/${_id}`;
   const response = await Axios.delete(url);
   return response.data;
 };
@@ -85,11 +84,16 @@ export const transferLead = async (_id: string, assigned_to: string) => {
   return response.data;
 };
 
-export const exportToCsv = async () => {
+
+export const exportToCsv = async (selectedIds: string[]) => {
   try {
-    const response = await Axios.get(`/bddashboard/export-lead`, {
-      responseType: "blob",
-    });
+    const response = await Axios.post(
+      "/bddashboard/export-lead",
+      { Ids: selectedIds },
+      {
+        responseType: "blob",
+      }
+    );
 
     const blob = new Blob([response.data], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -99,7 +103,7 @@ export const exportToCsv = async () => {
     document.body.appendChild(link);
     link.click();
     link.remove();
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to export CSV");
   }
 };
@@ -115,6 +119,8 @@ export const uploadDocuments = async (
 ) => {
   try {
     const formData = new FormData();
+
+    // Append JSON metadata
     formData.append(
       "data",
       JSON.stringify({
@@ -126,8 +132,10 @@ export const uploadDocuments = async (
       })
     );
 
+
     formData.append("file_0", file);
 
+    // Make PUT request
     const response = await Axios.put(`/bddashboard/uploadDocuments`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -269,7 +277,7 @@ export const getAllHandover = async (params = {}) => {
 export const exportToCsvHandover = async (selectedIds: string[]) => {
   try {
     const response = await Axios.post(
-      "/bddashboard/handover-export",
+      "/handover-export",
       { Ids: selectedIds },
       {
         responseType: "blob",
@@ -280,7 +288,7 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "tasks.csv");
+    link.setAttribute("download", "handover.csv");
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -38,90 +38,84 @@ export default function AddLead() {
     }
   };
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    const requiredFields = [
-      "customerName",
-      "groupName",
-      "mobile",
-      "village",
-      "district",
-      "state",
-      "capacity",
-      "comments",
-    ];
+ const handleSubmit = async (e: any) => {
+  e.preventDefault();
+  try {
+    const payload = {
+      name: formData.customerName,
+      contact_details: {
+        email: formData.email,
+        mobile: [formData.mobile, formData.altMobile].filter(Boolean),
+      },
+      company_name: formData.companyName,
 
-    const missing = requiredFields.filter((key) => !formData[key]);
+      address: {
+        district: formData.district,
+        state: formData.state,
+        postalCode: formData.pincode || "",
+        country: formData.country || "India",
+        village: formData.village
+      },
 
-    if (missing.length > 0 || !source) {
-      toast.error(`Please fill all required fields.`);
-      return;
-    }
-    try {
-      const payload = {
-        name: formData.customerName,
-        contact_details: {
-          email: formData.email,
-          mobile: [formData.mobile, formData.altMobile].filter(Boolean),
+      project_details: {
+        capacity: formData.capacity,
+        distance_from_substation: {
+          value: formData.subStationDistance,
+          unit: "km",
         },
-        company_name: formData.companyName,
-
-        address: {
-          district: formData.district,
-          state: formData.state,
-          postalCode: formData.pincode || "",
-          country: formData.country || "India",
+        available_land: {
+          value: formData.land,
+          unit: "km",
         },
+        tarrif: formData.tariff,
+        scheme: formData.scheme,
+        land_type: formData.landType || "Owned",
+      },
 
-        project_details: {
-          capacity: formData.capacity,
-          distance_from_substation: {
-            value: formData.subStationDistance,
-            unit: "km",
-          },
-          available_land: {
-            value: formData.land,
-            unit: "km",
-          },
-          tarrif: formData.tariff,
-          scheme: formData.scheme,
-          land_type: formData.landType || "Owned",
-        },
+      source: {
+        from: source,
+        sub_source: subSource || "",
+      },
 
-        source: {
-          from: source,
-          sub_source: subSource || "",
-        },
+      comments: formData.comments,
+      current_status: {
+        name: "initial",
+      },
+      submitted_by: getCurrentUser()._id,
+      documents: [],
+    };
 
-        comments: formData.comments,
-        current_status: {
-          name: "initial",
-        },
-        submitted_by: getCurrentUser()._id,
+    await createBdLead({ data: payload });
+    toast.success("Lead Created Successfully!");
+    navigate("/leads");
+  } catch (err: any) {
+    toast.error(err.message || "Something went wrong");
+  }
+};
 
-        documents: [],
-        token_money: "",
-        interest: "",
-      };
-
-      await createBdLead({ data: payload });
-      toast.success("Lead Created Successfully!");
-      navigate("/leads");
-    } catch (err) {
-      toast.error("Failed to create Lead");
-    }
-  };
 
   return (
     <div>
-      <Button
+      <div className="flex justify-between">
+        <div>
+        <Button
         className="cursor-pointer"
+        variant="outline"
         onClick={() => {
           navigate(-1);
         }}
       >
         <ChevronLeft />
       </Button>
+      </div>
+
+      
+        <div className=" flex justify-end">
+          <Button type="submit" className="cursor-pointer">
+            Submit
+          </Button>
+        </div>
+      </div>
       <form
         className="max-w-5xl mx-auto p-8 rounded-xl shadow-md border bg-white"
         onSubmit={handleSubmit}
@@ -186,10 +180,10 @@ export default function AddLead() {
                 "West Bengal",
               ],
             ],
-            ["Capacity", "capacity", true],
-            ["Sub Station Distance (KM)", "subStationDistance", false],
+            ["Capacity(MW)", "capacity", true],
+            ["Sub Station Distance (km)", "subStationDistance", false],
             ["Tariff (Per Unit)", "tariff", false],
-            ["Available Land (acres)", "land", false],
+            ["Available Land (Acres)", "land", false],
             [
               "Scheme",
               "scheme",
@@ -301,11 +295,6 @@ export default function AddLead() {
           })}
         </div>
 
-        <div className="mt-8 flex justify-end">
-          <Button type="submit" className="cursor-pointer">
-            Submit
-          </Button>
-        </div>
       </form>
     </div>
   );
