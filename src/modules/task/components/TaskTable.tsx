@@ -323,21 +323,13 @@ export function TaskTable({
         );
       },
     },
-    {
-      accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => (
-        <div className="capitalize">{row.getValue("type")}</div>
-      ),
-    },
+
     {
       accessorKey: "user_id.name",
       header: "Lead Name",
       cell: ({ row }) => {
         const lead = row.getValue("user_id") as any;
-        return <div>{lead?.name
-        
-        }</div>;
+        return <div>{lead?.name}</div>;
       },
     },
     {

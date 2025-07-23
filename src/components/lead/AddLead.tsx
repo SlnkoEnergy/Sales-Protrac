@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Switch } from "../ui/switch"
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";
@@ -19,6 +20,7 @@ export default function AddLead() {
   const [formData, setFormData] = useState<any>({});
   const [source, setSource] = useState("");
   const [subSource, setSubSource] = useState("");
+  const [shwoGroupDropDown, setShowGroupDropDown] = useState(false)
   const navigate = useNavigate();
   const subSourceOptions: Record<string, string[]> = {
     "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
@@ -38,80 +40,87 @@ export default function AddLead() {
     }
   };
 
- const handleSubmit = async (e: any) => {
-  e.preventDefault();
-  try {
-    const payload = {
-      name: formData.customerName,
-      contact_details: {
-        email: formData.email,
-        mobile: [formData.mobile, formData.altMobile].filter(Boolean),
-      },
-      company_name: formData.companyName,
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
 
-      address: {
-        district: formData.district,
-        state: formData.state,
-        postalCode: formData.pincode || "",
-        country: formData.country || "India",
-        village: formData.village
-      },
-
-      project_details: {
-        capacity: formData.capacity,
-        distance_from_substation: {
-          value: formData.subStationDistance,
-          unit: "km",
+    try {
+      const payload = {
+        name: formData.customerName,
+        contact_details: {
+          email: formData.email,
+          mobile: [formData.mobile, formData.altMobile].filter(Boolean),
         },
-        available_land: {
-          value: formData.land,
-          unit: "km",
+        company_name: formData.companyName,
+
+        address: {
+          district: formData.district,
+          state: formData.state,
+          postalCode: formData.pincode || "",
+          country: formData.country || "India",
+          village: formData.village
         },
-        tarrif: formData.tariff,
-        scheme: formData.scheme,
-        land_type: formData.landType || "Owned",
-      },
 
-      source: {
-        from: source,
-        sub_source: subSource || "",
-      },
+        project_details: {
+          capacity: formData.capacity,
+          distance_from_substation: {
+            value: formData.subStationDistance,
+            unit: "km",
+          },
+          available_land: {
+            value: formData.land,
+            unit: "km",
+          },
+          tarrif: formData.tariff,
+          scheme: formData.scheme,
+          land_type: formData.landType || "Owned",
+        },
 
-      comments: formData.comments,
-      current_status: {
-        name: "initial",
-      },
-      submitted_by: getCurrentUser()._id,
-      documents: [],
-    };
+        source: {
+          from: source,
+          sub_source: subSource || " ",
+        },
 
-    await createBdLead({ data: payload });
-    toast.success("Lead Created Successfully!");
-    navigate("/leads");
-  } catch (err: any) {
-    toast.error(err.message || "Something went wrong");
-  }
-};
+        comments: formData.comments,
+        current_status: {
+          name: "initial",
+        },
+        submitted_by: getCurrentUser()._id,
+        documents: [],
+      };
+
+      await createBdLead({ data: payload });
+      toast.success("Lead Created Successfully!");
+      navigate("/leads");
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    }
+  };
+
+
 
 
   return (
     <div>
       <div className="flex justify-between">
         <div>
-        <Button
-        className="cursor-pointer"
-        variant="outline"
-        onClick={() => {
-          navigate(-1);
-        }}
-      >
-        <ChevronLeft />
-      </Button>
-      </div>
+          <Button
+            className="cursor-pointer"
+            variant="outline"
+            onClick={() => {
+              navigate(-1);
+            }}
+          >
+            <ChevronLeft />
+          </Button>
+        </div>
 
-      
+
         <div className=" flex justify-end">
-          <Button type="submit" className="cursor-pointer">
+          <Button
+            type="submit"
+            className="cursor-pointer"
+            onClick={handleSubmit}
+          >
             Submit
           </Button>
         </div>
@@ -125,7 +134,17 @@ export default function AddLead() {
           {[
             ["Customer Name", "customerName", true],
             ["Company Name", "companyName", false],
-            ["Group Name", "groupName", false],
+            [
+              "Group Name",
+              "groupName",
+              false,
+              "select",
+              [
+                "a",
+                "b",
+                "c",
+              ]
+            ],
             [
               "Source",
               "source",
@@ -194,6 +213,7 @@ export default function AddLead() {
             ["Land Types", "landType", false, "select", ["Leased", "Owned"]],
             ["Comments", "comments", true, "textarea"],
           ].map(([label, name, required, type = "input", options], idx) => {
+
             const isSource = name === "source";
             if (isSource) {
               return (
@@ -222,34 +242,53 @@ export default function AddLead() {
                   {["Marketing", "Referred By", "Social Media"].includes(
                     source
                   ) && (
-                    <div className="flex-1 space-y-1.5">
-                      <Label htmlFor="subSource">Sub-Source</Label>
-                      <Select onValueChange={setSubSource}>
-                        <SelectTrigger id="subSource">
-                          <SelectValue placeholder="Select Sub-Source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {subSourceOptions[source]?.map((sub, idx) => (
-                            <SelectItem key={idx} value={sub}>
-                              {sub}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                      <div className="flex-1 space-y-1.5">
+                        <Label htmlFor="subSource">Sub-Source</Label>
+                        <Select onValueChange={setSubSource}>
+                          <SelectTrigger id="subSource">
+                            <SelectValue placeholder="Select Sub-Source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subSourceOptions[source]?.map((sub, idx) => (
+                              <SelectItem key={idx} value={sub}>
+                                {sub}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                 </div>
               );
             }
 
             return (
-              <div key={idx} className="space-y-1.5">
-                <Label htmlFor={name as string}>
-                  {label}
-                  {required ? <span className="text-red-500"> *</span> : null}
-                </Label>
 
-                {type === "input" && (
+
+              <div key={idx} className="space-y-1.5">
+                {
+                  <div>
+                    <div className="flex flex-row space-x-2">
+                      <Label htmlFor={name as string}>
+                        {label}
+                        {required ? <span className="text-red-500"> *</span> : null}
+                      </Label>
+                      {
+                        label === "Group Name" && (
+                          <div className="flex items-center space-x-2">
+                        <Switch
+                          id="enable-group"
+                          checked={shwoGroupDropDown}
+                          onCheckedChange={(val) => setShowGroupDropDown(val)}
+                        />
+                      </div>
+                        )
+                      }
+                    </div>
+                  </div>
+                }
+
+                {type === "input" && name != "groupName" && (
                   <Input
                     id={name as string}
                     onChange={(e) =>
@@ -274,14 +313,20 @@ export default function AddLead() {
                     }
                   />
                 )}
-                {type === "select" && (
+                {type === "select" && name != "groupName" && (
+
                   <Select
                     onValueChange={(val) => handleChange(name as string, val)}
                   >
                     <SelectTrigger id={name as string}>
                       <SelectValue placeholder={label} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+                    >
                       {(options as string[]).map((opt, i) => (
                         <SelectItem value={opt} key={i}>
                           {opt}
@@ -290,6 +335,38 @@ export default function AddLead() {
                     </SelectContent>
                   </Select>
                 )}
+                {
+                  type === "select" && name === "groupName" && (
+                    <div className="flex flex-row space-y-2">
+                      
+                      {
+                        shwoGroupDropDown && (
+                          <Select
+                            onValueChange={(val) => handleChange(name as string, val)}
+                          >
+                            <SelectTrigger id={name as string}>
+                              <SelectValue placeholder={label} />
+                            </SelectTrigger>
+                            <SelectContent
+                              position="popper"
+                              side="bottom"
+                              align="start"
+                              className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+                            >
+                              {(options as string[]).map((opt, i) => (
+                                <SelectItem value={opt} key={i}>
+                                  {opt}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )
+                      }
+                    </div>
+
+                  )
+                }
+
               </div>
             );
           })}
