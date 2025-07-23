@@ -142,51 +142,60 @@ export default function TaskForm({
 const currentUser = getCurrentUser();
 const currentUserId = getUserIdFromToken();
 
-  const handleSave = async () => {
-    if (type !== "todo" && selected.length === 0) {
+const handleSave = async () => {
+  try {
+    const currentUser = getCurrentUser(); 
+    const userId = currentUser._id;
+      if (type !== "todo" && selected.length === 0) {
       toast.error("Please select at least one user to assign the task.");
       return;
     }
-    try {
-      const payload = {
-        title: formData.title,
-        lead_id: formData.lead_id,
-        user_id: getUserIdFromToken(),
-        type,
-        assigned_to: type === "todo" ? [getUserIdFromToken()] : selected,
-        deadline: formData.due_date,
-        priority: formData.priority,
-        description: formData.description,
-      };
 
-      const res = await createTask(payload);
-      const createdTask = res.task;
+    const payload = {
+      title: formData.title,
+      lead_id: formData.lead_id,
+      user_id: getUserIdFromToken(),
+      type,
+      assigned_to: type === "todo" ? [userId] : selected,
+      deadline: formData.due_date,
+      priority: formData.priority,
+      description: formData.description,
+    };
 
-      toast.success("Task Created Successfully");
+    const res = await createTask(payload);
+    const createdTask = res.task;
 
-      // Clear form
-      setFormData({
-        title: "",
-        lead_id: "",
-        lead_name: "",
-        priority: "",
-        due_date: "",
-        assigned_to: [],
-        description: "",
-      });
-      setSelected([]);
+    createdTask.user_id = {
+      _id: userId,
+      name: currentUser.name,
+    };
 
-      onTaskCreated?.(createdTask);
+    toast.success("Task Created Successfully");
 
-      if (isFromModal) {
-        onClose?.();
-      } else {
-        navigate("/tasks");
+    // Clear form
+    setFormData({
+      title: "",
+      lead_id: "",
+      lead_name: "",
+      priority: "",
+      due_date: "",
+      assigned_to: [],
+      description: "",
+    });
+    setSelected([]);
+
+    onTaskCreated?.(createdTask);
+
+    if (isFromModal) {
+      onClose?.();
+    } else {
+      navigate("/tasks");
       }
     } catch (err) {
       toast.error("Failed to create Task. Please fill all the fields");
     }
   };
+  
 
   const isDisabled = !!(id && name && leadId);
 

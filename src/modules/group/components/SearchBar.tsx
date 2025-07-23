@@ -9,22 +9,21 @@ import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
 import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
-import { exportToCsvTask } from "@/services/task/Task";
 
-interface SearchBarTasksProps {
+interface SearchBarGroupProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
-  selectedStatus: string;
+  selectedStage: string;
   onValueChange: (value: string) => void;
   clearFilters: () => void;
   selectedIds: string[];
 }
 
-export default function SearchBarTasks({
+export default function SearchBarGroups({
   searchValue,
   onSearchChange,
   selectedIds
-}: SearchBarTasksProps) {
+}: SearchBarGroupProps) {
   const navigate = useNavigate();
 
  const handleExportToCsv = async (selectedIds: string[]) => {
@@ -34,7 +33,7 @@ export default function SearchBarTasks({
    }
  
    try {
-     await exportToCsvTask(selectedIds);
+     await exportToCsv(selectedIds);
      toast.success("CSV exported successfully");
    } catch (error: any) {
      toast.error(error.message || "Failed to export CSV");
@@ -58,7 +57,7 @@ export default function SearchBarTasks({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search Tasks"
+            placeholder="Search Leads"
             className="pl-8"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -89,7 +88,7 @@ export default function SearchBarTasks({
             className="cursor-pointer text-black hover:underline"
             onClick={()=> handleExportToCsv(selectedIds)}
           >
-            Export Tasks
+            Export Leads
           </span>
         </div>
       </div>

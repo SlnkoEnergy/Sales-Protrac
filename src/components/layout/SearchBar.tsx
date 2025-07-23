@@ -103,12 +103,6 @@ export default function SearchBar() {
         >
           + Add Group
         </span>
-        <span
-          className="cursor-pointer text-black hover:underline"
-          onClick={() => navigate("/addtask")}
-        >
-          + Add Task
-        </span>
       </div>
 
       {selectedFilter === "Custom" && showPicker && (

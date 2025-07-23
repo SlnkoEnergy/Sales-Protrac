@@ -144,7 +144,13 @@ export type stageCounts = {
   dead: number;
   all: number;
 };
-export function DataTable({ search, onSelectionChange, }: { search: string, onSelectionChange: (ids: string[]) => void;}) {
+export function DataTable({
+  search,
+  onSelectionChange,
+}: {
+  search: string;
+  onSelectionChange: (ids: string[]) => void;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
@@ -237,15 +243,18 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
       ),
       cell: ({ row }) => {
         const navigateToLeadProfile = () => {
-          
           navigate(`/leadProfile?id=${row.original._id}`);
         };
+
+        const fullName = row?.original?.name || "";
+        const displayedName =
+          fullName.length > 50 ? fullName.slice(0, 10) + "..." : fullName;
 
         const mobile = row.original?.contact_details?.mobile;
         const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
         const first = mobiles[0];
         const remaining = mobiles.slice(1);
-        const remainingContent = mobile.slice(0);
+        const remainingContent = mobile?.slice(0) || [];
         const remainingCount = remaining.length;
         const tooltipContent = remainingContent.join(", ");
 
@@ -254,7 +263,7 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
-            <div className="font-medium">{row?.original?.name}</div>
+            <div className="font-medium">{displayedName}</div>
 
             {mobiles.length > 0 ? (
               <TooltipProvider>
@@ -367,12 +376,7 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
           relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
         const formatted = format(usedDate, "MMM d, yyyy");
 
-        return (
-          <div>
-            {relative}{" "}
-            
-          </div>
-        );
+        return <div>{relative} </div>;
       },
     },
     {
@@ -596,8 +600,6 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
     setIsLoading(true);
   }, [stageFromUrl]);
 
-  
-
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -719,7 +721,6 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
   });
 
   const totalPages = Math.ceil(total / pageSize);
-  
 
   const table = useReactTable({
     data,
@@ -742,13 +743,13 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-    React.useEffect(() => {
-      const selectedIds = table
-        .getSelectedRowModel()
-        .rows.map((row) => row.original._id);
-  
-      onSelectionChange(selectedIds);
-    }, [table.getSelectedRowModel().rows, onSelectionChange]);
+  React.useEffect(() => {
+    const selectedIds = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original._id);
+
+    onSelectionChange(selectedIds);
+  }, [table.getSelectedRowModel().rows, onSelectionChange]);
 
   if (isLoading) return <Loader />;
 
