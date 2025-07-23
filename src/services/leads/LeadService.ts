@@ -300,8 +300,7 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
 export const getAllGroupName = async() =>{
   try {
     
-    const response = await Axios.get("/bddashboard/group-drop");
-    console.log(response.data);
+    const response = await Axios.get("/bddashboard/group");
     return response;
   } catch (error) {
     console.log(error);

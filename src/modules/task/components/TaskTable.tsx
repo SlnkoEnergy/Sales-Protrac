@@ -431,7 +431,7 @@ export function TaskTable({
     };
 
     fetchTasks();
-  }, [statusFromUrl, page, pageSize, search, fromDeadline, toDeadline]);
+  }, [statusFromUrl, page, pageSize, searchParams, fromDeadline, toDeadline]);
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
