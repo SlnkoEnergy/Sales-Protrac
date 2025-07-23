@@ -147,7 +147,7 @@ export type stageCounts = {
 export function DataTable({
   search,
   onSelectionChange,
-  group_id
+  group_id,
 }: {
   search: string;
   onSelectionChange: (ids: string[]) => void;
@@ -188,7 +188,7 @@ export function DataTable({
     return d && !isNaN(parsed.getTime());
   };
   const navigate = useNavigate();
-  const isFromGroup = location.pathname === "/groupDetail"
+  const isFromGroup = location.pathname === "/groupDetail";
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",
@@ -233,68 +233,68 @@ export function DataTable({
       ),
       cell: ({ row }) => <div>{row.getValue("id")}</div>,
     },
-    {
-      id: "client_info",
-      accessorFn: (row) => row?.name,
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Client Info <ArrowUpDown />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const navigateToLeadProfile = () => {
-          
-          navigate(`/leadProfile?id=${row.original._id}`);
-        };
+   {
+  id: "client_info",
+  accessorFn: (row) => row?.name,
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Client Info <ArrowUpDown />
+    </Button>
+  ),
+  cell: ({ row }) => {
+    const navigateToLeadProfile = () => {
+      navigate(`/leadProfile?id=${row.original._id}`);
+    };
 
-        const mobile = row.original?.contact_details?.mobile;
-        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-        const first = mobiles[0];
-        const remaining = mobiles.slice(1);
-        const remainingContent = mobile.slice(0);
-        const remainingCount = remaining.length;
-        const tooltipContent = remainingContent.join(", ");
+    const mobile = row.original?.contact_details?.mobile;
+    const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
+    const first = mobiles[0];
+    const remaining = mobiles.slice(1);
+    const tooltipContent = remaining.join(", ");
+    const name = row?.original?.name || "";
+    const truncatedName = name.length > 15 ? `${name.slice(0, 15)}...` : name;
 
-        return (
-          <div
-            onClick={navigateToLeadProfile}
-            className="cursor-pointer hover:text-[#214b7b]"
-          >
-            <div className="font-medium">{row?.original?.name}</div>
+    return (
+      <div
+        onClick={navigateToLeadProfile}
+        className="cursor-pointer hover:text-[#214b7b]"
+      >
+        <div className="font-medium">{truncatedName}</div>
 
-            {mobiles.length > 0 ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex gap-1 text-sm text-gray-500 items-center">
-                      <div>{first}</div>
-                      {remainingCount > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs px-2 py-0.5 cursor-default"
-                        >
-                          <Phone size={14} />+{remainingCount}
-                        </Badge>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  {remainingCount > 0 && (
-                    <TooltipContent side="bottom" align="start">
-                      {tooltipContent}
-                    </TooltipContent>
+        {mobiles.length > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex gap-1 text-sm text-gray-500 items-center">
+                  <div>{first}</div>
+                  {remaining.length > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs px-2 py-0.5 cursor-default"
+                    >
+                      <Phone size={14} />+{remaining.length}
+                    </Badge>
                   )}
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <div className="text-sm text-gray-500">-</div>
-            )}
-          </div>
-        );
-      },
-    },
+                </div>
+              </TooltipTrigger>
+              {remaining.length > 0 && (
+                <TooltipContent side="bottom" align="start">
+                  {tooltipContent}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <div className="text-sm text-gray-500">-</div>
+        )}
+      </div>
+    );
+  },
+}
+,
     {
       id: "location_info",
       header: "Location Info",
@@ -604,7 +604,7 @@ export function DataTable({
     setIsLoading(true);
   }, [stageFromUrl]);
 
-  
+  console.log({ group_id });
 
   React.useEffect(() => {
     const fetchLeads = async () => {
@@ -614,9 +614,13 @@ export function DataTable({
           page,
           limit: pageSize,
           search,
-          group_id: isFromGroup? group_id : "",
+          group_id: isFromGroup ? group_id : "",
           lead_without_task:
-            stageFromUrl === "lead_without_task" ? "true" : undefined,
+            stageFromUrl === "lead_without_task"
+              ? "true"
+              : isFromGroup
+              ? ""
+              : undefined,
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -728,7 +732,6 @@ export function DataTable({
   });
 
   const totalPages = Math.ceil(total / pageSize);
-  
 
   const table = useReactTable({
     data,
@@ -754,35 +757,42 @@ export function DataTable({
   if (isLoading) return <Loader />;
 
   return (
-  <div className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}>
+    <div
+      className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
+    >
       <div className="flex justify-between items-center py-4 px-2">
-        <div>
-          <Tabs value={tab} onValueChange={handleTabChange}>
-            <TabsList className="gap-2">
-              <TabsTrigger className="cursor-pointer" value="lead_without_task">
-                Lead W/O Task ({stageCounts?.lead_without_task || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="initial">
-                Initial ({stageCounts?.initial || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="follow up">
-                Follow Up ({stageCounts?.["follow up"] || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="warm">
-                Warm ({stageCounts?.warm || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="won">
-                Won ({stageCounts?.won || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="dead">
-                Dead ({stageCounts?.dead || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="">
-                All ({stageCounts?.all || "0"})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+        {!isFromGroup && (
+          <div>
+            <Tabs value={tab} onValueChange={handleTabChange}>
+              <TabsList className="gap-2">
+                <TabsTrigger
+                  className="cursor-pointer"
+                  value="lead_without_task"
+                >
+                  Lead W/O Task ({stageCounts?.lead_without_task || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="initial">
+                  Initial ({stageCounts?.initial || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="follow up">
+                  Follow Up ({stageCounts?.["follow up"] || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="warm">
+                  Warm ({stageCounts?.warm || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="won">
+                  Won ({stageCounts?.won || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="dead">
+                  Dead ({stageCounts?.dead || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="">
+                  All ({stageCounts?.all || "0"})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
 
         {/* Right side: Rows per page and Columns */}
         <div className="flex items-center gap-4">

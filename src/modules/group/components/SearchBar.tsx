@@ -57,7 +57,7 @@ export default function SearchBarGroups({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search Leads"
+            placeholder="Search Group"
             className="pl-8"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -88,7 +88,7 @@ export default function SearchBarGroups({
             className="cursor-pointer text-black hover:underline"
             onClick={()=> handleExportToCsv(selectedIds)}
           >
-            Export Leads
+            Export Group
           </span>
         </div>
       </div>

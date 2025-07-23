@@ -9,7 +9,7 @@ export default function LeadsCard({group_id}) {
    const [searchQuery, setSearchQuery] = useState("");
    const [selectedIds, setSelectedIds] = useState<string[]>([]);
    
-   
+   console.log(group_id);
 
   return (
     <Card>

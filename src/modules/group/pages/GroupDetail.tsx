@@ -66,6 +66,9 @@ export type Group = {
   comments: {
     type: string;
   };
+  total_lead_capacity: {
+    type: string;
+  };
 };
 
 export default function GroupDetail() {
@@ -73,7 +76,7 @@ export default function GroupDetail() {
   const [data, setData] = React.useState<Group | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const id = searchParams.get("id");
-  const group_id = searchParams.get("group_id");
+  const group_id = searchParams.get("id");
 
   React.useEffect(() => {
     const fetchGroup = async () => {
@@ -246,11 +249,18 @@ export default function GroupDetail() {
               {data?.source?.sub_source}
             </p>
             <p>
-              <strong>Total Capacity:</strong> {data?.project_details?.capacity}
+              <strong>Total Capacity:</strong>{" "}
+              {parseFloat(data?.project_details?.capacity || "0").toFixed(2)} MW
             </p>
-             <p>
-              <strong>Left Capacity:</strong> {data?.project_details?.capacity}
+            <p>
+              <strong>Left Capacity:</strong>{" "}
+              {(
+                parseFloat(data?.project_details?.capacity || "0") -
+                parseFloat(data?.total_lead_capacity || "0")
+              ).toFixed(2)}{" "}
+              MW
             </p>
+
             <p>
               <strong>Scheme:</strong> {data?.project_details?.scheme}
             </p>

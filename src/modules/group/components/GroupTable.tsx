@@ -85,6 +85,9 @@ export type Group = {
   current_status: {
     status: string;
   };
+  left_capacity:{
+    type: string;
+  }
 };
 
 export function GroupTable({
@@ -239,10 +242,25 @@ export function GroupTable({
       accessorKey: "project_details.capacity",
       header: "Capacity (MW)",
       cell: ({ row }) => {
-        const capacity = row.original.project_details?.capacity;
-        return <div>{capacity ?? "N/A"}</div>;
+        const capacity = parseFloat(row.original.project_details?.capacity);
+        return (<div>
+        {isNaN(capacity) ? "N/A" : capacity.toFixed(2)}
+      </div>);
       },
     },
+  {
+  accessorKey: "left_capacity",
+  header: "Left Capacity (MW)",
+  cell: ({ row }) => {
+    const capacity = parseFloat(row.original?.left_capacity);
+    return (
+      <div>
+        {isNaN(capacity) ? "N/A" : capacity.toFixed(2)}
+      </div>
+    );
+  },
+}
+,
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
