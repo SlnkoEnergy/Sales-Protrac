@@ -75,22 +75,15 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Edit Group Detail</DialogTitle>
-        </DialogHeader>
-
+      <DialogContent className="max-w-5xl">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : error ? (
           <p className="text-sm text-red-500">Error loading group data.</p>
         ) : defaultValues ? (
           <GroupDetailForm
-            key={groupId}
-            isEdit
-            defaultValues={defaultValues}
             groupId={groupId}
-            onSuccess={onSuccess}
+            onClose={onClose}
           />
         ) : (
           <p className="text-sm text-muted-foreground">No group data found.</p>

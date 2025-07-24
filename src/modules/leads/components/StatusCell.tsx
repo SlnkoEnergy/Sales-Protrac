@@ -77,11 +77,13 @@ const StatusCell: React.FC<Props> = ({
     if (
       stage === "warm" &&
       !dateToSend &&
-      expected_closing_date === undefined
+      (expected_closing_date === undefined || expected_closing_date === null)
     ) {
       toast.error("Expected Closing Date is required");
       return;
     }
+
+    console.log(expected_closing_date);
 
     setUploading(true);
     try {
@@ -108,15 +110,25 @@ const StatusCell: React.FC<Props> = ({
   const submitStatusUpdate = async () => {
     if (!leadId || !selectedStatus) return;
 
+    let dateToSend = "";
+
     if (
-      selectedStatus === "warm" &&
-      (!pendingDate ||
-        (isNaN(pendingDate.getTime()) && expected_closing_date === undefined))
+      expected_closing_date instanceof Date &&
+      !isNaN(expected_closing_date.getTime())
     ) {
-      toast.error("Expected Closing Date is required for Warm status");
-      return;
+      dateToSend = expected_closing_date.toISOString();
+    } else if (pendingDate instanceof Date && !isNaN(pendingDate.getTime())) {
+      dateToSend = pendingDate.toISOString();
     }
 
+    if (
+      selectedStatus === "warm" &&
+      !dateToSend &&
+      (expected_closing_date === undefined || expected_closing_date === null)
+    ) {
+      toast.error("Expected Closing Date is required");
+      return;
+    }
     try {
       await updateLeadStatus(
         leadId,
@@ -230,7 +242,8 @@ const StatusCell: React.FC<Props> = ({
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
           />
-          {expected_closing_date === undefined &&
+          {(expected_closing_date === undefined ||
+            expected_closing_date === null) &&
             ((selectedStatus === "warm" &&
               !["as per choice", "won"].includes(
                 selectedLabel?.toLowerCase?.()
@@ -251,7 +264,7 @@ const StatusCell: React.FC<Props> = ({
                 }
                 onChange={(e) => {
                   const val = e.target.value;
-                  setPendingDate(val ? new Date(val) : null); // set to null if cleared
+                  setPendingDate(val ? new Date(val) : null);
                 }}
               />
             )}
@@ -260,10 +273,16 @@ const StatusCell: React.FC<Props> = ({
             <Button
               variant="outline"
               onClick={() => setStatusDialogOpen(false)}
+              className="cursor-pointer"
             >
               Cancel
             </Button>
-            <Button onClick={submitStatusUpdate}>Submit</Button>
+            <Button
+              onClick={submitStatusUpdate}
+              className="cursor-pointer bg-[#214b7b]"
+            >
+              Submit
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -283,7 +302,8 @@ const StatusCell: React.FC<Props> = ({
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
             />
 
-            {expected_closing_date === undefined && (
+            {(expected_closing_date === undefined ||
+              expected_closing_date === null) && (
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">
                   Expected Closing Date
@@ -304,6 +324,7 @@ const StatusCell: React.FC<Props> = ({
             <Button
               disabled={uploading || !selectedFile}
               onClick={handleFileUpload}
+              className="cursor-pointer bg-[#214b7b]"
             >
               {uploading ? "Uploading..." : "Upload"}
             </Button>

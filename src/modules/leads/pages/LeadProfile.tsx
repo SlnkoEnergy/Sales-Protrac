@@ -64,6 +64,7 @@ export type Lead = {
   createdAt: Date;
   current_assigned: {
     user_id: {
+      _id: string;
       name: string;
     };
     status: {
@@ -240,16 +241,16 @@ export default function LeadProfile() {
                 Lead Info
               </TabsTrigger>
 
-              {(data?.current_status?.name === "won" &&
-                getUserIdFromToken() ===
-                  data?.current_assigned?.user_id?._id) ||
-                (["admin", "Deepak Manodi"].includes(
+              {((data?.current_status?.name === "won" &&
+                data?.current_assigned?.user_id?._id ===
+                  getUserIdFromToken()) ||
+                ["admin", "Deepak Manodi"].includes(
                   getCurrentUser()?.name
-                ) && (
-                  <TabsTrigger className="cursor-pointer" value="handover">
-                    Handover
-                  </TabsTrigger>
-                ))}
+                )) && (
+                <TabsTrigger className="cursor-pointer" value="handover">
+                  Handover
+                </TabsTrigger>
+              )}
 
               <TabsTrigger className="cursor-pointer" value="timeline">
                 Timeline
@@ -370,14 +371,14 @@ export default function LeadProfile() {
         {/* Lead Info Tab */}
         <TabsContent value="info">
           <div className="flex gap-4 h-[calc(100vh-200px)]">
-            <Card className="min-w-[450px] max-h-full overflow-hidden">
+            <Card className="min-w-[450px] max-h-full overflow-auto">
               <CardHeader className="flex justify-center flex-col items-center">
                 <Avatar className="h-14 w-14">
                   <AvatarImage src="https://github.com/shadcn.png" />
                   <AvatarFallback>KR</AvatarFallback>
                 </Avatar>
                 <CardTitle className="mb-2 capitalize">{data?.name}</CardTitle>
-                <CardDescription className="flex items-center gap-3">
+                <CardDescription className="flex items-center md:flex-col gap-3">
                   <span className="flex items-center gap-2">
                     <Mail size={18} /> {data?.contact_details?.email || "NA"}
                   </span>
@@ -392,15 +393,15 @@ export default function LeadProfile() {
                   Status:{" "}
                   <Badge
                     className={`capitalize ${
-                      status === "won"
+                      data?.current_status?.name === "won"
                         ? "bg-green-500"
-                        : status === "followUp"
+                        : data?.current_status?.name === "followUp"
                         ? "bg-yellow-400"
-                        : status === "initial"
+                        : data?.current_status?.name === "initial"
                         ? "bg-blue-500"
-                        : status === "dead"
+                        : data?.current_status?.name === "dead"
                         ? "bg-red-500"
-                        : status === "warm"
+                        : data?.current_status?.name === "warm"
                         ? "bg-orange-400"
                         : ""
                     }`}
@@ -430,7 +431,8 @@ export default function LeadProfile() {
                   {data?.source?.sub_source}
                 </p>
                 <p>
-                  <strong>Capacity:</strong> {data?.project_details?.capacity}
+                  <strong>Capacity:</strong> {data?.project_details?.capacity}{" "}
+                  MW
                 </p>
                 <p>
                   <strong>Scheme:</strong> {data?.project_details?.scheme}
@@ -459,7 +461,24 @@ export default function LeadProfile() {
               </CardContent>
               <CardFooter className="flex flex-col gap-2 items-start">
                 <Separator />
-                Owner: {data?.current_assigned?.user_id?.name}
+                <div className="flex-col gap-2">
+                  <div>
+                    Exp Closing Date:{" "}
+                    <Badge variant="secondary">
+                      {data?.expected_closing_date
+                        ? new Date(
+                            data.expected_closing_date
+                          ).toLocaleDateString()
+                        : "Yet to come"}
+                    </Badge>
+                  </div>
+                  <div>
+                    Owner:{" "}
+                    <Badge className="bg-[#214b7b]">
+                      {data?.current_assigned?.user_id?.name || "Unassigned"}
+                    </Badge>
+                  </div>
+                </div>
               </CardFooter>
             </Card>
 

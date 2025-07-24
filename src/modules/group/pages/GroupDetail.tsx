@@ -154,8 +154,6 @@ export default function GroupDetail() {
         status: nextStatus,
         remarks: `Status changed to ${nextStatus}`,
       });
-
-      // ✅ Update local status inside `data`
       setData((prev) =>
         prev
           ? {
@@ -164,7 +162,6 @@ export default function GroupDetail() {
                 ...prev.current_status,
                 status: nextStatus,
                 remarks: `Status changed to ${nextStatus}`,
-                // optionally update `user_id` if needed
               },
             }
           : null
@@ -197,16 +194,17 @@ export default function GroupDetail() {
           </Button>
           <p className="text-2xl font-semibold text-[#214b7b]">Group Detail</p>
         </div>
-        <Button variant="default" size="sm" onClick={() => setIsEditOpen(true)}>
+      {getUserIdFromToken() === data?.createdBy?._id && (
+         <Button className="cursor-pointer bg-[#214b7b]" size="sm" onClick={() => setIsEditOpen(true)}>
           Edit Group Detail
         </Button>
+      )}
         <EditGroupModal
           open={isEditOpen}
           groupId={id}
           onClose={() => setIsEditOpen(false)}
           onSuccess={() => {
             setIsEditOpen(false);
-            // optionally refetch group data
           }}
         />
       </div>
