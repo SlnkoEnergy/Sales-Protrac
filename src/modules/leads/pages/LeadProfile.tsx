@@ -263,9 +263,8 @@ export default function LeadProfile() {
           <div className="flex gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                {(data?.current_assigned?.user_id?._id ===
-                  getUserIdFromToken() ||
-                  ["admin", "Deepak Manodi"].includes(
+                {(
+                  ["admin", "Deepak Manodi", "IT Team"].includes(
                     getCurrentUser()?.name
                   )) && (
                   <Button
