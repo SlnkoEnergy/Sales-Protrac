@@ -156,7 +156,7 @@ const handleSave = async () => {
       lead_id: formData.lead_id,
       user_id: getUserIdFromToken(),
       type,
-      assigned_to: type === "todo" ? [userId] : selected,
+      assigned_to:  selected,
       deadline: formData.due_date,
       priority: formData.priority,
       description: formData.description,
