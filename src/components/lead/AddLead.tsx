@@ -376,7 +376,7 @@ export default function AddLead() {
                               sub_source: group.source.sub_source || "",
                             }));
 
-                            setSource(group.source.from || ""); // ✅ So subSourceOptions works
+                            setSource(group.source.from || ""); 
                             setSubSource(group.source.sub_source || "");
                           }
                         }}
