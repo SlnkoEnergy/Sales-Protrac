@@ -53,13 +53,11 @@ export default function AddLead() {
   const navigate = useNavigate();
 
   const filtered = data.filter(
-  (grp) =>
-    (
-      grp.group_code?.toLowerCase().includes(search?.toLowerCase()) ||
-      grp.group_name?.toLowerCase().includes(search?.toLowerCase())
-    ) &&
-    grp.current_status?.status?.toLowerCase() !== "closed"
-);
+    (grp) =>
+      (grp.group_code?.toLowerCase().includes(search?.toLowerCase()) ||
+        grp.group_name?.toLowerCase().includes(search?.toLowerCase())) &&
+      grp.current_status?.status?.toLowerCase() !== "closed"
+  );
 
   const subSourceOptions: Record<string, string[]> = {
     "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
@@ -153,18 +151,10 @@ export default function AddLead() {
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ChevronLeft />
         </Button>
-
-        <Button
-          type="submit"
-          className="cursor-pointer bg-[#214b7b]"
-          onClick={handleSubmit}
-        >
-          Submit
-        </Button>
       </div>
 
       <form
-        className="max-w-5xl mx-auto p-8 rounded-xl shadow-md border bg-white"
+        className="max-w-5xl mx-auto p-8 flex flex-col items-center rounded-xl shadow-md border bg-white"
         onSubmit={handleSubmit}
       >
         <h2 className="text-3xl font-bold mb-6 text-center">Create Lead</h2>
@@ -384,6 +374,7 @@ export default function AddLead() {
 
                   {type === "textarea" && (
                     <Textarea
+                      className="min-w-240"
                       id={name as string}
                       onChange={(e) =>
                         handleChange(name as string, e.target.value)
@@ -449,18 +440,17 @@ export default function AddLead() {
                             />
                           </div>
                           <SelectGroup>
-                            { filtered.length > 0 ? (
-                              filtered.map((group) =>(
+                            {filtered.length > 0 ? (
+                              filtered.map((group) => (
                                 <SelectItem key={group._id} value={group._id}>
-                                {group.group_code}- {group.group_name}
-                              </SelectItem>
+                                  {group.group_code}- {group.group_name}
+                                </SelectItem>
                               ))
-                            ):(
+                            ) : (
                               <div className="px-2 py-2 text-sm text-muted-foreground">
-                                    No group found
-                                  </div>
-                            )
-                            }
+                                No group found
+                              </div>
+                            )}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -492,6 +482,15 @@ export default function AddLead() {
                 </div>
               );
             })}
+        </div>
+        <div className="mt-4">
+          <Button
+            type="submit"
+            className="cursor-pointer bg-[#214b7b]"
+            onClick={handleSubmit}
+          >
+            Submit
+          </Button>
         </div>
       </form>
     </div>
