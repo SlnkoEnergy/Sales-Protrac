@@ -30,7 +30,7 @@ export type Task = {
   _id: string;
   title: string;
   type: "meeting" | "call" | "sms" | "email" | "todo";
-  current_status:  "completed" | "in progress" | "pending";
+  current_status: "completed" | "in progress" | "pending";
   priority: "high" | "medium" | "low";
   description: string;
   deadline: string;
@@ -82,7 +82,7 @@ export default function ViewTask() {
     }
   };
 
-    const getCurrentUser = () => {
+  const getCurrentUser = () => {
     try {
       return JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
@@ -90,7 +90,6 @@ export default function ViewTask() {
     }
   };
 
-  
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
     if (!token) return null;
@@ -147,7 +146,6 @@ export default function ViewTask() {
 
     if (id) fetchTasks();
   }, [id]);
-
 
   return (
     <div className="p-6 space-y-4">
@@ -303,14 +301,20 @@ export default function ViewTask() {
                     </SelectContent>
                   </Select>
                   <Button
-  onClick={() => handleChangeStatus(selectedStatus, selectedRemarks)}
-  className="w-[100px] cursor-pointer"
-  variant="default"
-  disabled={data?.user_id?.name === getCurrentUser()?.name} 
->
-  Submit
-</Button>
-
+                    onClick={() =>
+                      handleChangeStatus(selectedStatus, selectedRemarks)
+                    }
+                    className="w-[100px] cursor-pointer"
+                    variant="default"
+                    disabled={
+                      data?.current_status === "completed" ||
+                      !data?.assigned_to?.some(
+                        (assignee: any) => assignee._id === getUserIdFromToken()
+                      )
+                    }
+                  >
+                    Submit
+                  </Button>
                 </div>
                 <ScrollArea className="h-48 w-full overflow-auto">
                   <div className="flex flex-col gap-3 p-2">
