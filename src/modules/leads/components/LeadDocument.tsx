@@ -27,32 +27,18 @@ import { uploadDocuments } from "@/services/leads/LeadService";
 import DocumentViewerModal from "@/components/lead/DocumentViewer";
 import { Input } from "@/components/ui/input";
 
-const documentOptions = ["LOI", "LOA", "PPA", "Aadhaar", "Other"];
 
-export default function LeadDocuments({ data }) {
-  const [selectedDoc, setSelectedDoc] = useState<string>("");
-  const [files, setFiles] = useState<{ type: string; file: File | null }[]>([]);
+export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files, setFiles}) {
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedViewDoc, setSelectedViewDoc] = useState<string>("");
   const [customDocName, setCustomDocName] = useState("");
   const [expectedDate, setExpectedDate] = useState<Date | null>(null);
-  const uploadedDocTypes =
-    data?.documents?.map((d) => d?.name?.toLowerCase()) || [];
+  
 
-  const filteredOptions = documentOptions.filter(
-    (doc) => doc === "Other" || !uploadedDocTypes.includes(doc.toLowerCase())
-  );
-
-  const handleAddFile = () => {
-    if (!selectedDoc) return toast.warning("Select document type first");
-    if (files.find((item) => item.type === selectedDoc)) {
-      return toast.warning("Document already added");
-    }
-    setFiles([...files, { type: selectedDoc, file: null }]);
-    setSelectedDoc("");
-  };
+  
 
   const handleDelete = (index: number) => {
     const updated = [...files];
@@ -114,23 +100,7 @@ export default function LeadDocuments({ data }) {
     <Card>
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-medium">Lead Documents</CardTitle>
-        <div className="flex gap-2 items-center">
-          <Select value={selectedDoc} onValueChange={setSelectedDoc}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Select Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredOptions.map((doc) => (
-                <SelectItem key={doc} value={doc}>
-                  {doc}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={handleAddFile}>
-            <Plus className="w-4 h-4 mr-1" /> Add
-          </Button>
-        </div>
+        
       </CardHeader>
 
       <CardContent className="max-h-64 overflow-hidden">
