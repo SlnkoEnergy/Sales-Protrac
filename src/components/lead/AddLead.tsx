@@ -55,10 +55,20 @@ export default function AddLead() {
     "Referred By": ["Directors", "Clients", "Team members", "E-mail"],
     Marketing: ["Youtube", "Advertisements"],
   };
+const handleChange = (key: string, value: string) => {
+  setFormData((prev: any) => {
+    if (key === "source") {
+      return {
+        ...prev,
+        source: value,
+        sub_source: "", // reset sub_source on source change
+      };
+    }
+    return { ...prev, [key]: value };
+  });
+};
 
-  const handleChange = (key: string, value: string) => {
-    setFormData((prev: any) => ({ ...prev, [key]: value }));
-  };
+
 
   const getCurrentUser = () => {
     try {
@@ -106,9 +116,6 @@ export default function AddLead() {
           sub_source: subSource || " ",
         },
         comments: formData.comments,
-        current_status: {
-          name: "initial",
-        },
         submitted_by: getCurrentUser()._id,
         documents: [],
       };
@@ -237,10 +244,12 @@ export default function AddLead() {
                         Source<span className="text-red-500"> *</span>
                       </Label>
                       <Select
-                        value={formData.source || ""}
+                        value={formData.source || " "}
                         onValueChange={(val) => {
                           handleChange("source", val);
                           handleChange("sub_source", "");
+                          setSource(val); // ✅ this is needed for correct payload
+                          setSubSource("");
                         }}
                         disabled={!!selectedGroup}
                       >
@@ -262,27 +271,27 @@ export default function AddLead() {
                       <div className="flex-1 space-y-1.5">
                         <Label htmlFor="sub_source">Sub-Source</Label>
                         <Select
-                          value={formData.sub_source || ""}
-                          onValueChange={(val) =>
-                            handleChange("sub_source", val)
-                          }
+                          value={formData.sub_source || " "}
+                          onValueChange={(val) => {
+                            handleChange("sub_source", val);
+                            setSubSource(val);
+                          }}
                           disabled={!!selectedGroup}
                         >
                           <SelectTrigger id="sub_source">
                             <SelectValue placeholder="Select Sub-Source" />
                           </SelectTrigger>
                           <SelectContent>
-                            {subSourceOptions[formData.source].map(
-                              (sub, idx) => (
-                                <SelectItem key={idx} value={sub}>
-                                  {sub}
-                                </SelectItem>
-                              )
-                            )}
+                            {subSourceOptions[formData.source].map((sub, idx) => (
+                              <SelectItem key={idx} value={sub}>
+                                {sub}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                     )}
+
                   </div>
                 );
               }
@@ -376,7 +385,7 @@ export default function AddLead() {
                               sub_source: group.source.sub_source || "",
                             }));
 
-                            setSource(group.source.from || ""); // ✅ So subSourceOptions works
+                            setSource(group.source.from || ""); 
                             setSubSource(group.source.sub_source || "");
                           }
                         }}
