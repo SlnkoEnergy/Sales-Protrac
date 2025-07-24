@@ -175,7 +175,7 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
     <>
       <Card className="h-full">
         <CardHeader className="flex flex-row w-full items-center justify-between">
-          <CardTitle className="text-lg font-medium">Tasks</CardTitle>
+          <CardTitle className="text-lg font-medium">Tasks History</CardTitle>
 
         </CardHeader>
 

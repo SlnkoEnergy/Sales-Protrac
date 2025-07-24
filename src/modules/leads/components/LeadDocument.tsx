@@ -99,7 +99,7 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle className="text-lg font-medium">Lead Documents</CardTitle>
+        <CardTitle className="text-lg font-medium">Lead Documents History</CardTitle>
         
       </CardHeader>
 

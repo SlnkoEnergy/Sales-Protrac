@@ -135,7 +135,7 @@ export default function NotesCard({ showNotesModal, setShowNotesModal}) {
   return (
     <Card className="h-full">
       <CardHeader className="flex justify-between items-center">
-        <CardTitle className="text-lg font-medium">Internal Notes</CardTitle>
+        <CardTitle className="text-lg font-medium">Internal Notes History</CardTitle>
         <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
           
           <DialogContent>

@@ -468,7 +468,7 @@ export default function LeadProfile() {
                   <strong>Tariff (Per Unit):</strong>{data?.project_details?.tarrif}
                 </p>
                 <p>
-                  <strong>Lead ID :</strong>{data.id}
+                  <strong>Lead ID :</strong>{data?.id}
                 </p>
                 <p>
                   <strong>Group Code:</strong>{data?.documents?.group_code}
