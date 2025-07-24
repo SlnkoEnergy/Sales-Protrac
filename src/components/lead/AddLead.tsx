@@ -68,8 +68,6 @@ const handleChange = (key: string, value: string) => {
   });
 };
 
-
-
   const getCurrentUser = () => {
     try {
       return JSON.parse(localStorage.getItem("user") || "{}");
@@ -389,11 +387,17 @@ const handleChange = (key: string, value: string) => {
                             setSubSource(group.source.sub_source || "");
                           }
                         }}
+                        
                       >
                         <SelectTrigger id={name as string}>
-                          <SelectValue placeholder={label} />
+                          <SelectValue  placeholder={label} />
                         </SelectTrigger>
-                        <SelectContent>
+                            <SelectContent
+  position="popper"
+                          side="bottom"
+                          align="start"
+                          className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+  >
                           {data
                             .filter(
                               (group) =>
@@ -417,7 +421,12 @@ const handleChange = (key: string, value: string) => {
                       <SelectTrigger id={name as string}>
                         <SelectValue placeholder={label} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent
+                        position="popper"
+                          side="bottom"
+                          align="start"
+                          className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+                      >
                         {(options as string[]).map((opt, i) => (
                           <SelectItem value={opt} key={i}>
                             {opt}
