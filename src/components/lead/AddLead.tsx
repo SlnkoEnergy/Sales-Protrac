@@ -136,7 +136,7 @@ export default function AddLead() {
           <ChevronLeft />
         </Button>
 
-        <Button type="submit" onClick={handleSubmit}>
+        <Button type="submit" className="cursor-pointer bg-[#214b7b]" onClick={handleSubmit}>
           Submit
         </Button>
       </div>

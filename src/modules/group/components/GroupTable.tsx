@@ -85,9 +85,9 @@ export type Group = {
   current_status: {
     status: string;
   };
-  left_capacity:{
+  left_capacity: {
     type: string;
-  }
+  };
 };
 
 export function GroupTable({
@@ -138,82 +138,86 @@ export function GroupTable({
       enableHiding: false,
     },
     {
-      accessorKey: "group_code",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Group Id <ArrowUpDown />
-        </Button>
-      ),
-      cell: ({ row }) => <div>{row.getValue("group_code")}</div>,
-    },
+  accessorKey: "group_code",
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Group Id <ArrowUpDown />
+    </Button>
+  ),
+  cell: ({ row }) => (
+    <Badge style={{ backgroundColor: "#214b7b", color: "white" }}>
+      {row.getValue("group_code")}
+    </Badge>
+  ),
+},
     {
-      id: "client_info",
-      accessorFn: (row) => row?.group_name,
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Client Info <ArrowUpDown />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const navigateToLeadProfile = () => {
-          navigate(`/groupDetail?id=${row.original._id}`);
-        };
+  id: "client_info",
+  accessorFn: (row) => row?.group_name,
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Client Info <ArrowUpDown />
+    </Button>
+  ),
+  cell: ({ row }) => {
+    const navigateToLeadProfile = () => {
+      navigate(`/groupDetail?id=${row.original._id}`);
+    };
 
-        const fullName = row?.original?.group_name || "";
-        const displayedName =
-          fullName.length > 50 ? fullName.slice(0, 10) + "..." : fullName;
+    const fullName = row?.original?.group_name || "";
+    const displayedName =
+      fullName.length > 15 ? fullName.slice(0, 15) + "..." : fullName;
 
-        const mobile = row.original?.contact_details?.mobile;
-        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-        const first = mobiles[0];
-        const remaining = mobiles.slice(1);
-        const remainingContent = mobile?.slice(0) || [];
-        const remainingCount = remaining?.length;
-        const tooltipContent = remainingContent.join(", ");
+    const mobile = row.original?.contact_details?.mobile;
+    const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
+    const first = mobiles[0];
+    const remaining = mobiles.slice(1);
+    const remainingCount = remaining?.length;
+    const tooltipContent = remaining.join(", ");
 
-        return (
-          <div
-            onClick={navigateToLeadProfile}
-            className="cursor-pointer hover:text-[#214b7b]"
-          >
-            <div className="font-medium">{displayedName}</div>
+    return (
+      <div
+        onClick={navigateToLeadProfile}
+        className="cursor-pointer hover:text-[#214b7b]"
+      >
+        <div className="font-medium">{displayedName}</div>
 
-            {mobiles?.length > 0 ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex gap-1 text-sm text-gray-500 items-center">
-                      <div>{first}</div>
-                      {remainingCount > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs px-2 py-0.5 cursor-default"
-                        >
-                          <Phone size={14} />+{remainingCount}
-                        </Badge>
-                      )}
-                    </div>
-                  </TooltipTrigger>
+        {mobiles.length > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex gap-1 text-sm text-gray-500 items-center">
+                  <div>{first}</div>
                   {remainingCount > 0 && (
-                    <TooltipContent side="bottom" align="start">
-                      {tooltipContent}
-                    </TooltipContent>
+                    <Badge
+                      variant="outline"
+                      className="text-xs px-2 py-0.5 cursor-default"
+                    >
+                      <Phone size={14} />+{remainingCount}
+                    </Badge>
                   )}
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <div className="text-sm text-gray-500">-</div>
-            )}
-          </div>
-        );
-      },
-    },
+                </div>
+              </TooltipTrigger>
+              {remainingCount > 0 && (
+                <TooltipContent side="bottom" align="start">
+                  {tooltipContent}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <div className="text-sm text-gray-500">-</div>
+        )}
+      </div>
+    );
+  },
+}
+,
     {
       id: "location_info",
       header: "Location Info",
@@ -243,24 +247,17 @@ export function GroupTable({
       header: "Capacity (MW)",
       cell: ({ row }) => {
         const capacity = parseFloat(row.original.project_details?.capacity);
-        return (<div>
-        {isNaN(capacity) ? "N/A" : capacity.toFixed(2)}
-      </div>);
+        return <div>{isNaN(capacity) ? "N/A" : capacity.toFixed(2)}</div>;
       },
     },
-  {
-  accessorKey: "left_capacity",
-  header: "Left Capacity (MW)",
-  cell: ({ row }) => {
-    const capacity = parseFloat(row.original?.left_capacity);
-    return (
-      <div>
-        {isNaN(capacity) ? "N/A" : capacity.toFixed(2)}
-      </div>
-    );
-  },
-}
-,
+    {
+      accessorKey: "left_capacity",
+      header: "Left Capacity (MW)",
+      cell: ({ row }) => {
+        const capacity = parseFloat(row.original?.left_capacity);
+        return <div>{isNaN(capacity) ? "N/A" : capacity.toFixed(2)}</div>;
+      },
+    },
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
@@ -282,6 +279,26 @@ export function GroupTable({
       header: "Created By",
       cell: ({ row }) => <div>{row.original.createdBy?.name}</div>,
     },
+    {
+  accessorKey: "createdBy?.name",
+  header: "Status",
+  cell: ({ row }) => {
+    const status = row.original.current_status?.status || "unknown";
+    const capitalized = status.charAt(0).toUpperCase() + status.slice(1);
+    const isOpen = status.toLowerCase() === "open";
+
+    return (
+      <Badge
+        style={{
+          backgroundColor: isOpen ? "#d1fae5" : "#fee2e2", 
+          color: isOpen ? "#065f46" : "#991b1b", 
+        }}
+      >
+        {capitalized}
+      </Badge>
+    );
+  },
+},
     {
       id: "actions",
       enableHiding: false,
@@ -450,64 +467,63 @@ export function GroupTable({
     <div className="w-full">
       <div className="flex justify-between items-center py-4 px-2">
         {/* Right side: Rows per page and Columns */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="limit">Rows per page:</label>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => handleLimitChange(Number(value))}
-            >
-              <SelectTrigger className="w-24 h-9 cursor-pointer">
-                <SelectValue placeholder="Select limit" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 5, 10, 20, 50, 100].map((limit) => (
-                  <SelectItem
-                    className="cursor-pointer"
-                    key={limit}
-                    value={limit.toString()}
-                  >
-                    {limit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Columns Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="cursor-pointer" variant="outline">
-                Columns <ChevronDown className="ml-1 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  let label = column.id;
-                  if (column.id === "id") label = "Group Id";
-                  else if (column.id === "name") label = "Name";
-                  else if (typeof column.columnDef.header === "string")
-                    label = column.columnDef.header;
-
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize cursor-pointer"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {label}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <label htmlFor="limit">Rows per page:</label>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => handleLimitChange(Number(value))}
+          >
+            <SelectTrigger className="w-24 h-9 cursor-pointer">
+              <SelectValue placeholder="Select limit" />
+            </SelectTrigger>
+            <SelectContent>
+              {[1, 5, 10, 20, 50, 100].map((limit) => (
+                <SelectItem
+                  className="cursor-pointer"
+                  key={limit}
+                  value={limit.toString()}
+                >
+                  {limit}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
+        {/* Columns Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="cursor-pointer" variant="outline">
+              Columns <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                let label = column.id;
+                if (column.id === "id") label = "Group Id";
+                else if (column.id === "name") label = "Name";
+                else if (typeof column.columnDef.header === "string")
+                  label = column.columnDef.header;
+
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize cursor-pointer"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
         <Table>

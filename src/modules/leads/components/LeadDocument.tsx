@@ -212,6 +212,7 @@ export default function LeadDocuments({ data }) {
                   }
                   size="sm"
                   variant="outline"
+                  className="cursor-pointer"
                 >
                   {uploading ? "Uploading..." : "Upload"}
                 </Button>
@@ -240,10 +241,10 @@ export default function LeadDocuments({ data }) {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction onClick={() => handleDelete(index)}>
+                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]"  onClick={() => handleDelete(index)}>
                         Delete
                       </AlertDialogAction>
-                      <AlertDialogCancel onClick={() => setEditIndex(null)}>
+                      <AlertDialogCancel className="cursor-pointer" onClick={() => setEditIndex(null)}>
                         Cancel
                       </AlertDialogCancel>
                     </AlertDialogFooter>

@@ -405,12 +405,9 @@ export function DataTable({
 
         const relative =
           relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-        const formatted = format(usedDate, "MMM d, yyyy");
-
         return (
           <div>
             {relative}{" "}
-            <span className="text-gray-500 text-xs">({formatted})</span>
           </div>
         );
       },

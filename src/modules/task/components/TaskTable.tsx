@@ -188,20 +188,26 @@ export function TaskTable({
     {
       accessorKey: "title",
       header: "Title",
-      cell: ({ row }) => (
-        <div
-          onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
-          className="capitalize cursor-pointer hover:text-[#214b7b]"
-        >
-          {row.getValue("title")}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const title = row.getValue("title") || "";
+        const truncatedTitle =
+          title.length > 15 ? title.slice(0, 15) + "..." : title;
+
+        return (
+          <div
+            onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
+            className="capitalize cursor-pointer hover:text-[#214b7b]"
+          >
+            {truncatedTitle}
+          </div>
+        );
+      },
     },
     {
       id: "Lead ID",
       accessorFn: (row) => row.lead?.id,
       header: "Lead ID",
-      cell: ({getValue}) => {
+      cell: ({ getValue }) => {
         return <div>{String(getValue())}</div>;
       },
     },
@@ -210,20 +216,22 @@ export function TaskTable({
       accessorKey: "lead",
       header: "Lead Name",
       cell: ({ row }) => {
-        
         const navigate = useNavigate();
-        
+
         const navigateToLeadProfile = () => {
-          
           navigate(`/leadProfile?id=${row.original.lead._id}`);
         };
+
+        const name = row.original.lead?.name || "";
+        const truncatedName =
+          name.length > 15 ? name.slice(0, 15) + "..." : name;
 
         return (
           <div
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
-            {row.original.lead?.name}
+            {truncatedName}
           </div>
         );
       },
@@ -626,9 +634,7 @@ export function TaskTable({
                 .map((column) => {
                   const colHeader = column.columnDef.header;
                   const label =
-                    typeof colHeader === "string"
-                      ? colHeader
-                      : column.id;
+                    typeof colHeader === "string" ? colHeader : column.id;
 
                   return (
                     <DropdownMenuCheckboxItem

@@ -17,7 +17,7 @@ import { ChevronLeft } from "lucide-react";
 import { getGroupById } from "@/services/group/GroupService";
 import { updateGroup } from "@/services/group/GroupService";
 
-export default function GroupDetailForm({ groupId }) {
+export default function GroupDetailForm({ groupId, onClose }) {
   const [formData, setFormData] = useState<any>({});
   const [source, setSource] = useState("");
   const [subSource, setSubSource] = useState("");
@@ -112,7 +112,7 @@ export default function GroupDetailForm({ groupId }) {
         await createGroup({ data: payload });
         toast.success("Group Created Successfully!");
       }
-      navigate("/group");
+      onClose();
     } catch (err) {
       toast.error("Failed to submit Group");
     }
