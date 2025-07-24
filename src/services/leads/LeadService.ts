@@ -44,7 +44,8 @@ export const createBdLead = async ({ data }: { data: any }) => {
     const response = await Axios.post(`/bddashboard/lead`, data);
     return response.data;
   } catch (error: any) {
-    throw error.response?.data || error.message;
+    const message = error.response?.data?.error || error.message || "Something went wrong";
+    throw new Error(message);
   }
 };
 
@@ -295,3 +296,13 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
     throw new Error(error.response?.data?.message || "Failed to export CSV");
   }
 };
+
+export const getAllGroupName = async() =>{
+  try {
+    
+    const response = await Axios.get("/bddashboard/group");
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+}

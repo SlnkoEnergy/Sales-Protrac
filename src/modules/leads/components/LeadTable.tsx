@@ -134,6 +134,9 @@ export type Lead = {
   leadAgeing: string;
   expected_closing_date: Date;
   handover: boolean;
+  group_code: string;
+  group_name: string;
+  group_id: string;
 };
 
 export type stageCounts = {
@@ -144,7 +147,15 @@ export type stageCounts = {
   dead: number;
   all: number;
 };
-export function DataTable({ search, onSelectionChange, }: { search: string, onSelectionChange: (ids: string[]) => void;}) {
+export function DataTable({
+  search,
+  onSelectionChange,
+  group_id,
+}: {
+  search: string;
+  onSelectionChange: (ids: string[]) => void;
+  group_id: string;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
@@ -180,6 +191,34 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
     return d && !isNaN(parsed.getTime());
   };
   const navigate = useNavigate();
+  const isFromGroup = location.pathname === "/groupDetail";
+
+  const groupInfoColumn = {
+    id: "group_info",
+    accessorFn: (row) => row?.name,
+    header: "Group Info",
+    cell: ({ row }) => {
+      const navigateToGroupProfile = () => {
+        navigate(`/groupDetail?id=${row.original.group_id}`);
+      };
+
+      const code = row?.original?.group_code || "";
+      const name = row?.original?.group_name;
+
+      if (!code) return <div className="text-gray-500">-</div>;
+
+      return (
+        <div
+          onClick={navigateToGroupProfile}
+          className="cursor-pointer hover:text-[#214b7b]"
+        >
+          <div className="font-medium">{code}</div>
+          <div className="text-sm text-gray-500">{name}</div>
+        </div>
+      );
+    },
+  };
+
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",
@@ -244,16 +283,17 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
         const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
         const first = mobiles[0];
         const remaining = mobiles.slice(1);
-        const remainingContent = mobile.slice(0);
-        const remainingCount = remaining.length;
-        const tooltipContent = remainingContent.join(", ");
+        const tooltipContent = remaining.join(", ");
+        const name = row?.original?.name || "";
+        const truncatedName =
+          name.length > 15 ? `${name.slice(0, 15)}...` : name;
 
         return (
           <div
             onClick={navigateToLeadProfile}
             className="cursor-pointer hover:text-[#214b7b]"
           >
-            <div className="font-medium">{row?.original?.name}</div>
+            <div className="font-medium">{truncatedName}</div>
 
             {mobiles.length > 0 ? (
               <TooltipProvider>
@@ -261,17 +301,17 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
                   <TooltipTrigger asChild>
                     <div className="flex gap-1 text-sm text-gray-500 items-center">
                       <div>{first}</div>
-                      {remainingCount > 0 && (
+                      {remaining.length > 0 && (
                         <Badge
                           variant="outline"
                           className="text-xs px-2 py-0.5 cursor-default"
                         >
-                          <Phone size={14} />+{remainingCount}
+                          <Phone size={14} />+{remaining.length}
                         </Badge>
                       )}
                     </div>
                   </TooltipTrigger>
-                  {remainingCount > 0 && (
+                  {remaining.length > 0 && (
                     <TooltipContent side="bottom" align="start">
                       {tooltipContent}
                     </TooltipContent>
@@ -285,6 +325,7 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
         );
       },
     },
+    ...(isFromGroup ? [] : [groupInfoColumn]),
     {
       id: "location_info",
       header: "Location Info",
@@ -364,12 +405,9 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
 
         const relative =
           relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-        const formatted = format(usedDate, "MMM d, yyyy");
-
         return (
           <div>
             {relative}{" "}
-            
           </div>
         );
       },
@@ -594,6 +632,8 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
     setIsLoading(true);
   }, [stageFromUrl]);
 
+  console.log({ group_id });
+
   React.useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -602,8 +642,13 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
           page,
           limit: pageSize,
           search,
+          group_id: isFromGroup ? group_id : "",
           lead_without_task:
-            stageFromUrl === "lead_without_task" ? "true" : undefined,
+            stageFromUrl === "lead_without_task"
+              ? "true"
+              : isFromGroup
+              ? ""
+              : undefined,
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -737,46 +782,45 @@ export function DataTable({ search, onSelectionChange, }: { search: string, onSe
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-    React.useEffect(() => {
-      const selectedIds = table
-        .getSelectedRowModel()
-        .rows.map((row) => row.original._id);
-  
-      onSelectionChange(selectedIds);
-    }, [table.getSelectedRowModel().rows, onSelectionChange]);
-
   if (isLoading) return <Loader />;
 
   return (
-    <div className="w-full">
+    <div
+      className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
+    >
       <div className="flex justify-between items-center py-4 px-2">
-        <div>
-          <Tabs value={tab} onValueChange={handleTabChange}>
-            <TabsList className="gap-2">
-              <TabsTrigger className="cursor-pointer" value="lead_without_task">
-                Lead W/O Task ({stageCounts?.lead_without_task || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="initial">
-                Initial ({stageCounts?.initial || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="follow up">
-                Follow Up ({stageCounts?.["follow up"] || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="warm">
-                Warm ({stageCounts?.warm || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="won">
-                Won ({stageCounts?.won || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="dead">
-                Dead ({stageCounts?.dead || "0"})
-              </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="">
-                All ({stageCounts?.all || "0"})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+        {!isFromGroup && (
+          <div>
+            <Tabs value={tab} onValueChange={handleTabChange}>
+              <TabsList className="gap-2">
+                <TabsTrigger
+                  className="cursor-pointer"
+                  value="lead_without_task"
+                >
+                  Lead W/O Task ({stageCounts?.lead_without_task || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="initial">
+                  Initial ({stageCounts?.initial || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="follow up">
+                  Follow Up ({stageCounts?.["follow up"] || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="warm">
+                  Warm ({stageCounts?.warm || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="won">
+                  Won ({stageCounts?.won || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="dead">
+                  Dead ({stageCounts?.dead || "0"})
+                </TabsTrigger>
+                <TabsTrigger className="cursor-pointer" value="">
+                  All ({stageCounts?.all || "0"})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
 
         {/* Right side: Rows per page and Columns */}
         <div className="flex items-center gap-4">

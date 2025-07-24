@@ -236,7 +236,7 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                               minute: "2-digit",
                               hour12: true,
                             })}{" "}
-                            by {details?.user_id?.name}
+                            by {task?.user_id?.name}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -262,9 +262,9 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                                 setEditModalOpen(true);
                               }}
                             >
-                              {task?.current_status !== "completed" && (
-                                <Pencil className="cursor-pointer" size={18} />
-                              )}
+                            {task?.current_status !== "completed" && task?.user_id?.name !== getCurrentUser()?.name && (
+  <Pencil className="cursor-pointer" size={18} />
+)}
                             </div>
                           </div>
                         </div>
