@@ -7,7 +7,6 @@ import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
-import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
 import { exportToCsvTask } from "@/services/task/Task";
 
@@ -75,9 +74,9 @@ export default function SearchBarTasks({
         </span>
         <span
           className="cursor-pointer text-black hover:underline"
-          onClick={() => navigate("/addtask")}
+          onClick={() => navigate("/addgroup")}
         >
-          + Add Task
+          + Add Group
         </span>
         <div>
           <img

@@ -6,9 +6,9 @@ import { useSearchParams } from "react-router-dom";
 
 export default function Leads() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedStages, setSelectedStages] = useState("");
   const [loading, setLoading] = useState(true);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 400);

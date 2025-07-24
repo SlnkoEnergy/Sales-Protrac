@@ -82,6 +82,14 @@ export default function ViewTask() {
     }
   };
 
+    const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
   
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
@@ -294,16 +302,15 @@ export default function ViewTask() {
                       ))}
                     </SelectContent>
                   </Select>
-
                   <Button
-                    onClick={() =>
-                      handleChangeStatus(selectedStatus, selectedRemarks)
-                    }
-                    className="w-[100px] cursor-pointer"
-                    variant="default"
-                  >
-                    Submit
-                  </Button>
+  onClick={() => handleChangeStatus(selectedStatus, selectedRemarks)}
+  className="w-[100px] cursor-pointer"
+  variant="default"
+  disabled={data?.user_id?.name === getCurrentUser()?.name} 
+>
+  Submit
+</Button>
+
                 </div>
                 <ScrollArea className="h-48 w-full overflow-auto">
                   <div className="flex flex-col gap-3 p-2">

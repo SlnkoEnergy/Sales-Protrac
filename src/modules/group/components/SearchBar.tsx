@@ -10,7 +10,7 @@ import exportImg from "../../../../public/assets/export.png";
 import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
 
-interface SearchBarLeadsProps {
+interface SearchBarGroupProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   selectedStage: string;
@@ -19,11 +19,11 @@ interface SearchBarLeadsProps {
   selectedIds: string[];
 }
 
-export default function SearchBarLeads({
+export default function SearchBarGroups({
   searchValue,
   onSearchChange,
   selectedIds
-}: SearchBarLeadsProps) {
+}: SearchBarGroupProps) {
   const navigate = useNavigate();
 
  const handleExportToCsv = async (selectedIds: string[]) => {
@@ -57,7 +57,7 @@ export default function SearchBarLeads({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search Leads"
+            placeholder="Search Group"
             className="pl-8"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -88,7 +88,7 @@ export default function SearchBarLeads({
             className="cursor-pointer text-black hover:underline"
             onClick={()=> handleExportToCsv(selectedIds)}
           >
-            Export Leads
+            Export Group
           </span>
         </div>
       </div>
