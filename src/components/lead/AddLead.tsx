@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -48,7 +49,17 @@ export default function AddLead() {
   const [showGroupDropDown, setShowGroupDropDown] = useState(false);
   const [data, setData] = useState<GroupName[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupName | null>(null);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
+
+  const filtered = data.filter(
+  (grp) =>
+    (
+      grp.group_code?.toLowerCase().includes(search?.toLowerCase()) ||
+      grp.group_name?.toLowerCase().includes(search?.toLowerCase())
+    ) &&
+    grp.current_status?.status?.toLowerCase() !== "closed"
+);
 
   const subSourceOptions: Record<string, string[]> = {
     "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
@@ -429,16 +440,28 @@ export default function AddLead() {
                           align="start"
                           className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
                         >
-                          {data
-                            .filter(
-                              (group) =>
-                                group.current_status.status !== "closed"
-                            )
-                            .map((group) => (
-                              <SelectItem key={group._id} value={group._id}>
-                                {group.group_code} - {group.group_name}
+                          <div>
+                            <Input
+                              placeholder="search group..."
+                              value={search}
+                              onChange={(e) => setSearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <SelectGroup>
+                            { filtered.length > 0 ? (
+                              filtered.map((group) =>(
+                                <SelectItem key={group._id} value={group._id}>
+                                {group.group_code}- {group.group_name}
                               </SelectItem>
-                            ))}
+                              ))
+                            ):(
+                              <div className="px-2 py-2 text-sm text-muted-foreground">
+                                    No group found
+                                  </div>
+                            )
+                            }
+                          </SelectGroup>
                         </SelectContent>
                       </Select>
                     )}
