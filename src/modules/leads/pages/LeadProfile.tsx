@@ -272,16 +272,11 @@ export default function LeadProfile() {
                 Lead Info
               </TabsTrigger>
 
-              {((data?.current_status?.name === "won" &&
-                data?.current_assigned?.user_id?._id ===
-                getUserIdFromToken()) ||
-                ["admin", "Deepak Manodi"].includes(
-                  getCurrentUser()?.name
-                )) && (
-                  <TabsTrigger className="cursor-pointer" value="handover">
-                    Handover
-                  </TabsTrigger>
-                )}
+              {data?.current_status?.name === "won" && (
+                <TabsTrigger className="cursor-pointer" value="handover">
+                  Handover
+                </TabsTrigger>
+              )}
 
               <TabsTrigger className="cursor-pointer" value="timeline">
                 Timeline
@@ -294,9 +289,8 @@ export default function LeadProfile() {
           <div className="flex gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                {(data?.current_assigned?.user_id?._id ===
-                  getUserIdFromToken() ||
-                  ["admin", "Deepak Manodi"].includes(
+                {(
+                  ["admin", "Deepak Manodi", "IT Team"].includes(
                     getCurrentUser()?.name
                   )) && (
                     <Button

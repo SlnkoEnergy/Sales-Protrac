@@ -259,7 +259,7 @@ const handleSave = async () => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label className="mb-2">Title</Label>
+          <Label className="mb-2">Task Name</Label>
           <Input
             required
             onChange={(e) =>

@@ -15,12 +15,10 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  Calendar,
   CalendarDays,
   ChevronDown,
   EyeIcon,
   MoreHorizontal,
-  Pencil,
   PencilIcon,
   Phone,
 } from "lucide-react";
@@ -139,6 +137,45 @@ export type Lead = {
   group_id: string;
 };
 
+const allStates = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
+];
+
 export type stageCounts = {
   lead_without_task: number;
   initial: number;
@@ -169,7 +206,7 @@ export function DataTable({
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [stageCounts, setStageCounts] = React.useState("");
-  const [tab, setTab] = React.useState(stageFromUrl || "lead_without_task");
+  const [tab, setTab] = React.useState(stageFromUrl || "initial");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
     null
   );
@@ -182,6 +219,7 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [selectedStates, setSelectedStates] = React.useState("");
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -196,7 +234,7 @@ export function DataTable({
   const groupInfoColumn = {
     id: "group_info",
     accessorFn: (row) => row?.name,
-    header: "Group Info",
+    header: "Group Name",
     cell: ({ row }) => {
       const navigateToGroupProfile = () => {
         navigate(`/groupDetail?id=${row.original.group_id}`);
@@ -328,7 +366,7 @@ export function DataTable({
     ...(isFromGroup ? [] : [groupInfoColumn]),
     {
       id: "location_info",
-      header: "Location Info",
+      header: "State",
       cell: ({ row }) => {
         const state = row.original?.address?.state || "";
         const scheme = row.original?.project_details?.scheme || "";
@@ -353,19 +391,10 @@ export function DataTable({
     ,
     {
       accessorKey: "project_details.capacity",
-      header: "Capacity (MW)",
+      header: "Capacity (MW AC)",
       cell: ({ row }) => {
         const capacity = row.original.project_details?.capacity;
         return <div>{capacity ?? "N/A"}</div>;
-      },
-    },
-    {
-      accessorKey: "project_details.distance_from_substation.value",
-      header: "Distance (Km)",
-      cell: ({ row }) => {
-        const distance =
-          row.original.project_details?.distance_from_substation?.value;
-        return <div>{distance ?? "N/A"}</div>;
       },
     },
     {
@@ -476,38 +505,14 @@ export function DataTable({
 
         return (
           <div className="flex items-center text-sm  gap-1">
-            <CalendarDays className="w-3.5 h-3.5" />
             {expectedClosing && expectedClosing !== "-" ? (
-              <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+              <>
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+              </>
             ) : (
               <>
-                <input
-                  type="date"
-                  className="border rounded text-xs px-1 py-0.5"
-                  onChange={handleDateChange}
-                />
-
-                <AlertDialog open={open} onOpenChange={setOpen}>
-                  <AlertDialogTrigger asChild />
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you sure you want to set the expected closing date?
-                      </AlertDialogTitle>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogAction
-                        className="cursor-pointer"
-                        onClick={handleConfirm}
-                      >
-                        Yes, Confirm
-                      </AlertDialogAction>
-                      <AlertDialogCancel className="cursor-pointer">
-                        Cancel
-                      </AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Badge variant="secondary">Yet to come</Badge>
               </>
             )}
           </div>
@@ -630,11 +635,12 @@ export function DataTable({
 
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
+  const state = searchParams.get("stateFilter");
+  
+
   React.useEffect(() => {
     setIsLoading(true);
   }, [stageFromUrl]);
-
-  console.log({ group_id });
 
   React.useEffect(() => {
     const fetchLeads = async () => {
@@ -645,6 +651,7 @@ export function DataTable({
           limit: pageSize,
           search,
           group_id: isFromGroup ? group_id : "",
+          stateFilter: state || "",
           lead_without_task:
             stageFromUrl === "lead_without_task"
               ? "true"
@@ -668,7 +675,7 @@ export function DataTable({
     };
 
     fetchLeads();
-  }, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
+  }, [page, pageSize, search, fromDate, toDate, stageFromUrl, state]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -785,22 +792,38 @@ export function DataTable({
   });
 
   if (isLoading) return <Loader />;
+  const isActiveLeadWithoutTask =
+    location.pathname === "/leads" &&
+    searchParams.get("stage") === "lead_without_task";
+  const toggleState = (state: string) => {
+    let updatedStates = [...selectedStates];
 
+    if (updatedStates.includes(state)) {
+      updatedStates = updatedStates.filter((s) => s !== state);
+    } else {
+      updatedStates.push(state);
+    }
+
+    setSelectedStates(updatedStates);
+
+    // Update URL
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (updatedStates.length > 0) {
+      newParams.set("stateFilter", updatedStates.join(","));
+    } else {
+      newParams.delete("stateFilter");
+    }
+    setSearchParams(newParams);
+  };
   return (
     <div
       className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
     >
       <div className="flex justify-between items-center py-4 px-2">
-        {!isFromGroup && (
+        {!isFromGroup && !isActiveLeadWithoutTask && (
           <div>
             <Tabs value={tab} onValueChange={handleTabChange}>
               <TabsList className="gap-2">
-                <TabsTrigger
-                  className="cursor-pointer"
-                  value="lead_without_task"
-                >
-                  Lead W/O Task ({stageCounts?.lead_without_task || "0"})
-                </TabsTrigger>
                 <TabsTrigger className="cursor-pointer" value="initial">
                   Initial ({stageCounts?.initial || "0"})
                 </TabsTrigger>
@@ -824,31 +847,41 @@ export function DataTable({
           </div>
         )}
 
-        {/* Right side: Rows per page and Columns */}
         <div className="flex items-center gap-4">
           {/* Rows per page */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="limit">Rows per page:</label>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => handleLimitChange(Number(value))}
+          
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="relative inline-block">
+                <Button variant="outline" className="cursor-pointer pr-8">
+                  Filter by State <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+
+                {selectedStates.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold">
+                    {selectedStates.length}
+                  </span>
+                )}
+              </div>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              className="max-h-64 overflow-y-auto w-48"
             >
-              <SelectTrigger className="w-24 h-9 cursor-pointer">
-                <SelectValue placeholder="Select limit" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 5, 10, 20, 50, 100].map((limit) => (
-                  <SelectItem
-                    className="cursor-pointer"
-                    key={limit}
-                    value={limit.toString()}
-                  >
-                    {limit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              {allStates.map((state) => (
+                <DropdownMenuCheckboxItem
+                  key={state}
+                  className="capitalize cursor-pointer"
+                  checked={selectedStates.includes(state)}
+                  onCheckedChange={() => toggleState(state)}
+                >
+                  {state}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Columns Dropdown */}
           <DropdownMenu>
@@ -883,6 +916,28 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <label htmlFor="limit">Rows per page:</label>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => handleLimitChange(Number(value))}
+            >
+              <SelectTrigger className="w-24 h-9 cursor-pointer">
+                <SelectValue placeholder="Select limit" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 5, 10, 20, 50, 100].map((limit) => (
+                  <SelectItem
+                    className="cursor-pointer"
+                    key={limit}
+                    value={limit.toString()}
+                  >
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
