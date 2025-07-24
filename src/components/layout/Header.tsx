@@ -12,6 +12,7 @@ import {
   User2,
   File,
   Group,
+  WorkflowIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -39,7 +40,8 @@ export default function Header() {
 
   const isActiveHandover = location.pathname === "/handover";
   const isActiveTask = location.pathname === "/tasks";
-  const isActiveLead = location.pathname === "/leads";
+ const isActiveLead = location.pathname === "/leads" && location.search !== "?stage=lead_without_task";
+  const isActiveLeadWithoutTask = location.pathname === "/leads" && location.search === "?stage=lead_without_task";
   const isActiveDashboard = location.pathname === "/";
   const isActiveGroup = location.pathname === "/group"
 
@@ -136,10 +138,19 @@ export default function Header() {
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
             isActiveLead ? "bg-white text-[#214b7b] font-medium" : ""
           }`}
-          onClick={() => navigate("/leads?stage=lead_without_task")}
+          onClick={() => navigate("/leads?stage=initial")}
         >
           <Users size={18} />
           <span>Leads</span>
+        </div>
+        <div
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
+            isActiveLeadWithoutTask ? "bg-white text-[#214b7b] font-medium" : ""
+          }`}
+          onClick={() => navigate("/leads?stage=lead_without_task")}
+        >
+          <WorkflowIcon size={18} />
+          <span>Leads W/O Task</span>
         </div>
         <div
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
@@ -150,15 +161,6 @@ export default function Header() {
           <ClipboardList size={18} />
           <span>Tasks</span>
         </div>
-        {/* <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveMeeting ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
-          onClick={() => navigate("/meeting")}
-        >
-          <Calendar size={18} />
-          <span>Meetings</span>
-        </div> */}
         <div
           className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
             isActiveHandover ? "bg-white text-[#214b7b] font-medium" : ""
