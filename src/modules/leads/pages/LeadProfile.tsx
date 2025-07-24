@@ -241,12 +241,7 @@ export default function LeadProfile() {
                 Lead Info
               </TabsTrigger>
 
-              {((data?.current_status?.name === "won" &&
-                data?.current_assigned?.user_id?._id ===
-                  getUserIdFromToken()) ||
-                ["admin", "Deepak Manodi"].includes(
-                  getCurrentUser()?.name
-                )) && (
+              {data?.current_status?.name === "won" && (
                 <TabsTrigger className="cursor-pointer" value="handover">
                   Handover
                 </TabsTrigger>
