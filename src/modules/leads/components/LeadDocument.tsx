@@ -37,7 +37,7 @@ export default function LeadDocuments({ data }) {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedViewDoc, setSelectedViewDoc] = useState<string>("");
   const [customDocName, setCustomDocName] = useState("");
-
+  const [expectedDate, setExpectedDate] = useState<Date | null>(null);
   const uploadedDocTypes =
     data?.documents?.map((d) => d?.name?.toLowerCase()) || [];
 
@@ -68,20 +68,39 @@ export default function LeadDocuments({ data }) {
     if (!selectedFile || !itemType || !data._id) return;
 
     const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
+    const docType = itemType.toLowerCase();
+    const isExpectedDateValid =
+      expectedDate instanceof Date && !isNaN(expectedDate.getTime());
+
+    if (
+      !(
+        data.expected_closing_date instanceof Date &&
+        !isNaN(data.expected_closing_date.getTime())
+      ) &&
+      (docType === "loa" || docType === "ppa") &&
+      !isExpectedDateValid
+    ) {
+      toast.error("Expected Closing Date is required for LOA and PPA.");
+      return;
+    }
 
     try {
       setUploading(true);
       await uploadDocuments(
         data._id,
         stage,
-        itemType.toLowerCase(),
+        docType as "loi" | "loa" | "ppa",
         customDocName,
+        !data.expected_closing_date ? expectedDate : undefined,
         selectedFile
       );
 
       console.log({ customDocName });
-      toast.success(`✅ File Uploaded Successfully`);
+      toast.success("✅ File Uploaded Successfully");
       setSelectedFile(null);
+      setTimeout(() => {
+        location.reload();
+      }, 300);
     } catch (error) {
       toast.error("❌ Upload failed.");
     } finally {
@@ -89,7 +108,7 @@ export default function LeadDocuments({ data }) {
     }
   };
 
-  console.log(data?.documents?.length)
+  console.log(data?.documents?.length);
 
   return (
     <Card>
@@ -160,11 +179,40 @@ export default function LeadDocuments({ data }) {
                   />
                 )}
 
+                {/* Expected Closing Date input if missing and required */}
+                {!data?.expected_closing_date &&
+                  ["loa", "ppa", "loi"].includes(item.type.toLowerCase()) && (
+                    <Input
+                      type="date"
+                      required={["loa", "ppa"].includes(
+                        item.type.toLowerCase()
+                      )}
+                      className="w-[160px]"
+                      value={
+                        expectedDate instanceof Date &&
+                        !isNaN(expectedDate.getTime())
+                          ? expectedDate.toISOString().split("T")[0]
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setExpectedDate(new Date(e.target.value))
+                      }
+                    />
+                  )}
+
                 <Button
                   onClick={() => handleFileUpload(item.type)}
-                  disabled={!selectedFile || editIndex !== index || uploading}
+                  disabled={
+                    !selectedFile ||
+                    editIndex !== index ||
+                    uploading ||
+                    (["loa", "ppa"].includes(item.type.toLowerCase()) &&
+                      !data?.expected_closing_date &&
+                      !expectedDate)
+                  }
                   size="sm"
                   variant="outline"
+                  className="cursor-pointer"
                 >
                   {uploading ? "Uploading..." : "Upload"}
                 </Button>
@@ -177,6 +225,7 @@ export default function LeadDocuments({ data }) {
                       [index]?.click()
                   }
                 />
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Trash
@@ -192,10 +241,10 @@ export default function LeadDocuments({ data }) {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction onClick={() => handleDelete(index)}>
+                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]"  onClick={() => handleDelete(index)}>
                         Delete
                       </AlertDialogAction>
-                      <AlertDialogCancel onClick={() => setEditIndex(null)}>
+                      <AlertDialogCancel className="cursor-pointer" onClick={() => setEditIndex(null)}>
                         Cancel
                       </AlertDialogCancel>
                     </AlertDialogFooter>
@@ -206,7 +255,7 @@ export default function LeadDocuments({ data }) {
           ))}
         </ScrollArea>
       </CardContent>
-      
+
       {data?.documents?.length > 0 && (
         <CardContent className="pt-0 mt-4 border-t">
           <p className="text-sm font-semibold mt-3 mb-3">Uploaded Documents</p>
@@ -222,8 +271,8 @@ export default function LeadDocuments({ data }) {
                   </span>
                   {doc?.name === "other" && (
                     <span className="capitalize font-medium">
-                    {doc?.remarks}
-                  </span>
+                      {doc?.remarks}
+                    </span>
                   )}
                   <span className="text-gray-600 capitalize">
                     {doc?.user_id?.name}

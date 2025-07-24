@@ -15,6 +15,9 @@ import { DateFilterProvider } from "./modules/dashboard/components/DateFilterCon
 import Layout from "./components/layout/Layout";
 import DocumentViewer from "./components/lead/DocumentViewer";
 import Handover from "./modules/team/pages/HandoverDashboard";
+import Group from "./modules/group/pages/AddGroup";
+import Groups from "./modules/group/pages/Groups";
+import GroupDetail from "./modules/group/pages/GroupDetail";
 
 
 function App() {
@@ -32,6 +35,8 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="group" element={<Groups />} />
+            <Route path="groupDetail" element = {<GroupDetail />} />
             <Route path="leads" element={<Leads />} />
             <Route path="document-viewer" element={<DocumentViewer />} /> {/* ✅ FIXED */}
             <Route path="leadProfile" element={<LeadProfile />} />
@@ -42,6 +47,7 @@ function App() {
             <Route path="editlead" element={<EditLead />} />
             <Route path="meeting" element={<Meetings />} />
             <Route path="handover" element={<Handover />} />
+            <Route path="addgroup" element={<Group />} />
           </Route>
         </Routes>
       </Router>

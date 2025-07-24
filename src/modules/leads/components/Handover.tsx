@@ -180,12 +180,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
   console.log({ handover });
 
-  const name = getCurrentUser().name;
   const [formData, setFormData] = useState({
-    id: data?.id,
+    id: "",
     customer_details: {
       name: "",
-      customer: data?.name,
+      customer: "",
       epc_developer: "",
       site_address: {
         district_name: "",
@@ -227,9 +226,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       slnko_basic: "",
       remark: "",
       remarks_for_slnko: "",
-      submitted_by_BD: name,
+      submitted_by_BD: "",
     },
-    submitted_by: name,
+    submitted_by: "",
   });
 
   useEffect(() => {
@@ -241,7 +240,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       const updated = {
         ...handover,
         other_details: {
-          ...defaultInitialValues.other_details, // ensures all keys exist
+          ...defaultInitialValues.other_details,
           ...handover.other_details,
         },
       };
@@ -253,7 +252,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         ...defaultInitialValues.customer_details,
         customer: data?.name,
         state: data?.address?.state || "",
-        p_group: data?.group || "",
+        p_group: data?.group_name || "",
         number: data?.contact_details?.mobile?.[0] || "",
         alt_number: data?.contact_details?.mobile?.[1] || "",
       };
@@ -357,7 +356,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
 
-    // Step 1: Validation logic
     const requiredFields = [
       { name: "order_details.type_business", label: "Type of Business *" },
       { name: "project_detail.work_by_slnko", label: "Work By Slnko *" },
@@ -409,7 +407,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       return;
     }
 
-    // Step 2: Submit logic
     try {
       const {
         id,
@@ -417,9 +414,15 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         order_details,
         project_detail,
         commercial_details,
-        other_details,
-        submitted_by: name,
+        other_details: originalOtherDetails,
       } = formData;
+
+      const user = getCurrentUser();
+
+      const other_details = {
+        ...originalOtherDetails,
+        submitted_by_BD: user?.name || "",
+      };
 
       const payload = {
         id,
@@ -429,7 +432,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         commercial_details,
         other_details,
         invoice_detail: {},
-        submitted_by: name,
+        submitted_by: user?.name || "",
         status_of_handoversheet: "draft",
         is_locked: "locked",
       };
@@ -448,6 +451,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       );
 
       toast.success("Handover Sheet Submitted Successfully");
+      setTimeout(() => {
+        location.reload();
+      }, 300);
     } catch (error: any) {
       toast.error("Error in Submitting Handover Sheet");
     }
@@ -482,6 +488,10 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
       const response = await editHandover(handover?._id, payload);
       toast.success("Handover Sheet Updated Successfully");
+
+      setTimeout(() => {
+        location.reload();
+      }, 300);
     } catch (error: any) {
       toast.error(error.message || "Error in Updating Handover Sheet");
     }

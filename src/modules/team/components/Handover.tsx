@@ -176,7 +176,7 @@ export function HandoverTable({
 
         return (
           <div className="capitalize">
-            {kwp || "-"} / {proposed || "-"}
+           {kwp ? `${kwp} kwp` : "- kwp"} / {proposed ? `${proposed} kwp` : "- kwp"}
           </div>
         );
       },
