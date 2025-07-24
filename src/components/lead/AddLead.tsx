@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -48,16 +49,32 @@ export default function AddLead() {
   const [showGroupDropDown, setShowGroupDropDown] = useState(false);
   const [data, setData] = useState<GroupName[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupName | null>(null);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
+
+  const filtered = data.filter(
+    (grp) =>
+      (grp.group_code?.toLowerCase().includes(search?.toLowerCase()) ||
+        grp.group_name?.toLowerCase().includes(search?.toLowerCase())) &&
+      grp.current_status?.status?.toLowerCase() !== "closed"
+  );
 
   const subSourceOptions: Record<string, string[]> = {
     "Social Media": ["Instagram", "LinkedIn", "Whatsapp"],
     "Referred By": ["Directors", "Clients", "Team members", "E-mail"],
     Marketing: ["Youtube", "Advertisements"],
   };
-
   const handleChange = (key: string, value: string) => {
-    setFormData((prev: any) => ({ ...prev, [key]: value }));
+    setFormData((prev: any) => {
+      if (key === "source") {
+        return {
+          ...prev,
+          source: value,
+          sub_source: "", // reset sub_source on source change
+        };
+      }
+      return { ...prev, [key]: value };
+    });
   };
 
   const getCurrentUser = () => {
@@ -106,9 +123,6 @@ export default function AddLead() {
           sub_source: subSource || " ",
         },
         comments: formData.comments,
-        current_status: {
-          name: "initial",
-        },
         submitted_by: getCurrentUser()._id,
         documents: [],
       };
@@ -129,20 +143,18 @@ export default function AddLead() {
     fetchData();
   }, []);
 
+  console.log({ data });
+
   return (
     <div>
       <div className="flex justify-between">
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ChevronLeft />
         </Button>
-
-        <Button type="submit" className="cursor-pointer bg-[#214b7b]" onClick={handleSubmit}>
-          Submit
-        </Button>
       </div>
 
       <form
-        className="max-w-5xl mx-auto p-8 rounded-xl shadow-md border bg-white"
+        className="max-w-5xl mx-auto p-8 flex flex-col items-center rounded-xl shadow-md border bg-white"
         onSubmit={handleSubmit}
       >
         <h2 className="text-3xl font-bold mb-6 text-center">Create Lead</h2>
@@ -237,10 +249,12 @@ export default function AddLead() {
                         Source<span className="text-red-500"> *</span>
                       </Label>
                       <Select
-                        value={formData.source || ""}
+                        value={formData.source || " "}
                         onValueChange={(val) => {
                           handleChange("source", val);
                           handleChange("sub_source", "");
+                          setSource(val); // ✅ this is needed for correct payload
+                          setSubSource("");
                         }}
                         disabled={!!selectedGroup}
                       >
@@ -262,10 +276,11 @@ export default function AddLead() {
                       <div className="flex-1 space-y-1.5">
                         <Label htmlFor="sub_source">Sub-Source</Label>
                         <Select
-                          value={formData.sub_source || ""}
-                          onValueChange={(val) =>
-                            handleChange("sub_source", val)
-                          }
+                          value={formData.sub_source || " "}
+                          onValueChange={(val) => {
+                            handleChange("sub_source", val);
+                            setSubSource(val);
+                          }}
                           disabled={!!selectedGroup}
                         >
                           <SelectTrigger id="sub_source">
@@ -298,7 +313,32 @@ export default function AddLead() {
                       <Switch
                         id="enable-group"
                         checked={showGroupDropDown}
-                        onCheckedChange={setShowGroupDropDown}
+                        onCheckedChange={(val) => {
+                          setShowGroupDropDown(val);
+
+                          if (!val) {
+                            // Clear populated data
+                            setSelectedGroup(null);
+                            handleChange(name as string, "");
+                            handleChange("groupname", "");
+
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              email: "",
+                              mobile: "",
+                              altMobile: "",
+                              district: "",
+                              state: "",
+                              village: "",
+                              scheme: "",
+                              source: "",
+                              sub_source: "",
+                            }));
+
+                            setSource("");
+                            setSubSource("");
+                          }
+                        }}
                       />
                     )}
                   </div>
@@ -313,7 +353,6 @@ export default function AddLead() {
                       }
                       disabled={
                         name !== "capacity" &&
-                        name !== "companyName" &&
                         name !== "customerName" &&
                         name !== "subStationDistance" &&
                         name !== "tariff" &&
@@ -335,6 +374,7 @@ export default function AddLead() {
 
                   {type === "textarea" && (
                     <Textarea
+                      className="min-w-240"
                       id={name as string}
                       onChange={(e) =>
                         handleChange(name as string, e.target.value)
@@ -374,9 +414,10 @@ export default function AddLead() {
                               scheme: group.project_details?.scheme || "",
                               source: group.source.from || "",
                               sub_source: group.source.sub_source || "",
+                              companyName: group?.company_name || "",
                             }));
 
-                            setSource(group.source.from || ""); 
+                            setSource(group.source.from || "");
                             setSubSource(group.source.sub_source || "");
                           }
                         }}
@@ -384,17 +425,33 @@ export default function AddLead() {
                         <SelectTrigger id={name as string}>
                           <SelectValue placeholder={label} />
                         </SelectTrigger>
-                        <SelectContent>
-                          {data
-                            .filter(
-                              (group) =>
-                                group.current_status.status !== "closed"
-                            )
-                            .map((group) => (
-                              <SelectItem key={group._id} value={group._id}>
-                                {group.group_code}
-                              </SelectItem>
-                            ))}
+                        <SelectContent
+                          position="popper"
+                          side="bottom"
+                          align="start"
+                          className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+                        >
+                          <div>
+                            <Input
+                              placeholder="search group..."
+                              value={search}
+                              onChange={(e) => setSearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <SelectGroup>
+                            {filtered.length > 0 ? (
+                              filtered.map((group) => (
+                                <SelectItem key={group._id} value={group._id}>
+                                  {group.group_code}- {group.group_name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="px-2 py-2 text-sm text-muted-foreground">
+                                No group found
+                              </div>
+                            )}
+                          </SelectGroup>
                         </SelectContent>
                       </Select>
                     )}
@@ -408,7 +465,12 @@ export default function AddLead() {
                       <SelectTrigger id={name as string}>
                         <SelectValue placeholder={label} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+                      >
                         {(options as string[]).map((opt, i) => (
                           <SelectItem value={opt} key={i}>
                             {opt}
@@ -420,6 +482,15 @@ export default function AddLead() {
                 </div>
               );
             })}
+        </div>
+        <div className="mt-4">
+          <Button
+            type="submit"
+            className="cursor-pointer bg-[#214b7b]"
+            onClick={handleSubmit}
+          >
+            Submit
+          </Button>
         </div>
       </form>
     </div>
