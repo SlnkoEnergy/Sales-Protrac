@@ -161,7 +161,7 @@ export function GroupTable({
       variant="ghost"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
-      Client Info <ArrowUpDown />
+      Group Name <ArrowUpDown />
     </Button>
   ),
   cell: ({ row }) => {
@@ -220,7 +220,7 @@ export function GroupTable({
 ,
     {
       id: "location_info",
-      header: "Location Info",
+      header: "State",
       cell: ({ row }) => {
         const state = row.original?.address?.state || "";
         const scheme = row.original?.project_details?.scheme || "";
@@ -244,7 +244,7 @@ export function GroupTable({
     },
     {
       accessorKey: "project_details.capacity",
-      header: "Capacity (MW)",
+      header: "Total Capacity (MW AC)",
       cell: ({ row }) => {
         const capacity = parseFloat(row.original.project_details?.capacity);
         return <div>{isNaN(capacity) ? "N/A" : capacity.toFixed(2)}</div>;
@@ -503,8 +503,8 @@ export function GroupTable({
               .filter((column) => column.getCanHide())
               .map((column) => {
                 let label = column.id;
-                if (column.id === "id") label = "Group Id";
-                else if (column.id === "name") label = "Name";
+                if (column.id === "group_code") label = "Group Id";
+                else if (column.id === "client_info") label = "Group Name";
                 else if (typeof column.columnDef.header === "string")
                   label = column.columnDef.header;
 
