@@ -55,18 +55,18 @@ export default function AddLead() {
     "Referred By": ["Directors", "Clients", "Team members", "E-mail"],
     Marketing: ["Youtube", "Advertisements"],
   };
-const handleChange = (key: string, value: string) => {
-  setFormData((prev: any) => {
-    if (key === "source") {
-      return {
-        ...prev,
-        source: value,
-        sub_source: "", // reset sub_source on source change
-      };
-    }
-    return { ...prev, [key]: value };
-  });
-};
+  const handleChange = (key: string, value: string) => {
+    setFormData((prev: any) => {
+      if (key === "source") {
+        return {
+          ...prev,
+          source: value,
+          sub_source: "", // reset sub_source on source change
+        };
+      }
+      return { ...prev, [key]: value };
+    });
+  };
 
   const getCurrentUser = () => {
     try {
@@ -134,6 +134,8 @@ const handleChange = (key: string, value: string) => {
     fetchData();
   }, []);
 
+  console.log({ data });
+
   return (
     <div>
       <div className="flex justify-between">
@@ -141,7 +143,11 @@ const handleChange = (key: string, value: string) => {
           <ChevronLeft />
         </Button>
 
-        <Button type="submit" className="cursor-pointer bg-[#214b7b]" onClick={handleSubmit}>
+        <Button
+          type="submit"
+          className="cursor-pointer bg-[#214b7b]"
+          onClick={handleSubmit}
+        >
           Submit
         </Button>
       </div>
@@ -280,16 +286,17 @@ const handleChange = (key: string, value: string) => {
                             <SelectValue placeholder="Select Sub-Source" />
                           </SelectTrigger>
                           <SelectContent>
-                            {subSourceOptions[formData.source].map((sub, idx) => (
-                              <SelectItem key={idx} value={sub}>
-                                {sub}
-                              </SelectItem>
-                            ))}
+                            {subSourceOptions[formData.source].map(
+                              (sub, idx) => (
+                                <SelectItem key={idx} value={sub}>
+                                  {sub}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
                     )}
-
                   </div>
                 );
               }
@@ -305,7 +312,32 @@ const handleChange = (key: string, value: string) => {
                       <Switch
                         id="enable-group"
                         checked={showGroupDropDown}
-                        onCheckedChange={setShowGroupDropDown}
+                        onCheckedChange={(val) => {
+                          setShowGroupDropDown(val);
+
+                          if (!val) {
+                            // Clear populated data
+                            setSelectedGroup(null);
+                            handleChange(name as string, "");
+                            handleChange("groupname", "");
+
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              email: "",
+                              mobile: "",
+                              altMobile: "",
+                              district: "",
+                              state: "",
+                              village: "",
+                              scheme: "",
+                              source: "",
+                              sub_source: "",
+                            }));
+
+                            setSource("");
+                            setSubSource("");
+                          }
+                        }}
                       />
                     )}
                   </div>
@@ -320,7 +352,6 @@ const handleChange = (key: string, value: string) => {
                       }
                       disabled={
                         name !== "capacity" &&
-                        name !== "companyName" &&
                         name !== "customerName" &&
                         name !== "subStationDistance" &&
                         name !== "tariff" &&
@@ -381,23 +412,23 @@ const handleChange = (key: string, value: string) => {
                               scheme: group.project_details?.scheme || "",
                               source: group.source.from || "",
                               sub_source: group.source.sub_source || "",
+                              companyName: group?.company_name || "",
                             }));
 
-                            setSource(group.source.from || ""); 
+                            setSource(group.source.from || "");
                             setSubSource(group.source.sub_source || "");
                           }
                         }}
-                        
                       >
                         <SelectTrigger id={name as string}>
-                          <SelectValue  placeholder={label} />
+                          <SelectValue placeholder={label} />
                         </SelectTrigger>
-                            <SelectContent
-  position="popper"
+                        <SelectContent
+                          position="popper"
                           side="bottom"
                           align="start"
                           className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
-  >
+                        >
                           {data
                             .filter(
                               (group) =>
@@ -405,7 +436,7 @@ const handleChange = (key: string, value: string) => {
                             )
                             .map((group) => (
                               <SelectItem key={group._id} value={group._id}>
-                                {group.group_code}
+                                {group.group_code} - {group.group_name}
                               </SelectItem>
                             ))}
                         </SelectContent>
@@ -423,9 +454,9 @@ const handleChange = (key: string, value: string) => {
                       </SelectTrigger>
                       <SelectContent
                         position="popper"
-                          side="bottom"
-                          align="start"
-                          className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
+                        side="bottom"
+                        align="start"
+                        className="z-[999] max-h-80 overflow-y-auto w-full min-w-[468px]"
                       >
                         {(options as string[]).map((opt, i) => (
                           <SelectItem value={opt} key={i}>
