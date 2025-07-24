@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, Lock, Mail, MapPin, Phone } from "lucide-react";
+import { ChevronLeft, Lock, Mail, MapPin, Phone, Plus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getLeadbyId, deleteLead } from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
@@ -40,8 +40,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type Lead = {
+  documents: {
+    group_code: string;
+    group_name: string;
+    id: string;
+  },
   _id: string;
   id: string;
   current_status: {
@@ -104,6 +110,29 @@ export default function LeadProfile() {
   const [activeTab, setActiveTab] = React.useState(tabParam);
   const [isLocked, setIsLocked] = React.useState(false);
   const [update, setUpdate] = React.useState(false);
+  const [showTaskModal, setShowTaskModal] = React.useState(false);
+  const [showNotesModal, setShowNotesModal] = React.useState(false);
+  const [selectedDoc, setSelectedDoc] = React.useState<string>("");
+  const [files, setFiles] = React.useState<{ type: string; file: File | null }[]>([]);
+
+  const documentOptions = ["LOI", "LOA", "PPA", "Aadhaar", "Other"];
+
+  const uploadedDocTypes =
+    data?.documents?.map((d) => d?.name?.toLowerCase()) || [];
+
+  const filteredOptions = documentOptions.filter(
+    (doc) => doc === "Other" || !uploadedDocTypes.includes(doc.toLowerCase())
+  );
+
+  const handleAddFile = () => {
+    if (!selectedDoc) return toast.warning("Select document type first");
+    if (files.find((item) => item.type === selectedDoc)) {
+      return toast.warning("Document already added");
+    }
+    setFiles([...files, { type: selectedDoc, file: null }]);
+    setSelectedDoc("");
+  };
+
 
   const id = searchParams.get("id");
   const status = searchParams.get("status");
@@ -144,6 +173,8 @@ export default function LeadProfile() {
     };
     fetchTask();
   }, [id]);
+
+  console.log(data);
 
   const handleDelete = async () => {
     try {
@@ -262,14 +293,14 @@ export default function LeadProfile() {
                   ["admin", "Deepak Manodi", "IT Team"].includes(
                     getCurrentUser()?.name
                   )) && (
-                  <Button
-                    className="cursor-pointer"
-                    variant="destructive"
-                    size="sm"
-                  >
-                    Remove Lead
-                  </Button>
-                )}
+                    <Button
+                      className="cursor-pointer"
+                      variant="destructive"
+                      size="sm"
+                    >
+                      Remove Lead
+                    </Button>
+                  )}
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -386,19 +417,18 @@ export default function LeadProfile() {
                 <CardTitle>
                   Status:{" "}
                   <Badge
-                    className={`capitalize ${
-                      data?.current_status?.name === "won"
-                        ? "bg-green-500"
-                        : data?.current_status?.name === "followUp"
+                    className={`capitalize ${data?.current_status?.name === "won"
+                      ? "bg-green-500"
+                      : data?.current_status?.name === "followUp"
                         ? "bg-yellow-400"
                         : data?.current_status?.name === "initial"
-                        ? "bg-blue-500"
-                        : data?.current_status?.name === "dead"
-                        ? "bg-red-500"
-                        : data?.current_status?.name === "warm"
-                        ? "bg-orange-400"
-                        : ""
-                    }`}
+                          ? "bg-blue-500"
+                          : data?.current_status?.name === "dead"
+                            ? "bg-red-500"
+                            : data?.current_status?.name === "warm"
+                              ? "bg-orange-400"
+                              : ""
+                      }`}
                   >
                     {data?.current_status?.name}
                   </Badge>
@@ -434,6 +464,24 @@ export default function LeadProfile() {
                 <p>
                   <strong>Company:</strong> {data?.company_name}
                 </p>
+                <p>
+                  <strong>Tariff (Per Unit):</strong>{data?.project_details?.tarrif}
+                </p>
+                <p>
+                  <strong>Lead ID :</strong>{data.id}
+                </p>
+                <p>
+                  <strong>Group Code:</strong>{data?.documents?.group_code}
+                </p>
+                <p>
+                  <strong>Group Name:</strong>{data?.documents?.group_name}
+                </p>
+                <p>
+                  <strong>Land Type:</strong>{data?.project_details?.land_type}
+                </p>
+                <p>
+                  <strong>Distance From Substation:</strong>{data?.project_details?.distance_from_substation?.value} {" "} {data?.project_details?.distance_from_substation?.value}
+                </p>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -452,8 +500,7 @@ export default function LeadProfile() {
                     )}
                   </Tooltip>
                 </TooltipProvider>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-2 items-start">
+
                 <Separator />
                 <div className="flex-col gap-2">
                   <div>
@@ -461,8 +508,8 @@ export default function LeadProfile() {
                     <Badge variant="secondary">
                       {data?.expected_closing_date
                         ? new Date(
-                            data.expected_closing_date
-                          ).toLocaleDateString()
+                          data.expected_closing_date
+                        ).toLocaleDateString()
                         : "Yet to come"}
                     </Badge>
                   </div>
@@ -473,21 +520,80 @@ export default function LeadProfile() {
                     </Badge>
                   </div>
                 </div>
+
+
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4 items-start mt-auto  ">
+                <Separator />
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTaskModal(true)}
+                  >
+                    + Add Task
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowNotesModal(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add Note
+                  </Button>
+
+                  <div className="flex gap-2 items-center">
+                    <Select value={selectedDoc} onValueChange={setSelectedDoc}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Select Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredOptions.map((doc) => (
+                          <SelectItem key={doc} value={doc}>
+                            {doc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="sm" onClick={handleAddFile}>
+                      <Plus className="w-4 h-4 mr-1" /> Add
+                    </Button>
+                  </div>
+                </div>
               </CardFooter>
+
             </Card>
 
             <div className="w-full overflow-y-auto pr-2 flex flex-col gap-4">
-              <NotesCard />
-              <TasksCard
-                leadId={data?.id}
-                name={data?.name}
-                id={id}
-                taskData={taskData}
-              />
-              {(data?.current_assigned?.user_id?._id === getUserIdFromToken() ||
-                ["admin", "Deepak Manodi"].includes(
-                  getCurrentUser()?.name
-                )) && <LeadDocuments data={data} />}
+              <div className="flex h-84/100 flex-row w-full gap-4 items-stretch">
+                <div className=" w-1/2 ">
+                  <NotesCard
+                    showNotesModal={showNotesModal}
+                    setShowNotesModal={setShowNotesModal}
+                  />
+                </div>
+                <div className=" w-1/2 ">
+                  <TasksCard
+                    leadId={data?.id}
+                    name={data?.name}
+                    id={id}
+                    taskData={taskData}
+                    showTaskModal={showTaskModal}
+                    setShowTaskModal={setShowTaskModal}
+                  />
+                </div>
+              </div>
+              <div className="w-full h-16/100">
+                {(data?.current_assigned?.user_id?._id === getUserIdFromToken() ||
+                  ["admin", "Deepak Manodi"].includes(
+                    getCurrentUser()?.name
+                  )) && <LeadDocuments data={data}
+                    files={files}
+                    setFiles={setFiles}
+                    selectedDoc={selectedDoc}
+                    setSelectedDoc={setSelectedDoc} />}
+              </div>
+
             </div>
           </div>
         </TabsContent>

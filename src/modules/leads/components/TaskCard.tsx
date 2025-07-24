@@ -26,8 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-export default function TasksCard({ id, taskData, name, leadId }) {
-  const [showModal, setShowModal] = useState(false);
+export default function TasksCard({ id, taskData, name, leadId, showTaskModal, setShowTaskModal }) {
   const [expandedTasks, setExpandedTasks] = useState({});
   const [taskDetails, setTaskDetails] = useState({});
   const [tasks, setTasks] = useState(taskData || []);
@@ -35,6 +34,8 @@ export default function TasksCard({ id, taskData, name, leadId }) {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [newRemarks, setNewRemarks] = useState("");
+
+
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
@@ -96,13 +97,13 @@ export default function TasksCard({ id, taskData, name, leadId }) {
         prevTasks.map((task) =>
           task._id === editingTaskId
             ? {
-                ...task,
-                current_status: newStatus,
-                remarks: [
-                  ...(task.remarks || []),
-                  { text: newRemarks, date: now, user_id: userId },
-                ],
-              }
+              ...task,
+              current_status: newStatus,
+              remarks: [
+                ...(task.remarks || []),
+                { text: newRemarks, date: now, user_id: userId },
+              ],
+            }
             : task
         )
       );
@@ -172,21 +173,14 @@ export default function TasksCard({ id, taskData, name, leadId }) {
 
   return (
     <>
-      <Card>
+      <Card className="h-full">
         <CardHeader className="flex flex-row w-full items-center justify-between">
           <CardTitle className="text-lg font-medium">Tasks</CardTitle>
-          <Button
-            variant="outline"
-            className="cursor-pointer"
-            size="sm"
-            onClick={() => setShowModal(true)}
-          >
-            + Add Task
-          </Button>
+
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-2">
-          <ScrollArea className="h-80">
+        <CardContent className="h-full overflow-y-auto">
+          <ScrollArea className="max-h-[400px] pr-2">
             <div className="flex flex-col gap-3 mt-2">
               {tasks?.length > 0 ? (
                 [...tasks].reverse().map((task) => {
@@ -198,10 +192,10 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                     task.current_status === "completed"
                       ? CheckCircle
                       : task.current_status === "in progress"
-                      ? Loader2
-                      : task.current_status === "pending"
-                      ? Clock
-                      : CircleDashed;
+                        ? Loader2
+                        : task.current_status === "pending"
+                          ? Clock
+                          : CircleDashed;
 
                   return (
                     <div key={task._id} className="space-y-2">
@@ -241,15 +235,14 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge
-                            className={`p-1 capitalize text-xs ${
-                              task.current_status === "completed"
-                                ? "bg-green-400"
-                                : task.current_status === "pending"
+                            className={`p-1 capitalize text-xs ${task.current_status === "completed"
+                              ? "bg-green-400"
+                              : task.current_status === "pending"
                                 ? "bg-red-400"
                                 : task.current_status === "in progress"
-                                ? "bg-orange-400"
-                                : "bg-blue-400"
-                            }`}
+                                  ? "bg-orange-400"
+                                  : "bg-blue-400"
+                              }`}
                           >
                             {task.current_status}
                           </Badge>
@@ -262,10 +255,10 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                                 setEditModalOpen(true);
                               }}
                             >
-                          {task?.current_status !== "completed" &&
-  task?.assigned_to?.some((assignee: any) => assignee._id === getUserIdFromToken()) && (
-    <Pencil className="cursor-pointer" size={18} />
-)}
+                              {task?.current_status !== "completed" &&
+                                task?.assigned_to?.some((assignee: any) => assignee._id === getUserIdFromToken()) && (
+                                  <Pencil className="cursor-pointer" size={18} />
+                                )}
                             </div>
                           </div>
                         </div>
@@ -353,15 +346,14 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                                     )}
                                     <div>
                                       <div
-                                        className={`font-semibold capitalize ${
-                                          entry.status === "pending"
-                                            ? "text-red-500"
-                                            : entry.status === "in progress"
+                                        className={`font-semibold capitalize ${entry.status === "pending"
+                                          ? "text-red-500"
+                                          : entry.status === "in progress"
                                             ? "text-orange-500"
                                             : entry.status === "completed"
-                                            ? "text-green-600"
-                                            : ""
-                                        }`}
+                                              ? "text-green-600"
+                                              : ""
+                                          }`}
                                       >
                                         {entry.status}
                                       </div>
@@ -398,14 +390,14 @@ export default function TasksCard({ id, taskData, name, leadId }) {
         </CardContent>
       </Card>
 
-      {showModal && (
+      {showTaskModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
           <div className="bg-white rounded-xl w-full max-w-3xl max-h-[95vh] overflow-y-auto relative shadow-lg">
             <Button
               className="absolute top-4 right-4 z-50"
               variant="ghost"
               size="icon"
-              onClick={() => setShowModal(false)}
+              onClick={() => setShowTaskModal(false)}
             >
               <X className="h-5 w-5" />
             </Button>
@@ -413,7 +405,7 @@ export default function TasksCard({ id, taskData, name, leadId }) {
               idModal={id}
               nameModal={name}
               leadIdModal={leadId}
-              onClose={() => setShowModal(false)}
+              onClose={() => setShowTaskModal(false)}
               onTaskCreated={handleNewTask}
             />
           </div>

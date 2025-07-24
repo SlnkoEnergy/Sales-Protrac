@@ -3,8 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Pencil, Trash, Plus } from "lucide-react";
+import { Avatar, } from "@/components/ui/avatar";
+import { Pencil, Trash, Plus, Notebook } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -34,7 +34,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
-export default function NotesCard() {
+export default function NotesCard({ showNotesModal, setShowNotesModal}) {
   const [searchParams] = useSearchParams();
   const lead_id = searchParams.get("id");
   const user_id = localStorage.getItem("userId");
@@ -80,10 +80,10 @@ export default function NotesCard() {
         prev.map((n) =>
           n?._id === noteId
             ? {
-                ...n,
-                description: editText,
-                updatedAt: new Date().toISOString(),
-              }
+              ...n,
+              description: editText,
+              updatedAt: new Date().toISOString(),
+            }
             : n
         )
       );
@@ -126,22 +126,18 @@ export default function NotesCard() {
       toast.success("Note created");
       setData((prev) => [localNote, ...prev]);
       setDescription("");
-      setOpenDialog(false);
+      setShowNotesModal(false)
     } catch (err: any) {
       toast.error(err.message || "Failed to create note");
     }
   };
-
+  
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-medium">Internal Notes</CardTitle>
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="cursor-pointer" size="sm">
-              <Plus className="w-4 h-4 mr-1" /> Add Note
-            </Button>
-          </DialogTrigger>
+        <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
+          
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Note</DialogTitle>
@@ -157,7 +153,7 @@ export default function NotesCard() {
               <Button
                 variant="ghost"
                 className="cursor-pointer"
-                onClick={() => setOpenDialog(false)}
+                onClick={() => setShowNotesModal(false)}
               >
                 Cancel
               </Button>
@@ -168,17 +164,17 @@ export default function NotesCard() {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="max-h-64 overflow-hidden">
-        <ScrollArea className="h-60 pr-2">
+      <CardContent className="h-full overflow-y-auto">
+        <ScrollArea className="max-h-[400px] pr-2">
           {data.length > 0 ? (
             data.map((note) => (
-              <div key={note._id} className="flex items-start gap-3 mt-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://github.com/vercel.png" />
-                  <AvatarFallback>
-                    {note.user_id?.name?.slice(0, 2).toUpperCase() || "NA"}
-                  </AvatarFallback>
+              <div key={note._id} className="flex items-center gap-3 mt-2">
+                <div>
+                  <Avatar className="h-8 w-8">
+                  <Notebook />
                 </Avatar>
+                </div>
+                
                 <div className="flex-1">
                   {editId === note._id ? (
                     <>
@@ -198,11 +194,16 @@ export default function NotesCard() {
                     </>
                   ) : (
                     <>
-                      <p className="text-sm">{note.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(note.updatedAt).toLocaleString()} by{" "}
-                        {note.user_id?.name || "Unknown"}
-                      </p>
+                      <div className="rounded-md border p-2 bg-muted/30">
+                        <p className="text-sm break-all whitespace-pre-wrap pr-2">
+                          {note.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(note.updatedAt).toLocaleString()} by{" "}
+                          {note.user_id?.name || "Unknown"}
+                        </p>
+                      </div>
+
                     </>
                   )}
                 </div>
@@ -210,21 +211,21 @@ export default function NotesCard() {
                   {(getCurrentUser().name === "admin" ||
                     getCurrentUser().name === "superadmin" ||
                     getCurrentUser().name === "Deepak Manodi") && (
-                    <Pencil
-                      className="h-4 w-4 text-muted-foreground cursor-pointer"
-                      onClick={() => handleEdit(note)}
-                    />
-                  )}
+                      <Pencil
+                        className="h-4 w-4 text-muted-foreground cursor-pointer"
+                        onClick={() => handleEdit(note)}
+                      />
+                    )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       {(getCurrentUser().name === "admin" ||
                         getCurrentUser().name === "superadmin" ||
                         getCurrentUser().name === "Deepak Manodi") && (
-                        <Trash
-                          className="h-4 w-4 text-muted-foreground cursor-pointer"
-                          onClick={() => setDeleteId(note._id)}
-                        />
-                      )}
+                          <Trash
+                            className="h-4 w-4 text-muted-foreground cursor-pointer"
+                            onClick={() => setDeleteId(note._id)}
+                          />
+                        )}
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
@@ -237,7 +238,10 @@ export default function NotesCard() {
                       <AlertDialogFooter>
                         <AlertDialogAction
                           className="cursor-pointer"
-                          onClick={handleDelete}
+                          onClick={() => {
+                            setDeleteId(note._id)
+                            handleDelete();
+                          }}
                         >
                           Delete
                         </AlertDialogAction>
