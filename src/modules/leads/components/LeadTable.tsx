@@ -405,11 +405,7 @@ export function DataTable({
 
         const relative =
           relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-        return (
-          <div>
-            {relative}{" "}
-          </div>
-        );
+        return <div>{relative} </div>;
       },
     },
     {
@@ -429,6 +425,24 @@ export function DataTable({
       },
       cell: ({ row }) => {
         const createdAt = row.original.createdAt;
+        const createdDate = new Date(createdAt);
+
+        let relativeRaw = formatDistanceToNow(createdDate, { addSuffix: true });
+        if (!relativeRaw.toLowerCase().includes("ago")) {
+          relativeRaw += " ago";
+        }
+
+        const relative =
+          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
+
+        return <div>{relative}</div>;
+      },
+    },
+
+    {
+      accessorKey: "expectedClosing",
+      header: "Exp Closing Date",
+      cell: ({ row }) => {
         const expectedClosing = row.original.expected_closing_date;
         const leadId = row.original._id;
 
@@ -436,14 +450,6 @@ export function DataTable({
           null
         );
         const [open, setOpen] = React.useState(false);
-
-        const createdDate = new Date(createdAt);
-        let relativeRaw = formatDistanceToNow(createdDate, { addSuffix: true });
-        if (!relativeRaw.toLowerCase().includes("ago")) {
-          relativeRaw += " ago";
-        }
-        const relative =
-          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
 
         const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           const selected = e.target.value;
@@ -458,10 +464,9 @@ export function DataTable({
           try {
             await updateExpectedClosingDate(leadId, pendingDate);
             toast.success("Expected closing date updated");
-
             setTimeout(() => {
               location.reload();
-            }, 300); // 300ms delay
+            }, 300);
           } catch (error: any) {
             toast.error(error.message || "Failed to update date");
           } finally {
@@ -470,49 +475,46 @@ export function DataTable({
         };
 
         return (
-          <div>
-            <div>{relative}</div>
-            <div className="flex items-center text-sm text-muted-foreground gap-1 mt-1">
-              <CalendarDays className="w-3.5 h-3.5" />
-              {expectedClosing && expectedClosing !== "-" ? (
-                <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
-              ) : (
-                <>
-                  <input
-                    type="date"
-                    className="border rounded text-xs px-1 py-0.5"
-                    onChange={handleDateChange}
-                  />
+          <div className="flex items-center text-sm  gap-1">
+            <CalendarDays className="w-3.5 h-3.5" />
+            {expectedClosing && expectedClosing !== "-" ? (
+              <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+            ) : (
+              <>
+                <input
+                  type="date"
+                  className="border rounded text-xs px-1 py-0.5"
+                  onChange={handleDateChange}
+                />
 
-                  <AlertDialog open={open} onOpenChange={setOpen}>
-                    <AlertDialogTrigger asChild />
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you sure you want to set the expected closing
-                          date?
-                        </AlertDialogTitle>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogAction
-                          className="cursor-pointer"
-                          onClick={handleConfirm}
-                        >
-                          Yes, Confirm
-                        </AlertDialogAction>
-                        <AlertDialogCancel className="cursor-pointer">
-                          Cancel
-                        </AlertDialogCancel>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-            </div>
+                <AlertDialog open={open} onOpenChange={setOpen}>
+                  <AlertDialogTrigger asChild />
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you sure you want to set the expected closing date?
+                      </AlertDialogTitle>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogAction
+                        className="cursor-pointer"
+                        onClick={handleConfirm}
+                      >
+                        Yes, Confirm
+                      </AlertDialogAction>
+                      <AlertDialogCancel className="cursor-pointer">
+                        Cancel
+                      </AlertDialogCancel>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
           </div>
         );
       },
     },
+
     {
       accessorKey: "createdAt",
       header: ({ column }) => (

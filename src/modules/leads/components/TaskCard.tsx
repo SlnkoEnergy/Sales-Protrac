@@ -262,8 +262,9 @@ export default function TasksCard({ id, taskData, name, leadId }) {
                                 setEditModalOpen(true);
                               }}
                             >
-                            {task?.current_status !== "completed" && task?.user_id?.name !== getCurrentUser()?.name && (
-  <Pencil className="cursor-pointer" size={18} />
+                          {task?.current_status !== "completed" &&
+  task?.assigned_to?.some((assignee: any) => assignee._id === getUserIdFromToken()) && (
+    <Pencil className="cursor-pointer" size={18} />
 )}
                             </div>
                           </div>
