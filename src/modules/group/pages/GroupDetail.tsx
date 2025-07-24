@@ -188,17 +188,21 @@ export default function GroupDetail() {
             variant="outline"
             size="sm"
             className="cursor-pointer"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/group")}
           >
             <ChevronLeft />
           </Button>
           <p className="text-2xl font-semibold text-[#214b7b]">Group Detail</p>
         </div>
-      {getUserIdFromToken() === data?.createdBy?._id && (
-         <Button className="cursor-pointer bg-[#214b7b]" size="sm" onClick={() => setIsEditOpen(true)}>
-          Edit Group Detail
-        </Button>
-      )}
+        {getUserIdFromToken() === data?.createdBy?._id && (
+          <Button
+            className="cursor-pointer bg-[#214b7b]"
+            size="sm"
+            onClick={() => setIsEditOpen(true)}
+          >
+            Edit Group Detail
+          </Button>
+        )}
         <EditGroupModal
           open={isEditOpen}
           groupId={id}
