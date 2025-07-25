@@ -174,17 +174,19 @@ const StatusCell: React.FC<Props> = ({
               </ContextMenuItem>
             )}
 
-          {normalizedStatus !== "warm" && normalizedStatus !== "dead" &&  normalizedStatus !== "won" &&  (
-            <>
-              <ContextMenuItem onClick={() => setOpenModal("LOA")}>
-                LOA
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => setOpenModal("PPA")}>
-                PPA
-              </ContextMenuItem>
-            </>
-          )}
-          
+          {normalizedStatus !== "warm" &&
+            normalizedStatus !== "dead" &&
+            normalizedStatus !== "won" && (
+              <>
+                <ContextMenuItem onClick={() => setOpenModal("LOA")}>
+                  LOA
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => setOpenModal("PPA")}>
+                  PPA
+                </ContextMenuItem>
+              </>
+            )}
+
           <ContextMenuSub>
             <ContextMenuSubTrigger>As Per Choice</ContextMenuSubTrigger>
             <ContextMenuSubContent>

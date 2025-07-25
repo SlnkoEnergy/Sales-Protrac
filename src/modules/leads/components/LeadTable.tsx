@@ -31,6 +31,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -84,7 +89,17 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
-import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/components/ui/context-menu";
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 export type Lead = {
   _id: string;
@@ -208,7 +223,7 @@ export function DataTable({
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [stageCounts, setStageCounts] = React.useState("");
   const [tab, setTab] = React.useState(stageFromUrl || "initial");
-    const [handoverStatus, setHandoverStatus] = React.useState("");
+  const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
     null
@@ -663,10 +678,9 @@ export function DataTable({
               : isFromGroup
               ? ""
               : undefined,
-          handover_statusFilter:Handoverfilter || "",
-          leadAgingFilter:LeadAgingFilter || "",
-          inactiveDays:InActiveDays || "",
-
+          handover_statusFilter: Handoverfilter || "",
+          leadAgingFilter: LeadAgingFilter || "",
+          inactiveDays: InActiveDays || "",
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -684,7 +698,18 @@ export function DataTable({
     };
 
     fetchLeads();
-  }, [page, pageSize, search, fromDate, toDate, stageFromUrl, state, Handoverfilter, LeadAgingFilter, InActiveDays]);
+  }, [
+    page,
+    pageSize,
+    search,
+    fromDate,
+    toDate,
+    stageFromUrl,
+    state,
+    Handoverfilter,
+    LeadAgingFilter,
+    InActiveDays,
+  ]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -749,21 +774,19 @@ export function DataTable({
     });
   };
 
-  
-    React.useEffect(() => {
-  const params = new URLSearchParams();
+  //     React.useEffect(() => {
+  //   const params = new URLSearchParams();
 
-  if (handoverStatus) {
-    params.set("handover", handoverStatus);
-  }
+  //   if (handoverStatus) {
+  //     params.set("handover", handoverStatus);
+  //   }
 
-  if (leadAging) {
-    params.set("aging", leadAging);
-  }
+  //   if (leadAging) {
+  //     params.set("aging", leadAging);
+  //   }
 
-  setSearchParams(params);
-}, [selectedStates, handoverStatus, leadAging, setSearchParams]);
-
+  //   setSearchParams(params);
+  // }, [selectedStates, handoverStatus, leadAging, setSearchParams]);
 
   const handleTransferLead = async () => {
     if (!selectedLeadId || !selectedUser) {
@@ -844,7 +867,6 @@ export function DataTable({
   const totalFilters =
     selectedStates.length + (handoverStatus ? 1 : 0) + (leadAging ? 1 : 0);
 
-
   return (
     <div
       className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
@@ -878,88 +900,100 @@ export function DataTable({
         )}
 
         <div className="flex items-center gap-4">
-      
-     
-<ContextMenu>
-  <ContextMenuTrigger asChild>
-    <div className="relative inline-block">
-      <Button variant="outline" className="cursor-pointer pr-8">
-        Filters
-      </Button>
-      {totalFilters > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold">
-          {totalFilters}
-        </span>
-      )}
-    </div>
-  </ContextMenuTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="relative inline-block">
+                <Button variant="outline" className="cursor-pointer pr-8">
+                  Filters
+                </Button>
+                {totalFilters > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold">
+                    {totalFilters}
+                  </span>
+                )}
+              </div>
+            </DropdownMenuTrigger>
 
-  <ContextMenuContent className="w-60">
-    {/* State Filter */}
-    <ContextMenuSub>
-      <ContextMenuSubTrigger>Filter by State</ContextMenuSubTrigger>
-      <ContextMenuSubContent className="max-h-64 overflow-y-auto">
-        {allStates.map((state) => (
-          <ContextMenuCheckboxItem
-            key={state}
-            checked={selectedStates.includes(state)}
-            onCheckedChange={() => toggleState(state)}
-          >
-            {state}
-          </ContextMenuCheckboxItem>
-        ))}
-      </ContextMenuSubContent>
-    </ContextMenuSub>
+            <DropdownMenuContent className="w-60">
+              {/* State Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Filter by State</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                  {allStates.map((state) => (
+                    <DropdownMenuCheckboxItem
+                      key={state}
+                      checked={selectedStates.includes(state)}
+                      onCheckedChange={() => toggleState(state)}
+                    >
+                      {state}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-    {/* Handover Filter */}
-    <ContextMenuSub>
-      <ContextMenuSubTrigger>Handover Filter</ContextMenuSubTrigger>
-      <ContextMenuSubContent>
-        <ContextMenuRadioGroup
-          value={handoverStatus}
-          onValueChange={setHandoverStatus}
-        >
-          <ContextMenuRadioItem value="pending">Pending</ContextMenuRadioItem>
-          <ContextMenuRadioItem value="in progress">In-Progress</ContextMenuRadioItem>
-          <ContextMenuRadioItem value="completed">Completed</ContextMenuRadioItem>
-        </ContextMenuRadioGroup>
-      </ContextMenuSubContent>
-    </ContextMenuSub>
+              {/* Handover Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Handover Filter</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={handoverStatus}
+                    onValueChange={setHandoverStatus}
+                  >
+                    <DropdownMenuRadioItem value="pending">
+                      Pending
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="in progress">
+                      In-Progress
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="completed">
+                      Completed
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-    {/* Lead Aging Filter */}
-    <ContextMenuSub>
-      <ContextMenuSubTrigger>Lead Aging Filter</ContextMenuSubTrigger>
-      <ContextMenuSubContent>
-        <ContextMenuRadioGroup
-          value={leadAging}
-          onValueChange={setLeadAging}
-        >
-          <ContextMenuRadioItem value="0-7">0-7 Days</ContextMenuRadioItem>
-          <ContextMenuRadioItem value="8-14">8-14 Days</ContextMenuRadioItem>
-          <ContextMenuRadioItem value="15+">15+ Days</ContextMenuRadioItem>
-        </ContextMenuRadioGroup>
-      </ContextMenuSubContent>
-    </ContextMenuSub>
+              {/* Lead Aging Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Lead Aging Filter
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={leadAging}
+                    onValueChange={setLeadAging}
+                  >
+                    <DropdownMenuRadioItem value="0-7">
+                      0-7 Days
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="8-14">
+                      8-14 Days
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="15+">
+                      15+ Days
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-    {/* Optional: Clear Filters Button */}
-    {(totalFilters > 0) && (
-      <div className="px-2 py-1">
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={() => {
-            setSelectedStates([]);
-            setHandoverStatus("");
-            setLeadAging("");
-          }}
-          className="w-full"
-        >
-          Clear All Filters
-        </Button>
-      </div>
-    )}
-  </ContextMenuContent>
-</ContextMenu>
+              {totalFilters > 0 && (
+                <div className="px-2 py-1">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setSelectedStates([]);
+                      setHandoverStatus("");
+                      setLeadAging("");
+                      setSearchParams({});
+                    }}
+                    className="w-full"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Columns Dropdown */}
           <DropdownMenu>

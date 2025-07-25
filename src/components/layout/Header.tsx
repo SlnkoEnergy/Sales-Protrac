@@ -15,7 +15,7 @@ import {
   WorkflowIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { getNotification, toggleViewTask } from "@/services/task/Task";
@@ -31,6 +31,7 @@ import {
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchParams] = useSearchParams();
   const [notifications, setNotifications] = useState([]);
   const [user, setUser] = useState<{ name: string; emp_id: string } | null>(
     null
@@ -40,10 +41,14 @@ export default function Header() {
 
   const isActiveHandover = location.pathname === "/handover";
   const isActiveTask = location.pathname === "/tasks";
- const isActiveLead = location.pathname === "/leads" && location.search !== "?stage=lead_without_task";
-  const isActiveLeadWithoutTask = location.pathname === "/leads" && location.search === "?stage=lead_without_task";
+  const isActiveLead =
+    location.pathname === "/leads" &&
+    searchParams.get("stage") !== "lead_without_task";
+  const isActiveLeadWithoutTask =
+    location.pathname === "/leads" &&
+    searchParams.get("stage") === "lead_without_task";
   const isActiveDashboard = location.pathname === "/";
-  const isActiveGroup = location.pathname === "/group"
+  const isActiveGroup = location.pathname === "/group";
 
   const toggleDrawer = () => setShowDrawer(!showDrawer);
   const toggleNotifications = () => setShowNotifications(!showNotifications);
@@ -85,17 +90,20 @@ export default function Header() {
   const PickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event : MouseEvent) => {
-      if(PickerRef.current && ! PickerRef.current.contains(event.target as Node)){
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        PickerRef.current &&
+        !PickerRef.current.contains(event.target as Node)
+      ) {
         setShowNotifications(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>{
+    return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [])
+    };
+  }, []);
 
   return (
     <div className="bg-[#1F487C] w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md  top-0 z-50 relative">
@@ -167,23 +175,21 @@ export default function Header() {
           }`}
           onClick={() => navigate("/handover?statusFilter=Rejected")}
         >
-            <File size={18} />
+          <File size={18} />
           <span>Handover</span>
         </div>
-        
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">
-        <div className="relative" ref={PickerRef}>     
+        <div className="relative" ref={PickerRef}>
           <div className="relative">
             <Bell
               size={18}
-              onClick={() =>{
-                toggleNotifications
-                setShowNotifications((prev) => !prev)
+              onClick={() => {
+                toggleNotifications;
+                setShowNotifications((prev) => !prev);
               }}
               className="cursor-pointer"
-              
             />
             {notifications.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[13px] px-1.5 rounded-full leading-none">
