@@ -27,32 +27,18 @@ import { uploadDocuments } from "@/services/leads/LeadService";
 import DocumentViewerModal from "@/components/lead/DocumentViewer";
 import { Input } from "@/components/ui/input";
 
-const documentOptions = ["LOI", "LOA", "PPA", "Aadhaar", "Other"];
 
-export default function LeadDocuments({ data }) {
-  const [selectedDoc, setSelectedDoc] = useState<string>("");
-  const [files, setFiles] = useState<{ type: string; file: File | null }[]>([]);
+export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files, setFiles }) {
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedViewDoc, setSelectedViewDoc] = useState<string>("");
   const [customDocName, setCustomDocName] = useState("");
   const [expectedDate, setExpectedDate] = useState<Date | null>(null);
-  const uploadedDocTypes =
-    data?.documents?.map((d) => d?.name?.toLowerCase()) || [];
 
-  const filteredOptions = documentOptions.filter(
-    (doc) => doc === "Other" || !uploadedDocTypes.includes(doc.toLowerCase())
-  );
 
-  const handleAddFile = () => {
-    if (!selectedDoc) return toast.warning("Select document type first");
-    if (files.find((item) => item.type === selectedDoc)) {
-      return toast.warning("Document already added");
-    }
-    setFiles([...files, { type: selectedDoc, file: null }]);
-    setSelectedDoc("");
-  };
+
 
   const handleDelete = (index: number) => {
     const updated = [...files];
@@ -69,14 +55,20 @@ export default function LeadDocuments({ data }) {
 
     const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
     const docType = itemType.toLowerCase();
+
+    // Normalize expected_closing_date to Date
+    const closingDate = data.expected_closing_date
+      ? new Date(data.expected_closing_date)
+      : null;
+
     const isExpectedDateValid =
       expectedDate instanceof Date && !isNaN(expectedDate.getTime());
 
+    const isClosingDateInvalid =
+      !closingDate || isNaN(closingDate.getTime());
+
     if (
-      !(
-        data.expected_closing_date instanceof Date &&
-        !isNaN(data.expected_closing_date.getTime())
-      ) &&
+      isClosingDateInvalid &&
       (docType === "loa" || docType === "ppa") &&
       !isExpectedDateValid
     ) {
@@ -91,7 +83,7 @@ export default function LeadDocuments({ data }) {
         stage,
         docType as "loi" | "loa" | "ppa",
         customDocName,
-        !data.expected_closing_date ? expectedDate : undefined,
+        isClosingDateInvalid ? expectedDate : undefined,
         selectedFile
       );
 
@@ -108,29 +100,14 @@ export default function LeadDocuments({ data }) {
     }
   };
 
-  console.log(data?.documents?.length);
+
+  console.log({ data });
 
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle className="text-lg font-medium">Lead Documents</CardTitle>
-        <div className="flex gap-2 items-center">
-          <Select value={selectedDoc} onValueChange={setSelectedDoc}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Select Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredOptions.map((doc) => (
-                <SelectItem key={doc} value={doc}>
-                  {doc}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={handleAddFile}>
-            <Plus className="w-4 h-4 mr-1" /> Add
-          </Button>
-        </div>
+        <CardTitle className="text-lg font-medium">Lead Documents History</CardTitle>
+
       </CardHeader>
 
       <CardContent className="max-h-64 overflow-hidden">
@@ -190,7 +167,7 @@ export default function LeadDocuments({ data }) {
                       className="w-[160px]"
                       value={
                         expectedDate instanceof Date &&
-                        !isNaN(expectedDate.getTime())
+                          !isNaN(expectedDate.getTime())
                           ? expectedDate.toISOString().split("T")[0]
                           : ""
                       }
@@ -222,7 +199,7 @@ export default function LeadDocuments({ data }) {
                   onClick={() =>
                     document
                       .querySelectorAll("input[type='file']")
-                      [index]?.click()
+                    [index]?.click()
                   }
                 />
 
@@ -241,7 +218,7 @@ export default function LeadDocuments({ data }) {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]"  onClick={() => handleDelete(index)}>
+                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]" onClick={() => handleDelete(index)}>
                         Delete
                       </AlertDialogAction>
                       <AlertDialogCancel className="cursor-pointer" onClick={() => setEditIndex(null)}>
