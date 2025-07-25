@@ -145,7 +145,8 @@ export type Lead = {
     name: string;
   };
   lastModifiedTask: Date;
-  leadAgeing: string;
+  leadAging: string;
+  inactiveDays: string;
   expected_closing_date: Date;
   handover: boolean;
   group_code: string;
@@ -225,6 +226,7 @@ export function DataTable({
   const [tab, setTab] = React.useState(stageFromUrl || "initial");
   const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
+  const [inactiveDays, setInactiveDays] = React.useState("");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
     null
   );
@@ -416,73 +418,49 @@ export function DataTable({
       },
     },
     {
-      accessorKey: "lastModifiedTask",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Inactive (Days) <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      sortingFn: (rowA, rowB) => {
-        const a = isValidDate(rowA.original.lastModifiedTask)
-          ? new Date(rowA.original.lastModifiedTask)
-          : new Date(rowA.original.createdAt);
-
-        const b = isValidDate(rowB.original.lastModifiedTask)
-          ? new Date(rowB.original.lastModifiedTask)
-          : new Date(rowB.original.createdAt);
-
-        return a.getTime() - b.getTime();
-      },
+      accessorKey: "inactiveDays", // Backend-mapped key
+      header: "Inactive (Days)", // No sorting
       cell: ({ row }) => {
-        const modified = row.getValue("lastModifiedTask");
-        const created = row.original.createdAt;
+        const days = row.original.inactiveDays;
+        let display = "";
 
-        const usedDate = isValidDate(modified)
-          ? new Date(modified)
-          : new Date(created);
-
-        const now = new Date();
-        let relativeRaw = formatDistanceToNow(usedDate, { addSuffix: true });
-        if (!relativeRaw.toLowerCase().includes("ago")) {
-          relativeRaw += " ago";
+        if (days < 7) {
+          const rounded = Math.floor(days);
+          display = `${rounded} ${rounded === 1 ? "day" : "days"}`;
+        } else if (days >= 7 && days < 30) {
+          const weeks = Math.floor(days / 7);
+          display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+        } else if (days >= 30 && days < 365) {
+          const months = Math.floor(days / 30);
+          display = `${months} ${months === 1 ? "month" : "months"}`;
+        } else {
+          const years = Math.floor(days / 365);
+          display = `${years} ${years === 1 ? "year" : "years"}`;
         }
 
-        const relative =
-          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-        return <div>{relative} </div>;
+        return <div>{display}</div>;
       },
     },
-    {
-      accessorKey: "leadAging",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Lead Aging <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      sortingFn: (rowA, rowB) => {
-        const a = new Date(rowA.original.createdAt).getTime();
-        const b = new Date(rowB.original.createdAt).getTime();
-        return a - b;
-      },
-      cell: ({ row }) => {
-        const createdAt = row.original.createdAt;
-        const createdDate = new Date(createdAt);
 
-        let relativeRaw = formatDistanceToNow(createdDate, { addSuffix: true });
-        if (!relativeRaw.toLowerCase().includes("ago")) {
-          relativeRaw += " ago";
+    {
+      accessorKey: "leadAging", // Mapped to backend key
+      header: "Lead Aging", // Simple header without sorting button
+      cell: ({ row }) => {
+        const aging = row.original.leadAging;
+
+        let display = "";
+
+        if (aging < 7) {
+          display = `${aging} ${aging === 1 ? "day" : "days"}`;
+        } else if (aging >= 7 && aging < 30) {
+          const weeks = Math.floor(aging / 7);
+          display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+        } else {
+          const months = Math.floor(aging / 30);
+          display = `${months} ${months === 1 ? "month" : "months"}`;
         }
 
-        const relative =
-          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-
-        return <div>{relative}</div>;
+        return <div>{display}</div>;
       },
     },
 
@@ -491,35 +469,6 @@ export function DataTable({
       header: "Exp Closing Date",
       cell: ({ row }) => {
         const expectedClosing = row.original.expected_closing_date;
-        const leadId = row.original._id;
-
-        const [pendingDate, setPendingDate] = React.useState<string | null>(
-          null
-        );
-        const [open, setOpen] = React.useState(false);
-
-        const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          const selected = e.target.value;
-          if (selected) {
-            setPendingDate(selected);
-            setOpen(true);
-          }
-        };
-
-        const handleConfirm = async () => {
-          if (!pendingDate) return;
-          try {
-            await updateExpectedClosingDate(leadId, pendingDate);
-            toast.success("Expected closing date updated");
-            setTimeout(() => {
-              location.reload();
-            }, 300);
-          } catch (error: any) {
-            toast.error(error.message || "Failed to update date");
-          } finally {
-            setOpen(false);
-          }
-        };
 
         return (
           <div className="flex items-center text-sm  gap-1">
@@ -655,7 +604,7 @@ export function DataTable({
   const toDate = searchParams.get("toDate");
   const state = searchParams.get("stateFilter");
   const Handoverfilter = searchParams.get("handover");
-  const LeadAgingFilter = searchParams.get("aging");
+  const LeadAgingFilter = searchParams.get("aging") || "";
   const InActiveDays = searchParams.get("inActiveDays");
 
   React.useEffect(() => {
@@ -680,7 +629,7 @@ export function DataTable({
               : undefined,
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
-          inactiveDays: InActiveDays || "",
+          inactiveFilter: InActiveDays || "",
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -774,19 +723,41 @@ export function DataTable({
     });
   };
 
-  //     React.useEffect(() => {
-  //   const params = new URLSearchParams();
+  React.useEffect(() => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
 
-  //   if (handoverStatus) {
-  //     params.set("handover", handoverStatus);
-  //   }
+      // Lead Aging Filter
+      if (leadAging) {
+        updated.set("aging", leadAging);
+      } else {
+        updated.delete("aging");
+      }
 
-  //   if (leadAging) {
-  //     params.set("aging", leadAging);
-  //   }
+      // Handover Status Filter
+      if (handoverStatus) {
+        updated.set("handover", handoverStatus);
+      } else {
+        updated.delete("handover");
+      }
 
-  //   setSearchParams(params);
-  // }, [selectedStates, handoverStatus, leadAging, setSearchParams]);
+      // State Filter
+      if (selectedStates.length > 0) {
+        updated.set("stateFilter", selectedStates.join(","));
+      } else {
+        updated.delete("stateFilter");
+      }
+
+      // Inactive Days Filter
+      if (inactiveDays) {
+        updated.set("inActiveDays", inactiveDays);
+      } else {
+        updated.delete("inActiveDays");
+      }
+
+      return updated;
+    });
+  }, [selectedStates, handoverStatus, leadAging, inactiveDays]);
 
   const handleTransferLead = async () => {
     if (!selectedLeadId || !selectedUser) {
@@ -932,25 +903,41 @@ export function DataTable({
               </DropdownMenuSub>
 
               {/* Handover Filter */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Handover Filter</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup
-                    value={handoverStatus}
-                    onValueChange={setHandoverStatus}
-                  >
-                    <DropdownMenuRadioItem value="pending">
-                      Pending
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="in progress">
-                      In-Progress
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="completed">
-                      Completed
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              {(tab === "" || tab === "won") && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    Handover Filter
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup
+                      value={handoverStatus}
+                      onValueChange={(value) => {
+                        setHandoverStatus(value);
+
+                        const newParams = new URLSearchParams(
+                          searchParams.toString()
+                        );
+                        if (value) {
+                          newParams.set("handover", value);
+                        } else {
+                          newParams.delete("handover");
+                        }
+                        setSearchParams(newParams);
+                      }}
+                    >
+                      <DropdownMenuRadioItem value="pending">
+                        Pending
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="in process">
+                        In-Procress
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="completed">
+                        Completed
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
 
               {/* Lead Aging Filter */}
               <DropdownMenuSub>
@@ -962,14 +949,104 @@ export function DataTable({
                     value={leadAging}
                     onValueChange={setLeadAging}
                   >
-                    <DropdownMenuRadioItem value="0-7">
-                      0-7 Days
+                    <DropdownMenuRadioItem value="1">
+                      1 day
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="8-14">
-                      8-14 Days
+                    <DropdownMenuRadioItem value="3">
+                      3 days
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="15+">
-                      15+ Days
+                    <DropdownMenuRadioItem value="5">
+                      5 days
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="7">
+                      1 week
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="14">
+                      2 weeks
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="21">
+                      3 weeks
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="30">
+                      1 month
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="90">
+                      3 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="180">
+                      6 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="270">
+                      9 months
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="365">
+                      1 year
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="730">
+                      2 years
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="1095">
+                      3 years
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {/* Inactive Days Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Inactive Days Filter
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={inactiveDays}
+                    onValueChange={setInactiveDays}
+                  >
+                    <DropdownMenuRadioItem value="1">
+                      1 day
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="3">
+                      3 days
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="5">
+                      5 days
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="7">
+                      1 week
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="14">
+                      2 weeks
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="21">
+                      3 weeks
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="30">
+                      1 month
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="90">
+                      3 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="180">
+                      6 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="270">
+                      9 months
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="365">
+                      1 year
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="730">
+                      2 years
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="1095">
+                      3 years
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
