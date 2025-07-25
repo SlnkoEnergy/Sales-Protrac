@@ -50,7 +50,7 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
     setEditIndex(null);
   };
 
-  const handleFileUpload = async (itemType: string) => {
+    const handleFileUpload = async (itemType: string) => {
     if (!selectedFile || !itemType || !data._id) return;
 
     const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
@@ -59,10 +59,8 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
       expectedDate instanceof Date && !isNaN(expectedDate.getTime());
 
     if (
-      !(
-        data.expected_closing_date instanceof Date &&
-        !isNaN(data.expected_closing_date.getTime())
-      ) &&
+      !data.expected_closing_date ||
+isNaN(new Date(data.expected_closing_date).getTime()) &&
       (docType === "loa" || docType === "ppa") &&
       !isExpectedDateValid
     ) {
@@ -94,7 +92,7 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
     }
   };
 
-  console.log(data?.documents?.length);
+  console.log({data});
 
   return (
     <Card>

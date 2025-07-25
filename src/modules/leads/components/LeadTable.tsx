@@ -207,7 +207,7 @@ export function DataTable({
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [stageCounts, setStageCounts] = React.useState("");
-  const [tab, setTab] = React.useState(stageFromUrl || "initial");
+  const [tab, setTab] = React.useState(stageFromUrl || "");
     const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
@@ -749,20 +749,6 @@ export function DataTable({
     });
   };
 
-  
-    React.useEffect(() => {
-  const params = new URLSearchParams();
-
-  if (handoverStatus) {
-    params.set("handover", handoverStatus);
-  }
-
-  if (leadAging) {
-    params.set("aging", leadAging);
-  }
-
-  setSearchParams(params);
-}, [selectedStates, handoverStatus, leadAging, setSearchParams]);
 
 
   const handleTransferLead = async () => {
@@ -854,6 +840,9 @@ export function DataTable({
           <div>
             <Tabs value={tab} onValueChange={handleTabChange}>
               <TabsList className="gap-2">
+                <TabsTrigger className="cursor-pointer" value="">
+                  All ({stageCounts?.all || "0"})
+                </TabsTrigger>
                 <TabsTrigger className="cursor-pointer" value="initial">
                   Initial ({stageCounts?.initial || "0"})
                 </TabsTrigger>
@@ -869,9 +858,7 @@ export function DataTable({
                 <TabsTrigger className="cursor-pointer" value="dead">
                   Dead ({stageCounts?.dead || "0"})
                 </TabsTrigger>
-                <TabsTrigger className="cursor-pointer" value="">
-                  All ({stageCounts?.all || "0"})
-                </TabsTrigger>
+               
               </TabsList>
             </Tabs>
           </div>
