@@ -57,3 +57,19 @@ export const updateGroupStatus = async ({ id, status, remarks }) => {
     throw error;
   }
 };
+export const exportToCsvGroup = async(Ids) =>{
+  try {
+    const response = await Axios.post( "/group-export", {Ids}, {responseType : "blob"});
+    const blob = new Blob([response.data], {type: "text/csv"});
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.setAttribute("download", "group.csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to exprot CSV");
+  }
+};

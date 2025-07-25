@@ -252,7 +252,7 @@ export function GroupTable({
     },
     {
       accessorKey: "left_capacity",
-      header: "Left Capacity (MW)",
+      header: "Left Capacity (MW AC)",
       cell: ({ row }) => {
         const capacity = parseFloat(row.original?.left_capacity);
         return <div>{isNaN(capacity) ? "N/A" : capacity.toFixed(2)}</div>;
