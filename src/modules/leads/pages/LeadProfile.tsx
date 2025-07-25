@@ -458,14 +458,16 @@ export default function LeadProfile() {
                     <strong>Lead ID:</strong> {data?.id}
                   </p>
                   {data?.documents?.group_code && (
-                  <p className="text-sm text-gray-800">
-                    <strong>Group :</strong>{" "} {data?.documents?.group_code || "N/A"} ({data?.documents?.group_name || "N/A"})
-                  </p>
+                    <p className="text-sm text-gray-800">
+                      <strong>Group :</strong>{" "}
+                      {data?.documents?.group_code || "N/A"} (
+                      {data?.documents?.group_name || "N/A"})
+                    </p>
                   )}
                   {data?.company_name && (
-                  <p className="text-sm text-gray-800">
-                    <strong>Company:</strong> {data?.company_name || "N/A"}
-                  </p>
+                    <p className="text-sm text-gray-800">
+                      <strong>Company:</strong> {data?.company_name || "N/A"}
+                    </p>
                   )}
                   <p className="text-sm text-gray-800">
                     <strong>Scheme:</strong> {data?.project_details?.scheme}
@@ -483,10 +485,11 @@ export default function LeadProfile() {
                     {data?.project_details?.land_type}
                   </p>
                   {!data?.project_details?.distance_from_substation && (
-                  <p className="text-sm text-gray-800">
-                    <strong>Distance From Substation:</strong>{" "}
-                    {data?.project_details?.distance_from_substation?.value} km
-                  </p>
+                    <p className="text-sm text-gray-800">
+                      <strong>Distance From Substation:</strong>{" "}
+                      {data?.project_details?.distance_from_substation?.value}{" "}
+                      km
+                    </p>
                   )}
                   <p className="text-sm text-gray-800">
                     <strong>Source:</strong> {data?.source?.from}
