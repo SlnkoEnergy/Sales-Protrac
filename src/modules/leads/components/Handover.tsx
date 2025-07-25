@@ -178,7 +178,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     fetchLeads();
   }, [data]);
 
-  console.log({ handover });
 
   const [formData, setFormData] = useState({
     id: "",
