@@ -199,7 +199,7 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
 
                   return (
                     <div key={task._id} className="space-y-2">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 w-full">
                         {createElement(statusIcon, {
                           className: "h-4 w-4 mt-1 text-muted-foreground",
                         })}
@@ -232,37 +232,41 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                             })}{" "}
                             by {task?.user_id?.name}
                           </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            className={`p-1 capitalize text-xs ${task.current_status === "completed"
-                              ? "bg-green-400"
-                              : task.current_status === "pending"
-                                ? "bg-red-400"
-                                : task.current_status === "in progress"
-                                  ? "bg-orange-400"
-                                  : "bg-blue-400"
-                              }`}
-                          >
-                            {task.current_status}
-                          </Badge>
-                          <div>
-                            <div
-                              onClick={() => {
-                                setEditingTaskId(task._id);
-                                setNewStatus(details?.current_status || "");
-                                setNewRemarks("");
-                                setEditModalOpen(true);
-                              }}
+
+                          <div className="mt-1">
+                            <Badge
+                              className={`p-1 capitalize text-xs ${task.current_status === "completed"
+                                  ? "bg-green-400"
+                                  : task.current_status === "pending"
+                                    ? "bg-red-400"
+                                    : task.current_status === "in progress"
+                                      ? "bg-orange-400"
+                                      : "bg-blue-400"
+                                }`}
                             >
-                              {task?.current_status !== "completed" &&
-                                task?.assigned_to?.some((assignee: any) => assignee._id === getUserIdFromToken()) && (
-                                  <Pencil className="cursor-pointer" size={18} />
-                                )}
-                            </div>
+                              {task.current_status}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div
+                            onClick={() => {
+                              setEditingTaskId(task._id);
+                              setNewStatus(details?.current_status || "");
+                              setNewRemarks("");
+                              setEditModalOpen(true);
+                            }}
+                          >
+                            {task?.current_status !== "completed" &&
+                              task?.assigned_to?.some(
+                                (assignee: any) => assignee._id === getUserIdFromToken()
+                              ) && <Pencil className="cursor-pointer" size={18} />}
                           </div>
                         </div>
                       </div>
+
+
 
                       {isExpanded && details && (
                         <div className="ml-12 mt-2 space-y-2 text-sm max-h-[200px] overflow-auto">

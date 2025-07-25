@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Lock, Mail, MapPin, Phone, Plus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getLeadbyId, deleteLead, getHandoverByLeadId } from "@/services/leads/LeadService";
+  import { getLeadbyId, deleteLead, getHandoverByLeadId } from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";
 import TasksCard from "../components/TaskCard";
