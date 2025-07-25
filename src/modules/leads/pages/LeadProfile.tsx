@@ -33,14 +33,19 @@ import {
 import LeadDocuments from "../components/LeadDocument";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import HandoverForm from "../components/Handover";
-import Leads from "./Leads";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import StatusCell from "../components/StatusCell";
 
 export type Lead = {
@@ -49,7 +54,7 @@ export type Lead = {
     group_code: string;
     group_name: string;
     id: string;
-  },
+  };
   _id: string;
   id: string;
   current_status: {
@@ -115,12 +120,14 @@ export default function LeadProfile() {
   const [showTaskModal, setShowTaskModal] = React.useState(false);
   const [showNotesModal, setShowNotesModal] = React.useState(false);
   const [selectedDoc, setSelectedDoc] = React.useState<string>("");
-  const [files, setFiles] = React.useState<{ type: string; file: File | null }[]>([]);
-  const [statusOpen, setStatusOpen] = React.useState(false);
+  const [files, setFiles] = React.useState<
+    { type: string; file: File | null }[]
+  >([]);
   const documentOptions = ["LOI", "LOA", "PPA", "Aadhaar", "Other"];
 
-  const uploadedDocTypes =
-    data?.documents?.map((d) => d?.name?.toLowerCase()) || [];
+  const uploadedDocTypes = Array.isArray(data?.documents)
+    ? data.documents.map((d) => d?.name?.toLowerCase())
+    : [];
 
   const filteredOptions = documentOptions.filter(
     (doc) => doc === "Other" || !uploadedDocTypes.includes(doc.toLowerCase())
@@ -134,7 +141,6 @@ export default function LeadProfile() {
     setFiles([...files, { type: selectedDoc, file: null }]);
     setSelectedDoc("");
   };
-
 
   const id = searchParams.get("id");
   const status = searchParams.get("status");
@@ -255,19 +261,6 @@ export default function LeadProfile() {
     ? fullComment.slice(0, charLimit) + "..."
     : fullComment;
 
-
-
-  const statusColorClass = {
-    won: "bg-green-500",
-    followUp: "bg-yellow-400",
-    initial: "bg-blue-500",
-    dead: "bg-red-500",
-    warm: "bg-orange-400",
-  };
-
-  const normalizedStatus = data?.current_status?.name?.toLowerCase?.();
-
-
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
@@ -304,18 +297,17 @@ export default function LeadProfile() {
           <div className="flex gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                {(
-                  ["admin", "Deepak Manodi", "IT Team"].includes(
-                    getCurrentUser()?.name
-                  )) && (
-                    <Button
-                      className="cursor-pointer"
-                      variant="destructive"
-                      size="sm"
-                    >
-                      Remove Lead
-                    </Button>
-                  )}
+                {["admin", "Deepak Manodi", "IT Team"].includes(
+                  getCurrentUser()?.name
+                ) && (
+                  <Button
+                    className="cursor-pointer"
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Remove Lead
+                  </Button>
+                )}
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -412,37 +404,42 @@ export default function LeadProfile() {
         <TabsContent value="info">
           <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-[calc(100vh-200px)]">
             <div>
-              <Card className="min-w-[350px]  max-h-full overflow-auto ">
-                <CardHeader className="flex justify-center flex-col items-center">
+              <Card className="min-w-[350px]  max-h-full overflow-auto relative">
+                <CardHeader className="flex justify-start gap-6 items-center">
                   <Avatar className="h-14 w-14">
                     <AvatarImage src="https://github.com/shadcn.png" />
                     <AvatarFallback>KR</AvatarFallback>
                   </Avatar>
-                  <CardTitle className="mb-2 capitalize">{data?.name}</CardTitle>
-                  <CardDescription className="flex items-center md:flex-col gap-3">
-                    <span className="flex items-center gap-2">
-                      <Mail size={18} /> {data?.contact_details?.email || "NA"}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Phone size={18} />{" "}
-                      {data?.contact_details?.mobile?.join(", ") || "N/A"}
-                    </span>
-                  </CardDescription>
+                  <div className="flex gap-2 justify-evenly">
+                    <div className="flex flex-col gap-2">
+                      <CardTitle className="capitalize">{data?.name}</CardTitle>
+                      {data?.contact_details?.email && (
+                        <CardDescription className="flex items-center gap-2">
+                          <Mail size={16} />{" "}
+                          {data?.contact_details?.email || "NA"}
+                        </CardDescription>
+                      )}
+                      {data?.contact_details?.mobile && (
+                        <CardDescription className="flex gap-2 items-center">
+                          <Phone size={16} />{" "}
+                          {data?.contact_details?.mobile?.join(", ") || "N/A"}
+                        </CardDescription>
+                      )}
+                    </div>
+                    <div className="absolute right-8 top-8">
+                      <StatusCell
+                        leadId={data?._id}
+                        currentStatus={data?.current_status?.name}
+                        expected_closing_date={
+                          data?.expected_closing_date
+                            ? new Date(data.expected_closing_date)
+                            : undefined
+                        }
+                      />
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-2 ">
-                  <CardTitle className="flex gap-2">Status:
-
-                    <StatusCell
-                      leadId={data?._id}
-                      status={data?.status}
-                      currentStatus={data?.current_status?.name}
-                      expected_closing_date={
-                        data?.expected_closing_date
-                          ? new Date(data.expected_closing_date)
-                          : undefined
-                      }
-                    />
-                  </CardTitle>
                   <CardDescription className="text-black capitalize flex gap-1 items-center">
                     <MapPin size={16} />{" "}
                     <span>
@@ -457,35 +454,41 @@ export default function LeadProfile() {
                       {data?.address?.state}
                     </span>
                   </CardDescription>
-                  <p>
+                  <p className="text-sm text-gray-800">
                     <strong>Lead ID:</strong> {data?.id}
                   </p>
-                  <p>
-                    <strong>Group Code:</strong> {data?.documents?.group_code || "N/A"}
+                  {data?.documents?.group_code && (
+                  <p className="text-sm text-gray-800">
+                    <strong>Group :</strong>{" "} {data?.documents?.group_code || "N/A"} ({data?.documents?.group_name || "N/A"})
                   </p>
-                  <p>
-                    <strong>Group Name:</strong> {data?.documents?.group_name || "N/A"}
-                  </p>
-                  <p>
+                  )}
+                  {data?.company_name && (
+                  <p className="text-sm text-gray-800">
                     <strong>Company:</strong> {data?.company_name || "N/A"}
                   </p>
-                  <p>
+                  )}
+                  <p className="text-sm text-gray-800">
                     <strong>Scheme:</strong> {data?.project_details?.scheme}
                   </p>
-                  <p>
+                  <p className="text-sm text-gray-800">
                     <strong>Capacity:</strong> {data?.project_details?.capacity}{" "}
                     MW AC
                   </p>
-                  <p>
-                    <strong>Tariff (Per Unit):</strong> {data?.project_details?.tarrif}
+                  <p className="text-sm text-gray-800">
+                    <strong>Tariff (Per Unit):</strong>{" "}
+                    {data?.project_details?.tarrif}
                   </p>
-                  <p>
-                    <strong>Land Type:</strong> {data?.project_details?.land_type}
+                  <p className="text-sm text-gray-800">
+                    <strong>Land Type:</strong>{" "}
+                    {data?.project_details?.land_type}
                   </p>
-                  <p>
-                    <strong>Distance From Substation:</strong> {data?.project_details?.distance_from_substation?.value} km
+                  {!data?.project_details?.distance_from_substation && (
+                  <p className="text-sm text-gray-800">
+                    <strong>Distance From Substation:</strong>{" "}
+                    {data?.project_details?.distance_from_substation?.value} km
                   </p>
-                  <p>
+                  )}
+                  <p className="text-sm text-gray-800">
                     <strong>Source:</strong> {data?.source?.from}
                     {data?.source?.from && data?.source?.sub_source !== " "
                       ? " - "
@@ -495,7 +498,7 @@ export default function LeadProfile() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <p className="text-sm text-gray-700 cursor-default max-w-[300px]">
+                        <p className="text-sm text-gray-800 cursor-default max-w-[300px]">
                           <strong>Description:</strong> {displayedComment}
                         </p>
                       </TooltipTrigger>
@@ -518,8 +521,8 @@ export default function LeadProfile() {
                       <Badge variant="secondary">
                         {data?.expected_closing_date
                           ? new Date(
-                            data.expected_closing_date
-                          ).toLocaleDateString()
+                              data.expected_closing_date
+                            ).toLocaleDateString()
                           : "Yet to come"}
                       </Badge>
                     </div>
@@ -530,8 +533,6 @@ export default function LeadProfile() {
                       </Badge>
                     </div>
                   </div>
-
-
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4 items-start ">
                   <Separator />
@@ -555,7 +556,10 @@ export default function LeadProfile() {
                     </Button>
 
                     <div className="flex gap-3 items-center">
-                      <Select value={selectedDoc} onValueChange={setSelectedDoc}>
+                      <Select
+                        value={selectedDoc}
+                        onValueChange={setSelectedDoc}
+                      >
                         <SelectTrigger className="w-[140px] cursor-pointer h-8">
                           <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
@@ -567,16 +571,20 @@ export default function LeadProfile() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button className="w-[140px] cursor-pointer" variant="outline" size="sm" onClick={handleAddFile}>
+                      <Button
+                        className="w-[140px] cursor-pointer"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddFile}
+                        disabled={!selectedDoc}
+                      >
                         <Plus className="w-4 h-4 mr-1" /> Add Document
                       </Button>
                     </div>
                   </div>
                 </CardFooter>
-
               </Card>
             </div>
-
 
             <div className="w-full overflow-y-auto pr-2 flex flex-col gap-4">
               <div className="flex h-84/100 flex-row w-full gap-4 items-stretch">
@@ -598,16 +606,20 @@ export default function LeadProfile() {
                 </div>
               </div>
               <div className="w-full h-16/100">
-                {(data?.current_assigned?.user_id?._id === getUserIdFromToken() ||
+                {(data?.current_assigned?.user_id?._id ===
+                  getUserIdFromToken() ||
                   ["admin", "Deepak Manodi"].includes(
                     getCurrentUser()?.name
-                  )) && <LeadDocuments data={data}
+                  )) && (
+                  <LeadDocuments
+                    data={data}
                     files={files}
                     setFiles={setFiles}
                     selectedDoc={selectedDoc}
-                    setSelectedDoc={setSelectedDoc} />}
+                    setSelectedDoc={setSelectedDoc}
+                  />
+                )}
               </div>
-
             </div>
           </div>
         </TabsContent>
