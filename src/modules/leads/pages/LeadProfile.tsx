@@ -402,9 +402,9 @@ export default function LeadProfile() {
       <Tabs value={activeTab} className="w-full">
         {/* Lead Info Tab */}
         <TabsContent value="info">
-          <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-[calc(100vh-200px)]">
+          <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-200px)]">
             <div>
-              <Card className="min-w-[350px]  max-h-full overflow-auto relative">
+              <Card className="min-w-[350px]  h-full overflow-auto relative">
                 <CardHeader className="flex justify-start gap-6 items-center">
                   <Avatar className="h-14 w-14">
                     <AvatarImage src="https://github.com/shadcn.png" />
@@ -587,14 +587,14 @@ export default function LeadProfile() {
             </div>
 
             <div className="w-full overflow-y-auto pr-2 flex flex-col gap-4">
-              <div className="flex h-84/100 flex-row w-full gap-4 items-stretch">
+              <div className="flex h-77/100 flex-row w-full gap-4 items-stretch">
                 <div className=" w-1/2 ">
                   <NotesCard
                     showNotesModal={showNotesModal}
                     setShowNotesModal={setShowNotesModal}
                   />
                 </div>
-                <div className=" w-1/2 ">
+                <div className="w-1/2 ">
                   <TasksCard
                     leadId={data?.id}
                     name={data?.name}
