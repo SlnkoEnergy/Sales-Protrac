@@ -83,7 +83,7 @@ export default function GroupDetailForm({ groupId, onClose }) {
         email: formData.email,
         mobile: [formData.mobile, formData.altMobile].filter(Boolean),
       },
-      company_name: formData.companyName,
+      company_name: formData.company_name,
       address: {
         village: formData.village,
         district: formData.district,
@@ -121,7 +121,7 @@ export default function GroupDetailForm({ groupId, onClose }) {
   useEffect(() => {
     if (isFromGroup && data) {
       setFormData({
-        companyName: data.company_name || "",
+        company_name: data.company_name || "",
         group_name: data.group_name || "",
         email: data.contact_details?.email || "",
         mobile: data.contact_details?.mobile?.[0] || "",
@@ -162,7 +162,7 @@ export default function GroupDetailForm({ groupId, onClose }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
-            ["Company Name", "companyName", true],
+            ["Company Name", "company_name", true],
             ["Group Name", "group_name", true],
             [
               "Source",

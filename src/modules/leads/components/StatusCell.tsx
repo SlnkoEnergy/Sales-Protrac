@@ -29,6 +29,7 @@ interface Props {
   leadId: string;
   status: string;
   currentStatus: string;
+  expected_closing_date?: Date;
 }
 
 const StatusCell: React.FC<Props> = ({
@@ -45,9 +46,12 @@ const StatusCell: React.FC<Props> = ({
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [statusSelectOpen, setStatusSelectOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
   const normalizedStatus = currentStatus?.toLowerCase();
-  const [pendingDate, setPendingDate] = useState("");
+  const [pendingDate, setPendingDate] = useState<Date | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const statusColors: Record<string, string> = {
     initial: "text-gray-500",
     "follow up": "text-blue-600",
@@ -82,8 +86,6 @@ const StatusCell: React.FC<Props> = ({
       toast.error("Expected Closing Date is required");
       return;
     }
-
-    console.log(expected_closing_date);
 
     setUploading(true);
     try {
@@ -154,97 +156,95 @@ const StatusCell: React.FC<Props> = ({
     setStatusDialogOpen(true);
   };
 
+  console.log({ menuOpen })
+
   return (
     <>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div
-            className={`capitalize font-medium ${colorClass} cursor-pointer underline decoration-dotted`}
-          >
-            {currentStatus || "N/A"}
-          </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
+      <div className={`capitalize font-medium ${colorClass}`}>
+        <Button
+          variant="ghost"
+          className="p-0 h-auto underline decoration-dotted cursor-pointer capitalize"
+          onClick={() => setStatusSelectOpen(true)}
+        >
+          {currentStatus || "N/A"}
+        </Button>
+      </div>
+
+      {/* Status Option Dialog */}
+      <Dialog open={statusSelectOpen} onOpenChange={setStatusSelectOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Status</DialogTitle>
+            <DialogDescription>Select status update action.</DialogDescription>
+          </DialogHeader>
+
           {normalizedStatus !== "follow up" &&
             normalizedStatus !== "dead" &&
             normalizedStatus !== "warm" &&
             normalizedStatus !== "won" && (
-              <ContextMenuItem onClick={() => setOpenModal("LOI")}>
-                LOI
-              </ContextMenuItem>
+              <Button className="bg-[#214b7b] cursor-pointer" onClick={() => setOpenModal("LOI")}>Upload LOI</Button>
             )}
 
-          {normalizedStatus !== "warm" && normalizedStatus !== "dead" &&  normalizedStatus !== "won" &&  (
-            <>
-              <ContextMenuItem onClick={() => setOpenModal("LOA")}>
-                LOA
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => setOpenModal("PPA")}>
-                PPA
-              </ContextMenuItem>
-            </>
-          )}
-          
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>As Per Choice</ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              {["initial", "follow up", "warm", "won"]
-                .filter((status) => {
-                  const order = ["initial", "follow up", "warm", "won"];
-                  const currentIndex = order.indexOf(
-                    currentStatus?.toLowerCase() || ""
-                  );
-                  const targetIndex = order.indexOf(status);
-                  return targetIndex > currentIndex;
-                })
-                .map((status) => (
-                  <ContextMenuItem
+          {normalizedStatus !== "warm" &&
+            normalizedStatus !== "dead" &&
+            normalizedStatus !== "won" && (
+              <>
+                <Button className="bg-[#214b7b] cursor-pointer" onClick={() => setOpenModal("LOA")}>Upload LOA</Button>
+                <Button className="bg-[#214b7b] cursor-pointer" onClick={() => setOpenModal("PPA")}>Upload PPA</Button>
+              </>
+            )}
+
+          <div className="mt-4">
+            <p className="font-semibold">Manual Update (As Per Choice)</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {["initial", "follow up", "warm", "won"].map((status) => {
+                const order = ["initial", "follow up", "warm", "won"];
+                const currentIndex = order.indexOf(normalizedStatus || "");
+                const targetIndex = order.indexOf(status);
+                if (targetIndex <= currentIndex) return null;
+                return (
+                  <Button
                     key={status}
+                    variant="outline"
+                    className="cursor-pointer"
                     onClick={() => handleStatusUpdate(status, "as per choice")}
                   >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </ContextMenuItem>
-                ))}
-
-              {/* Always include Dead */}
-              {currentStatus?.toLowerCase() !== "dead" && (
-                <ContextMenuItem
+                    {status}
+                  </Button>
+                );
+              })}
+              {normalizedStatus !== "dead" && (
+                <Button
+                  variant="outline"
+                  className="cursor-pointer"
                   onClick={() => handleStatusUpdate("dead", "as per choice")}
                 >
                   Dead
-                </ContextMenuItem>
+                </Button>
               )}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-        </ContextMenuContent>
-      </ContextMenu>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* Dialog for remarks */}
+      {/* Remarks Dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Update Status: {selectedLabel}</DialogTitle>
+            <DialogTitle>Update Status: {selectedLabel}, {selectedStatus}</DialogTitle>
           </DialogHeader>
           <Textarea
             placeholder="Enter your remarks..."
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
           />
-          {(expected_closing_date === undefined ||
-            expected_closing_date === null) &&
-            ((selectedStatus === "warm" &&
-              !["as per choice", "won"].includes(
-                selectedLabel?.toLowerCase?.()
-              ) &&
-              selectedLabel !== "token money") ||
-              (selectedStatus === "follow up" &&
-                selectedLabel?.toLowerCase?.() === "as per choice") ||
-              (selectedStatus === "warm" &&
-                selectedLabel?.toLowerCase?.() === "as per choice")) && (
+          {(expected_closing_date === undefined || expected_closing_date === null) &&
+            selectedStatus !== "won" &&
+            selectedStatus !== "dead" &&
+            (selectedStatus === "warm" || selectedLabel?.toLowerCase() === "as per choice") && (
               <Input
                 type="date"
                 placeholder="Expected Closing Date"
-                required
                 value={
                   pendingDate instanceof Date && !isNaN(pendingDate.getTime())
                     ? pendingDate.toISOString().split("T")[0]
@@ -257,62 +257,51 @@ const StatusCell: React.FC<Props> = ({
               />
             )}
 
+
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setStatusDialogOpen(false)}
-              className="cursor-pointer"
-            >
+            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={submitStatusUpdate}
-              className="cursor-pointer bg-[#214b7b]"
-            >
+            <Button onClick={submitStatusUpdate} className="bg-[#214b7b]">
               Submit
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Upload Modal */}
+      {/* Upload Dialog */}
       <Dialog open={!!openModal} onOpenChange={() => setOpenModal(null)}>
         <DialogContent className="sm:max-w-md mt-10">
           <DialogHeader>
             <DialogTitle>Upload {openModal} Document</DialogTitle>
-            <DialogDescription>
-              Select and upload your document.
-            </DialogDescription>
+            <DialogDescription>Select and upload your document.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <Input
               type="file"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
             />
-
             {(expected_closing_date === undefined ||
               expected_closing_date === null) && (
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">
-                  Expected Closing Date
-                </label>
-                <Input
-                  type="date"
-                  placeholder="Expected Closing Date"
-                  value={
-                    pendingDate instanceof Date && !isNaN(pendingDate.getTime())
-                      ? pendingDate.toISOString().split("T")[0]
-                      : ""
-                  }
-                  onChange={(e) => setPendingDate(new Date(e.target.value))}
-                />
-              </div>
-            )}
-
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Expected Closing Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={
+                      pendingDate instanceof Date && !isNaN(pendingDate.getTime())
+                        ? pendingDate.toISOString().split("T")[0]
+                        : ""
+                    }
+                    onChange={(e) => setPendingDate(new Date(e.target.value))}
+                  />
+                </div>
+              )}
             <Button
               disabled={uploading || !selectedFile}
               onClick={handleFileUpload}
-              className="cursor-pointer bg-[#214b7b]"
+              className="bg-[#214b7b]"
             >
               {uploading ? "Uploading..." : "Upload"}
             </Button>

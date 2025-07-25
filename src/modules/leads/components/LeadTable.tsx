@@ -15,12 +15,10 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  Calendar,
   CalendarDays,
   ChevronDown,
   EyeIcon,
   MoreHorizontal,
-  Pencil,
   PencilIcon,
   Phone,
 } from "lucide-react";
@@ -33,6 +31,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -86,6 +89,17 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 export type Lead = {
   _id: string;
@@ -131,13 +145,53 @@ export type Lead = {
     name: string;
   };
   lastModifiedTask: Date;
-  leadAgeing: string;
+  leadAging: string;
+  inactiveDays: string;
   expected_closing_date: Date;
   handover: boolean;
   group_code: string;
   group_name: string;
   group_id: string;
 };
+
+const allStates = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
+];
 
 export type stageCounts = {
   lead_without_task: number;
@@ -169,7 +223,10 @@ export function DataTable({
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [stageCounts, setStageCounts] = React.useState("");
-  const [tab, setTab] = React.useState(stageFromUrl || "lead_without_task");
+  const [tab, setTab] = React.useState(stageFromUrl || "");
+  const [handoverStatus, setHandoverStatus] = React.useState("");
+  const [leadAging, setLeadAging] = React.useState("");
+  const [inactiveDays, setInactiveDays] = React.useState("");
   const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
     null
   );
@@ -182,6 +239,7 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [selectedStates, setSelectedStates] = React.useState("");
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
@@ -196,7 +254,7 @@ export function DataTable({
   const groupInfoColumn = {
     id: "group_info",
     accessorFn: (row) => row?.name,
-    header: "Group Info",
+    header: "Group Name",
     cell: ({ row }) => {
       const navigateToGroupProfile = () => {
         navigate(`/groupDetail?id=${row.original.group_id}`);
@@ -328,7 +386,7 @@ export function DataTable({
     ...(isFromGroup ? [] : [groupInfoColumn]),
     {
       id: "location_info",
-      header: "Location Info",
+      header: "State",
       cell: ({ row }) => {
         const state = row.original?.address?.state || "";
         const scheme = row.original?.project_details?.scheme || "";
@@ -353,89 +411,56 @@ export function DataTable({
     ,
     {
       accessorKey: "project_details.capacity",
-      header: "Capacity (MW)",
+      header: "Capacity (MW AC)",
       cell: ({ row }) => {
         const capacity = row.original.project_details?.capacity;
         return <div>{capacity ?? "N/A"}</div>;
       },
     },
     {
-      accessorKey: "project_details.distance_from_substation.value",
-      header: "Distance (Km)",
+      accessorKey: "inactiveDays", // Backend-mapped key
+      header: "Inactive (Days)", // No sorting
       cell: ({ row }) => {
-        const distance =
-          row.original.project_details?.distance_from_substation?.value;
-        return <div>{distance ?? "N/A"}</div>;
-      },
-    },
-    {
-      accessorKey: "lastModifiedTask",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Inactive (Days) <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      sortingFn: (rowA, rowB) => {
-        const a = isValidDate(rowA.original.lastModifiedTask)
-          ? new Date(rowA.original.lastModifiedTask)
-          : new Date(rowA.original.createdAt);
+        const days = row.original.inactiveDays;
+        let display = "";
 
-        const b = isValidDate(rowB.original.lastModifiedTask)
-          ? new Date(rowB.original.lastModifiedTask)
-          : new Date(rowB.original.createdAt);
-
-        return a.getTime() - b.getTime();
-      },
-      cell: ({ row }) => {
-        const modified = row.getValue("lastModifiedTask");
-        const created = row.original.createdAt;
-
-        const usedDate = isValidDate(modified)
-          ? new Date(modified)
-          : new Date(created);
-
-        const now = new Date();
-        let relativeRaw = formatDistanceToNow(usedDate, { addSuffix: true });
-        if (!relativeRaw.toLowerCase().includes("ago")) {
-          relativeRaw += " ago";
+        if (days < 7) {
+          const rounded = Math.floor(days);
+          display = `${rounded} ${rounded === 1 ? "day" : "days"}`;
+        } else if (days >= 7 && days < 30) {
+          const weeks = Math.floor(days / 7);
+          display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+        } else if (days >= 30 && days < 365) {
+          const months = Math.floor(days / 30);
+          display = `${months} ${months === 1 ? "month" : "months"}`;
+        } else {
+          const years = Math.floor(days / 365);
+          display = `${years} ${years === 1 ? "year" : "years"}`;
         }
 
-        const relative =
-          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-        return <div>{relative} </div>;
+        return <div>{display}</div>;
       },
     },
-    {
-      accessorKey: "leadAging",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Lead Aging <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      sortingFn: (rowA, rowB) => {
-        const a = new Date(rowA.original.createdAt).getTime();
-        const b = new Date(rowB.original.createdAt).getTime();
-        return a - b;
-      },
-      cell: ({ row }) => {
-        const createdAt = row.original.createdAt;
-        const createdDate = new Date(createdAt);
 
-        let relativeRaw = formatDistanceToNow(createdDate, { addSuffix: true });
-        if (!relativeRaw.toLowerCase().includes("ago")) {
-          relativeRaw += " ago";
+    {
+      accessorKey: "leadAging", // Mapped to backend key
+      header: "Lead Aging", // Simple header without sorting button
+      cell: ({ row }) => {
+        const aging = row.original.leadAging;
+
+        let display = "";
+
+        if (aging < 7) {
+          display = `${aging} ${aging === 1 ? "day" : "days"}`;
+        } else if (aging >= 7 && aging < 30) {
+          const weeks = Math.floor(aging / 7);
+          display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+        } else {
+          const months = Math.floor(aging / 30);
+          display = `${months} ${months === 1 ? "month" : "months"}`;
         }
 
-        const relative =
-          relativeRaw.charAt(0).toUpperCase() + relativeRaw.slice(1);
-
-        return <div>{relative}</div>;
+        return <div>{display}</div>;
       },
     },
 
@@ -444,70 +469,17 @@ export function DataTable({
       header: "Exp Closing Date",
       cell: ({ row }) => {
         const expectedClosing = row.original.expected_closing_date;
-        const leadId = row.original._id;
-
-        const [pendingDate, setPendingDate] = React.useState<string | null>(
-          null
-        );
-        const [open, setOpen] = React.useState(false);
-
-        const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          const selected = e.target.value;
-          if (selected) {
-            setPendingDate(selected);
-            setOpen(true);
-          }
-        };
-
-        const handleConfirm = async () => {
-          if (!pendingDate) return;
-          try {
-            await updateExpectedClosingDate(leadId, pendingDate);
-            toast.success("Expected closing date updated");
-            setTimeout(() => {
-              location.reload();
-            }, 300);
-          } catch (error: any) {
-            toast.error(error.message || "Failed to update date");
-          } finally {
-            setOpen(false);
-          }
-        };
 
         return (
           <div className="flex items-center text-sm  gap-1">
-            <CalendarDays className="w-3.5 h-3.5" />
             {expectedClosing && expectedClosing !== "-" ? (
-              <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+              <>
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+              </>
             ) : (
               <>
-                <input
-                  type="date"
-                  className="border rounded text-xs px-1 py-0.5"
-                  onChange={handleDateChange}
-                />
-
-                <AlertDialog open={open} onOpenChange={setOpen}>
-                  <AlertDialogTrigger asChild />
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you sure you want to set the expected closing date?
-                      </AlertDialogTitle>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogAction
-                        className="cursor-pointer"
-                        onClick={handleConfirm}
-                      >
-                        Yes, Confirm
-                      </AlertDialogAction>
-                      <AlertDialogCancel className="cursor-pointer">
-                        Cancel
-                      </AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Badge variant="secondary">Yet to come</Badge>
               </>
             )}
           </div>
@@ -630,11 +602,14 @@ export function DataTable({
 
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
+  const state = searchParams.get("stateFilter");
+  const Handoverfilter = searchParams.get("handover");
+  const LeadAgingFilter = searchParams.get("aging") || "";
+  const InActiveDays = searchParams.get("inActiveDays");
+
   React.useEffect(() => {
     setIsLoading(true);
   }, [stageFromUrl]);
-
-  console.log({ group_id });
 
   React.useEffect(() => {
     const fetchLeads = async () => {
@@ -645,12 +620,16 @@ export function DataTable({
           limit: pageSize,
           search,
           group_id: isFromGroup ? group_id : "",
+          stateFilter: state || "",
           lead_without_task:
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
               ? ""
               : undefined,
+          handover_statusFilter: Handoverfilter || "",
+          leadAgingFilter: LeadAgingFilter || "",
+          inactiveFilter: InActiveDays || "",
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -668,7 +647,18 @@ export function DataTable({
     };
 
     fetchLeads();
-  }, [page, pageSize, search, fromDate, toDate, stageFromUrl]);
+  }, [
+    page,
+    pageSize,
+    search,
+    fromDate,
+    toDate,
+    stageFromUrl,
+    state,
+    Handoverfilter,
+    LeadAgingFilter,
+    InActiveDays,
+  ]);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -733,6 +723,42 @@ export function DataTable({
     });
   };
 
+  React.useEffect(() => {
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+
+      // Lead Aging Filter
+      if (leadAging) {
+        updated.set("aging", leadAging);
+      } else {
+        updated.delete("aging");
+      }
+
+      // Handover Status Filter
+      if (handoverStatus) {
+        updated.set("handover", handoverStatus);
+      } else {
+        updated.delete("handover");
+      }
+
+      // State Filter
+      if (selectedStates.length > 0) {
+        updated.set("stateFilter", selectedStates.join(","));
+      } else {
+        updated.delete("stateFilter");
+      }
+
+      // Inactive Days Filter
+      if (inactiveDays) {
+        updated.set("inActiveDays", inactiveDays);
+      } else {
+        updated.delete("inActiveDays");
+      }
+
+      return updated;
+    });
+  }, [selectedStates, handoverStatus, leadAging, inactiveDays]);
+
   const handleTransferLead = async () => {
     if (!selectedLeadId || !selectedUser) {
       toast.error("Missing lead or user selection");
@@ -785,21 +811,44 @@ export function DataTable({
   });
 
   if (isLoading) return <Loader />;
+  const isActiveLeadWithoutTask =
+    location.pathname === "/leads" &&
+    searchParams.get("stage") === "lead_without_task";
+  const toggleState = (state: string) => {
+    let updatedStates = [...selectedStates];
+
+    if (updatedStates.includes(state)) {
+      updatedStates = updatedStates.filter((s) => s !== state);
+    } else {
+      updatedStates.push(state);
+    }
+
+    setSelectedStates(updatedStates);
+
+    // Update URL
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (updatedStates.length > 0) {
+      newParams.set("stateFilter", updatedStates.join(","));
+    } else {
+      newParams.delete("stateFilter");
+    }
+    setSearchParams(newParams);
+  };
+
+  const totalFilters =
+    selectedStates.length + (handoverStatus ? 1 : 0) + (leadAging ? 1 : 0);
 
   return (
     <div
       className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
     >
       <div className="flex justify-between items-center py-4 px-2">
-        {!isFromGroup && (
+        {!isFromGroup && !isActiveLeadWithoutTask && (
           <div>
             <Tabs value={tab} onValueChange={handleTabChange}>
               <TabsList className="gap-2">
-                <TabsTrigger
-                  className="cursor-pointer"
-                  value="lead_without_task"
-                >
-                  Lead W/O Task ({stageCounts?.lead_without_task || "0"})
+                <TabsTrigger className="cursor-pointer" value="">
+                  All ({stageCounts?.all || "0"})
                 </TabsTrigger>
                 <TabsTrigger className="cursor-pointer" value="initial">
                   Initial ({stageCounts?.initial || "0"})
@@ -816,39 +865,213 @@ export function DataTable({
                 <TabsTrigger className="cursor-pointer" value="dead">
                   Dead ({stageCounts?.dead || "0"})
                 </TabsTrigger>
-                <TabsTrigger className="cursor-pointer" value="">
-                  All ({stageCounts?.all || "0"})
-                </TabsTrigger>
+               
               </TabsList>
             </Tabs>
           </div>
         )}
 
-        {/* Right side: Rows per page and Columns */}
         <div className="flex items-center gap-4">
-          {/* Rows per page */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="limit">Rows per page:</label>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => handleLimitChange(Number(value))}
-            >
-              <SelectTrigger className="w-24 h-9 cursor-pointer">
-                <SelectValue placeholder="Select limit" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 5, 10, 20, 50, 100].map((limit) => (
-                  <SelectItem
-                    className="cursor-pointer"
-                    key={limit}
-                    value={limit.toString()}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="relative inline-block">
+                <Button variant="outline" className="cursor-pointer pr-8">
+                  Filters
+                </Button>
+                {totalFilters > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs font-semibold">
+                    {totalFilters}
+                  </span>
+                )}
+              </div>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent className="w-60">
+              {/* State Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Filter by State</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                  {allStates.map((state) => (
+                    <DropdownMenuCheckboxItem
+                      key={state}
+                      checked={selectedStates.includes(state)}
+                      onCheckedChange={() => toggleState(state)}
+                    >
+                      {state}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Handover Filter */}
+              {(tab === "" || tab === "won") && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    Handover Filter
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup
+                      value={handoverStatus}
+                      onValueChange={(value) => {
+                        setHandoverStatus(value);
+
+                        const newParams = new URLSearchParams(
+                          searchParams.toString()
+                        );
+                        if (value) {
+                          newParams.set("handover", value);
+                        } else {
+                          newParams.delete("handover");
+                        }
+                        setSearchParams(newParams);
+                      }}
+                    >
+                      <DropdownMenuRadioItem value="pending">
+                        Pending
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="in process">
+                        In-Procress
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="completed">
+                        Completed
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
+
+              {/* Lead Aging Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Lead Aging Filter
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={leadAging}
+                    onValueChange={setLeadAging}
                   >
-                    {limit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    <DropdownMenuRadioItem value="1">
+                      1 day
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="3">
+                      3 days
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="5">
+                      5 days
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="7">
+                      1 week
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="14">
+                      2 weeks
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="21">
+                      3 weeks
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="30">
+                      1 month
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="90">
+                      3 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="180">
+                      6 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="270">
+                      9 months
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="365">
+                      1 year
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="730">
+                      2 years
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="1095">
+                      3 years
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {/* Inactive Days Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Inactive Days Filter
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={inactiveDays}
+                    onValueChange={setInactiveDays}
+                  >
+                    <DropdownMenuRadioItem value="1">
+                      1 day
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="3">
+                      3 days
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="5">
+                      5 days
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="7">
+                      1 week
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="14">
+                      2 weeks
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="21">
+                      3 weeks
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="30">
+                      1 month
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="90">
+                      3 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="180">
+                      6 months
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="270">
+                      9 months
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="365">
+                      1 year
+                    </DropdownMenuRadioItem>
+
+                    <DropdownMenuRadioItem value="730">
+                      2 years
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="1095">
+                      3 years
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {totalFilters > 0 && (
+                <div className="px-2 py-1">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setSelectedStates([]);
+                      setHandoverStatus("");
+                      setLeadAging("");
+                      setSearchParams({});
+                    }}
+                    className="w-full"
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Columns Dropdown */}
           <DropdownMenu>
@@ -883,6 +1106,28 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <label htmlFor="limit">Rows per page:</label>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => handleLimitChange(Number(value))}
+            >
+              <SelectTrigger className="w-24 h-9 cursor-pointer">
+                <SelectValue placeholder="Select limit" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 5, 10, 20, 50, 100].map((limit) => (
+                  <SelectItem
+                    className="cursor-pointer"
+                    key={limit}
+                    value={limit.toString()}
+                  >
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
