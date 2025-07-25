@@ -28,17 +28,17 @@ import DocumentViewerModal from "@/components/lead/DocumentViewer";
 import { Input } from "@/components/ui/input";
 
 
-export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files, setFiles}) {
-  
+export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files, setFiles }) {
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedViewDoc, setSelectedViewDoc] = useState<string>("");
   const [customDocName, setCustomDocName] = useState("");
   const [expectedDate, setExpectedDate] = useState<Date | null>(null);
-  
 
-  
+
+
 
   const handleDelete = (index: number) => {
     const updated = [...files];
@@ -50,17 +50,25 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
     setEditIndex(null);
   };
 
-    const handleFileUpload = async (itemType: string) => {
+  const handleFileUpload = async (itemType: string) => {
     if (!selectedFile || !itemType || !data._id) return;
 
     const stage = itemType.toLowerCase() === "loi" ? "follow up" : "warm";
     const docType = itemType.toLowerCase();
+
+    // Normalize expected_closing_date to Date
+    const closingDate = data.expected_closing_date
+      ? new Date(data.expected_closing_date)
+      : null;
+
     const isExpectedDateValid =
       expectedDate instanceof Date && !isNaN(expectedDate.getTime());
 
+    const isClosingDateInvalid =
+      !closingDate || isNaN(closingDate.getTime());
+
     if (
-      !data.expected_closing_date ||
-isNaN(new Date(data.expected_closing_date).getTime()) &&
+      isClosingDateInvalid &&
       (docType === "loa" || docType === "ppa") &&
       !isExpectedDateValid
     ) {
@@ -75,7 +83,7 @@ isNaN(new Date(data.expected_closing_date).getTime()) &&
         stage,
         docType as "loi" | "loa" | "ppa",
         customDocName,
-        !data.expected_closing_date ? expectedDate : undefined,
+        isClosingDateInvalid ? expectedDate : undefined,
         selectedFile
       );
 
@@ -92,13 +100,14 @@ isNaN(new Date(data.expected_closing_date).getTime()) &&
     }
   };
 
-  console.log({data});
+
+  console.log({ data });
 
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-medium">Lead Documents History</CardTitle>
-        
+
       </CardHeader>
 
       <CardContent className="max-h-64 overflow-hidden">
@@ -158,7 +167,7 @@ isNaN(new Date(data.expected_closing_date).getTime()) &&
                       className="w-[160px]"
                       value={
                         expectedDate instanceof Date &&
-                        !isNaN(expectedDate.getTime())
+                          !isNaN(expectedDate.getTime())
                           ? expectedDate.toISOString().split("T")[0]
                           : ""
                       }
@@ -190,7 +199,7 @@ isNaN(new Date(data.expected_closing_date).getTime()) &&
                   onClick={() =>
                     document
                       .querySelectorAll("input[type='file']")
-                      [index]?.click()
+                    [index]?.click()
                   }
                 />
 
@@ -209,7 +218,7 @@ isNaN(new Date(data.expected_closing_date).getTime()) &&
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]"  onClick={() => handleDelete(index)}>
+                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]" onClick={() => handleDelete(index)}>
                         Delete
                       </AlertDialogAction>
                       <AlertDialogCancel className="cursor-pointer" onClick={() => setEditIndex(null)}>

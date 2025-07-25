@@ -125,54 +125,48 @@ export default function Header() {
 
       <div className="hidden sm:flex gap-8 items-center text-white">
         <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveDashboard ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${isActiveDashboard ? "bg-white text-[#214b7b] font-medium" : ""
+            }`}
           onClick={() => navigate("/")}
         >
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
         </div>
         <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveGroup ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${isActiveGroup ? "bg-white text-[#214b7b] font-medium" : ""
+            }`}
           onClick={() => navigate("/group")}
         >
           <Group size={18} />
           <span>Groups</span>
         </div>
         <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveLead ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
-          onClick={() => navigate("/leads?stage=initial")}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${isActiveLead ? "bg-white text-[#214b7b] font-medium" : ""
+            }`}
+          onClick={() => navigate("/leads")}
         >
           <Users size={18} />
           <span>Leads</span>
         </div>
         <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveLeadWithoutTask ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${isActiveLeadWithoutTask ? "bg-white text-[#214b7b] font-medium" : ""
+            }`}
           onClick={() => navigate("/leads?stage=lead_without_task")}
         >
           <WorkflowIcon size={18} />
           <span>Leads W/O Task</span>
         </div>
         <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveTask ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${isActiveTask ? "bg-white text-[#214b7b] font-medium" : ""
+            }`}
           onClick={() => navigate("/tasks?status=pending")}
         >
           <ClipboardList size={18} />
           <span>Tasks</span>
         </div>
         <div
-          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${
-            isActiveHandover ? "bg-white text-[#214b7b] font-medium" : ""
-          }`}
+          className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md transition ${isActiveHandover ? "bg-white text-[#214b7b] font-medium" : ""
+            }`}
           onClick={() => navigate("/handover?statusFilter=Rejected")}
         >
           <File size={18} />
