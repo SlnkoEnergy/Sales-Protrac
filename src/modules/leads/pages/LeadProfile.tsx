@@ -537,7 +537,7 @@ export default function LeadProfile() {
                   <Separator />
                   <div className="flex flex-wrap gap-3">
                     <Button
-                      className="w-[140px]"
+                      className="w-[140px] cursor-pointer"
                       variant="outline"
                       size="sm"
                       onClick={() => setShowTaskModal(true)}
@@ -546,7 +546,7 @@ export default function LeadProfile() {
                     </Button>
 
                     <Button
-                      className="w-[140px]"
+                      className="w-[140px] cursor-pointer"
                       variant="outline"
                       size="sm"
                       onClick={() => setShowNotesModal(true)}
@@ -556,7 +556,7 @@ export default function LeadProfile() {
 
                     <div className="flex gap-3 items-center">
                       <Select value={selectedDoc} onValueChange={setSelectedDoc}>
-                        <SelectTrigger className="w-[140px] h-8">
+                        <SelectTrigger className="w-[140px] cursor-pointer h-8">
                           <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -567,7 +567,7 @@ export default function LeadProfile() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button className="w-[140px]" variant="outline" size="sm" onClick={handleAddFile}>
+                      <Button className="w-[140px] cursor-pointer" variant="outline" size="sm" onClick={handleAddFile}>
                         <Plus className="w-4 h-4 mr-1" /> Add Document
                       </Button>
                     </div>
