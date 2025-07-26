@@ -203,7 +203,7 @@ export default function TasksCard({
 
                   return (
                     <div key={task._id} className="space-y-2">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 w-full">
                         {createElement(statusIcon, {
                           className: "h-4 w-4 mt-1 text-muted-foreground",
                         })}
@@ -274,6 +274,8 @@ export default function TasksCard({
                           </div>
                         </div>
                       </div>
+
+
 
                       {isExpanded && details && (
                         <div className="ml-12 mt-2 space-y-2 text-sm max-h-[200px] overflow-auto">

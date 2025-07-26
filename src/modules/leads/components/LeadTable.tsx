@@ -69,7 +69,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Select,
@@ -79,27 +78,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import Loader from "@/components/loader/Loader";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
-import {
-  ContextMenu,
-  ContextMenuCheckboxItem,
-  ContextMenuContent,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 
 export type Lead = {
   _id: string;
@@ -968,6 +950,9 @@ export function DataTable({
                     <DropdownMenuRadioItem value="1095">
                       3 years
                     </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="custom">
+  Custom
+</DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
@@ -1125,7 +1110,6 @@ export function DataTable({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers
                   .filter((header) => {
-                    // Hide the column if it's "handover" and no won leads exist
                     if (header.column.id === "handover") {
                       return data.some(
                         (lead) => lead.current_status?.name === "won"

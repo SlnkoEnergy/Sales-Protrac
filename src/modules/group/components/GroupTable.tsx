@@ -115,6 +115,7 @@ export function GroupTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  
 
   const navigate = useNavigate();
   const columns: ColumnDef<Group>[] = [
@@ -173,46 +174,12 @@ export function GroupTable({
     const displayedName =
       fullName.length > 15 ? fullName.slice(0, 15) + "..." : fullName;
 
-    const mobile = row.original?.contact_details?.mobile;
-    const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-    const first = mobiles[0];
-    const remaining = mobiles.slice(1);
-    const remainingCount = remaining?.length;
-    const tooltipContent = remaining.join(", ");
-
     return (
       <div
         onClick={navigateToLeadProfile}
         className="cursor-pointer hover:text-[#214b7b]"
       >
         <div className="font-medium">{displayedName}</div>
-
-        {mobiles.length > 0 ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex gap-1 text-sm text-gray-500 items-center">
-                  <div>{first}</div>
-                  {remainingCount > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="text-xs px-2 py-0.5 cursor-default"
-                    >
-                      <Phone size={14} />+{remainingCount}
-                    </Badge>
-                  )}
-                </div>
-              </TooltipTrigger>
-              {remainingCount > 0 && (
-                <TooltipContent side="bottom" align="start">
-                  {tooltipContent}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <div className="text-sm text-gray-500">-</div>
-        )}
       </div>
     );
   },

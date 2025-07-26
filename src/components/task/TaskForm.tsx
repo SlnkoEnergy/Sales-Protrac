@@ -269,7 +269,7 @@ const handleSave = async () => {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="Enter Title of task..."
+            placeholder="Enter Task Name..."
           />
         </div>
         <div>
