@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { X, ChevronDown, ChevronUp, Pencil, UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import AddTask from "@/components/task/AddTask";
@@ -26,7 +26,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-export default function TasksCard({ id, taskData, name, leadId, showTaskModal, setShowTaskModal }) {
+export default function TasksCard({
+  id,
+  taskData,
+  name,
+  leadId,
+  showTaskModal,
+  setShowTaskModal,
+}) {
   const [expandedTasks, setExpandedTasks] = useState({});
   const [taskDetails, setTaskDetails] = useState({});
   const [tasks, setTasks] = useState(taskData || []);
@@ -34,8 +41,6 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [newRemarks, setNewRemarks] = useState("");
-
-
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
@@ -97,13 +102,13 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
         prevTasks.map((task) =>
           task._id === editingTaskId
             ? {
-              ...task,
-              current_status: newStatus,
-              remarks: [
-                ...(task.remarks || []),
-                { text: newRemarks, date: now, user_id: userId },
-              ],
-            }
+                ...task,
+                current_status: newStatus,
+                remarks: [
+                  ...(task.remarks || []),
+                  { text: newRemarks, date: now, user_id: userId },
+                ],
+              }
             : task
         )
       );
@@ -176,7 +181,6 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
       <Card className="h-full">
         <CardHeader className="flex flex-row w-full items-center justify-between">
           <CardTitle className="text-lg font-medium">Tasks History</CardTitle>
-
         </CardHeader>
 
         <CardContent className="h-full overflow-y-auto">
@@ -192,14 +196,14 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                     task.current_status === "completed"
                       ? CheckCircle
                       : task.current_status === "in progress"
-                        ? Loader2
-                        : task.current_status === "pending"
-                          ? Clock
-                          : CircleDashed;
+                      ? Loader2
+                      : task.current_status === "pending"
+                      ? Clock
+                      : CircleDashed;
 
                   return (
                     <div key={task._id} className="space-y-2">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 w-full">
                         {createElement(statusIcon, {
                           className: "h-4 w-4 mt-1 text-muted-foreground",
                         })}
@@ -235,14 +239,15 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge
-                            className={`p-1 capitalize text-xs ${task.current_status === "completed"
-                              ? "bg-green-400"
-                              : task.current_status === "pending"
+                            className={`p-1 capitalize text-xs ${
+                              task.current_status === "completed"
+                                ? "bg-green-400"
+                                : task.current_status === "pending"
                                 ? "bg-red-400"
                                 : task.current_status === "in progress"
-                                  ? "bg-orange-400"
-                                  : "bg-blue-400"
-                              }`}
+                                ? "bg-orange-400"
+                                : "bg-blue-400"
+                            }`}
                           >
                             {task.current_status}
                           </Badge>
@@ -256,13 +261,21 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                               }}
                             >
                               {task?.current_status !== "completed" &&
-                                task?.assigned_to?.some((assignee: any) => assignee._id === getUserIdFromToken()) && (
-                                  <Pencil className="cursor-pointer" size={18} />
+                                task?.assigned_to?.some(
+                                  (assignee: any) =>
+                                    assignee._id === getUserIdFromToken()
+                                ) && (
+                                  <Pencil
+                                    className="cursor-pointer"
+                                    size={18}
+                                  />
                                 )}
                             </div>
                           </div>
                         </div>
                       </div>
+
+
 
                       {isExpanded && details && (
                         <div className="ml-12 mt-2 space-y-2 text-sm max-h-[200px] overflow-auto">
@@ -287,6 +300,49 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                             {new Date(details.deadline).toLocaleDateString(
                               "en-GB"
                             )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <strong>Assignees:</strong>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="relative flex items-center gap-1 cursor-pointer">
+                                  {details?.assigned_to?.length > 0 && (
+                                    <>
+                                      <div className="flex items-center gap-1">
+                                        <UserIcon size={18} />
+                                        <span>
+                                          {details.assigned_to[0]?.name}
+                                        </span>
+                                      </div>
+                                      {details.assigned_to.length > 1 && (
+                                        <span className="text-xs bg-gray-300 px-2 rounded-full">
+                                          +{details.assigned_to.length - 1}
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+
+                              <TooltipContent side="bottom" className="p-2">
+                                <div className="flex flex-col gap-1">
+                                  {details.assigned_to?.map((user, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <UserIcon
+                                        size={14}
+                                        className="text-gray-600"
+                                      />
+                                      <span className="text-sm">
+                                        {user.name}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
 
                           {/* Tooltip for Description */}
@@ -346,14 +402,15 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                                     )}
                                     <div>
                                       <div
-                                        className={`font-semibold capitalize ${entry.status === "pending"
-                                          ? "text-red-500"
-                                          : entry.status === "in progress"
+                                        className={`font-semibold capitalize ${
+                                          entry.status === "pending"
+                                            ? "text-red-500"
+                                            : entry.status === "in progress"
                                             ? "text-orange-500"
                                             : entry.status === "completed"
-                                              ? "text-green-600"
-                                              : ""
-                                          }`}
+                                            ? "text-green-600"
+                                            : ""
+                                        }`}
                                       >
                                         {entry.status}
                                       </div>
@@ -430,7 +487,6 @@ export default function TasksCard({ id, taskData, name, leadId, showTaskModal, s
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
