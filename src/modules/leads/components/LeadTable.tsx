@@ -583,9 +583,9 @@ export function DataTable({
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
-          name: NameFilter || "",
+          name:NameFilter || "",
         };
-
+        
         if (fromDate) params.fromDate = fromDate;
         if (toDate) params.toDate = toDate;
 
