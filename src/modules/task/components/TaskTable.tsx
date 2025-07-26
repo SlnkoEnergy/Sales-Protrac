@@ -187,7 +187,7 @@ export function TaskTable({
     },
     {
       accessorKey: "title",
-      header: "Title",
+      header: "Task Name",
       cell: ({ row }) => {
         const title = row.getValue("title") || "";
         const truncatedTitle =
@@ -195,8 +195,7 @@ export function TaskTable({
 
         return (
           <div
-            onClick={() => navigate(`/viewtask?id=${row.original._id}`)}
-            className="capitalize cursor-pointer hover:text-[#214b7b]"
+            className="capitalize"
           >
             {truncatedTitle}
           </div>
