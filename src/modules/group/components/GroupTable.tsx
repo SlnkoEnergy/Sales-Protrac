@@ -115,6 +115,7 @@ export function GroupTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  
 
   const navigate = useNavigate();
   const columns: ColumnDef<Group>[] = [
