@@ -169,9 +169,13 @@ const handleSave = async () => {
       _id: userId,
       name: currentUser.name,
     };
-
+    
     toast.success("Task Created Successfully");
-
+    createdTask.assigned_to = selected.map((id) => ({
+      _id: id,
+      name: currentUser?.name,
+    }));
+    console.log({createdTask})
     // Clear form
     setFormData({
       title: "",
