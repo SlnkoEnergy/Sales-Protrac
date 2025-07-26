@@ -334,11 +334,7 @@ export function DataTable({
           navigate(`/leadProfile?id=${row.original._id}`);
         };
 
-        const mobile = row.original?.contact_details?.mobile;
-        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-        const first = mobiles[0];
-        const remaining = mobiles.slice(1);
-        const tooltipContent = remaining.join(", ");
+       
         const name = row?.original?.name || "";
         const truncatedName =
           name.length > 15 ? `${name.slice(0, 15)}...` : name;
@@ -349,33 +345,6 @@ export function DataTable({
             className="cursor-pointer hover:text-[#214b7b]"
           >
             <div className="font-medium">{truncatedName}</div>
-
-            {mobiles.length > 0 ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex gap-1 text-sm text-gray-500 items-center">
-                      <div>{first}</div>
-                      {remaining.length > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs px-2 py-0.5 cursor-default"
-                        >
-                          <Phone size={14} />+{remaining.length}
-                        </Badge>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  {remaining.length > 0 && (
-                    <TooltipContent side="bottom" align="start">
-                      {tooltipContent}
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <div className="text-sm text-gray-500">-</div>
-            )}
           </div>
         );
       },
@@ -425,7 +394,7 @@ export function DataTable({
 
         if (numDays < 7) {
           const rounded = Math.floor(numDays);
-          display = `${rounded} ${rounded === 1 ? "day" : "days"}`;
+          display = `${rounded} ${rounded <= 1 ? "day" : "days"}`;
         } else if (numDays >= 7 && numDays < 30) {
           const weeks = Math.floor(numDays / 7);
           display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
@@ -437,7 +406,7 @@ export function DataTable({
           display = `${years} ${years === 1 ? "year" : "years"}`;
         }
 
-        return <div>{numDays}</div>;
+        return <div>{display}</div>;
       },
     },
     {

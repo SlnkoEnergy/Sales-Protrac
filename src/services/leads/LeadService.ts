@@ -167,7 +167,8 @@ export const updateLeadStatus = async (
   leadId: string,
   name: string,
   stage: string,
-  remarks: string
+  remarks: string,
+  pendingDate: string
 ) => {
   try {
     const response = await Axios.put(
@@ -176,6 +177,7 @@ export const updateLeadStatus = async (
         name: name,
         stage: stage,
         remarks: remarks,
+        expected_closing_date: pendingDate
       }
     );
     return response.data;

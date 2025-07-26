@@ -518,7 +518,7 @@ export default function LeadProfile() {
                   </TooltipProvider>
 
                   <Separator />
-                  <div className="flex flex-col gap-2">
+                  <div className="flex justify-between">
                     <div>
                       Exp Closing Date:{" "}
                       <Badge variant="secondary">

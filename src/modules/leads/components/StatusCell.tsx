@@ -123,7 +123,8 @@ const StatusCell: FC<Props> = ({
         leadId,
         selectedStatus,
         selectedLabel,
-        remarks || ""
+        remarks || "",
+        pendingDate
       );
       toast.success(`Status updated to ${selectedStatus}`);
       setStatusDialogOpen(false);
