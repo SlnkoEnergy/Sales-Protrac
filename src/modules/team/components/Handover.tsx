@@ -134,18 +134,23 @@ export function HandoverTable({
     {
       accessorKey: "customer_details.customer",
       header: "Name",
-      cell: ({ row }) => (
-        <div
-          className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
-          onClick={() =>
-            navigate(
-              `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
-            )
-          }
-        >
-          {row.original.customer_details?.customer || "-"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const name = row.original.customer_details?.customer || "-";
+        const truncated = name.length > 15 ? name.slice(0, 15) + "..." : name;
+
+        return (
+          <div
+            className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
+            onClick={() =>
+              navigate(
+                `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
+              )
+            }
+          >
+            {truncated}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "customer_details.p_group",
@@ -176,7 +181,8 @@ export function HandoverTable({
 
         return (
           <div className="capitalize">
-           {kwp ? `${kwp} kwp` : "- kwp"} / {proposed ? `${proposed} kwp` : "- kwp"}
+            {kwp ? `${kwp} kwp` : "- kwp"} /{" "}
+            {proposed ? `${proposed} kwp` : "- kwp"}
           </div>
         );
       },
@@ -258,13 +264,14 @@ export function HandoverTable({
     pageSize: pageSize,
   });
   const totalPages = Math.ceil(total / pageSize);
+
   React.useEffect(() => {
     const fetchHandover = async () => {
       try {
         const params = {
           status: statusFromUrl,
           search,
-          page,
+          page:page,
           limit: pageSize,
         };
         const res = await getAllHandover(params);
@@ -276,7 +283,7 @@ export function HandoverTable({
     };
 
     fetchHandover();
-  }, [search, pageSize, statusFromUrl]);
+  }, [search, pageSize, statusFromUrl, page]);
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
@@ -425,7 +432,7 @@ export function HandoverTable({
           </DropdownMenu>
         </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
