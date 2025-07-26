@@ -14,11 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Mail, MapPin, Phone, RotateCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { deleteLead } from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
-import NotesCard from "../../leads/components/NotesCard";
 import { toast } from "sonner";
-
 import {
   Tooltip,
   TooltipContent,
@@ -76,7 +73,7 @@ export type Group = {
 export default function GroupDetail() {
   const navigate = useNavigate();
   const [data, setData] = React.useState<Group | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const id = searchParams.get("id");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const group_id = searchParams.get("id");
@@ -92,21 +89,6 @@ export default function GroupDetail() {
     };
     fetchGroup();
   }, [id]);
-
-  const handleDelete = async () => {
-    try {
-      if (!id) {
-        toast.error("Missing lead ID or model");
-        return;
-      }
-
-      await deleteLead(id);
-      toast.success("Lead deleted successfully!");
-      navigate("/leads");
-    } catch (error) {
-      toast.error("Failed to delete lead");
-    }
-  };
 
   const getUserIdFromToken = () => {
     const token = localStorage.getItem("token");
@@ -142,10 +124,14 @@ export default function GroupDetail() {
 
   const fullComment = data?.comments || "";
   const charLimit = 15;
-  const isTruncated = fullComment?.length > charLimit;
-  const displayedComment = isTruncated
-    ? fullComment?.slice(0, charLimit) + "..."
-    : fullComment;
+  const isTruncated =
+    typeof fullComment === "string" && fullComment.length > charLimit;
+  const displayedComment =
+    typeof fullComment === "string"
+      ? isTruncated
+        ? fullComment.slice(0, charLimit) + "..."
+        : fullComment
+      : "";
 
   const handleChange = async (nextStatus) => {
     try {
@@ -287,8 +273,16 @@ export default function GroupDetail() {
             <p>
               <strong>Left Capacity:</strong>{" "}
               {(
-                parseFloat(data?.project_details?.capacity || "0") -
-                parseFloat(data?.total_lead_capacity || "0")
+                parseFloat(
+                  typeof data?.project_details?.capacity === "string"
+                    ? data.project_details.capacity
+                    : "0"
+                ) -
+                parseFloat(
+                  typeof data?.total_lead_capacity === "string"
+                    ? data.total_lead_capacity
+                    : "0"
+                )
               ).toFixed(2)}{" "}
               MW
             </p>

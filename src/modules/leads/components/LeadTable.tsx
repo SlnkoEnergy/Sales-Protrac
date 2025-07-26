@@ -152,6 +152,8 @@ export type Lead = {
   group_code: string;
   group_name: string;
   group_id: string;
+  fromDate?: string;
+  toDate?: string;
 };
 
 const allStates = [
@@ -193,14 +195,6 @@ const allStates = [
   "Puducherry",
 ];
 
-export type stageCounts = {
-  lead_without_task: number;
-  initial: number;
-  "follow up": number;
-  warm: number;
-  dead: number;
-  all: number;
-};
 export function DataTable({
   search,
   onSelectionChange,
@@ -222,7 +216,14 @@ export function DataTable({
   const [users, setUsers] = React.useState([]);
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [stageCounts, setStageCounts] = React.useState("");
+  const [stageCounts, setStageCounts] = React.useState<{
+    initial?: number;
+    "follow up"?: number;
+    warm?: number;
+    won?: number;
+    dead?: number;
+    all?: number;
+  }>({});
   const [tab, setTab] = React.useState(stageFromUrl || "");
   const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
@@ -239,15 +240,12 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [selectedStates, setSelectedStates] = React.useState("");
+  const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const isValidDate = (d: any) => {
-    const parsed = new Date(d);
-    return d && !isNaN(parsed.getTime());
-  };
+
   const navigate = useNavigate();
   const isFromGroup = location.pathname === "/groupDetail";
 
@@ -303,7 +301,6 @@ export function DataTable({
       cell: ({ row }) => (
         <StatusCell
           leadId={row.original._id}
-          status={row.original.current_status?.name}
           currentStatus={row.original.current_status?.name}
           expected_closing_date={row.original?.expected_closing_date}
         />
@@ -337,11 +334,7 @@ export function DataTable({
           navigate(`/leadProfile?id=${row.original._id}`);
         };
 
-        const mobile = row.original?.contact_details?.mobile;
-        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-        const first = mobiles[0];
-        const remaining = mobiles.slice(1);
-        const tooltipContent = remaining.join(", ");
+       
         const name = row?.original?.name || "";
         const truncatedName =
           name.length > 15 ? `${name.slice(0, 15)}...` : name;
@@ -352,33 +345,6 @@ export function DataTable({
             className="cursor-pointer hover:text-[#214b7b]"
           >
             <div className="font-medium">{truncatedName}</div>
-
-            {mobiles.length > 0 ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex gap-1 text-sm text-gray-500 items-center">
-                      <div>{first}</div>
-                      {remaining.length > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs px-2 py-0.5 cursor-default"
-                        >
-                          <Phone size={14} />+{remaining.length}
-                        </Badge>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  {remaining.length > 0 && (
-                    <TooltipContent side="bottom" align="start">
-                      {tooltipContent}
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <div className="text-sm text-gray-500">-</div>
-            )}
           </div>
         );
       },
@@ -418,35 +384,37 @@ export function DataTable({
       },
     },
     {
-      accessorKey: "inactiveDays", // Backend-mapped key
-      header: "Inactive (Days)", // No sorting
+      accessorKey: "inactiveDays",
+      header: "Inactive (Days)",
       cell: ({ row }) => {
         const days = row.original.inactiveDays;
         let display = "";
 
-        if (days < 7) {
-          const rounded = Math.floor(days);
-          display = `${rounded} ${rounded === 1 ? "day" : "days"}`;
-        } else if (days >= 7 && days < 30) {
-          const weeks = Math.floor(days / 7);
+        const numDays = Number(days);
+
+        if (numDays < 7) {
+          const rounded = Math.floor(numDays);
+          display = `${rounded} ${rounded <= 1 ? "day" : "days"}`;
+        } else if (numDays >= 7 && numDays < 30) {
+          const weeks = Math.floor(numDays / 7);
           display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
-        } else if (days >= 30 && days < 365) {
-          const months = Math.floor(days / 30);
+        } else if (numDays >= 30 && numDays < 365) {
+          const months = Math.floor(numDays / 30);
           display = `${months} ${months === 1 ? "month" : "months"}`;
         } else {
-          const years = Math.floor(days / 365);
+          const years = Math.floor(numDays / 365);
           display = `${years} ${years === 1 ? "year" : "years"}`;
         }
 
         return <div>{display}</div>;
       },
     },
-
     {
-      accessorKey: "leadAging", // Mapped to backend key
-      header: "Lead Aging", // Simple header without sorting button
+      accessorKey: "leadAging",
+      header: "Lead Aging",
       cell: ({ row }) => {
-        const aging = row.original.leadAging;
+        const agingRaw = row.original.leadAging;
+        const aging = Number(agingRaw);
 
         let display = "";
 
@@ -463,30 +431,31 @@ export function DataTable({
         return <div>{display}</div>;
       },
     },
-
     {
       accessorKey: "expectedClosing",
       header: "Exp Closing Date",
       cell: ({ row }) => {
         const expectedClosing = row.original.expected_closing_date;
 
+        const isValidDate =
+          expectedClosing &&
+          typeof expectedClosing === "string" &&
+          expectedClosing !== "-";
+
         return (
-          <div className="flex items-center text-sm  gap-1">
-            {expectedClosing && expectedClosing !== "-" ? (
+          <div className="flex items-center text-sm gap-1">
+            {isValidDate ? (
               <>
                 <CalendarDays className="w-3.5 h-3.5" />
                 <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
               </>
             ) : (
-              <>
-                <Badge variant="secondary">Yet to come</Badge>
-              </>
+              <Badge variant="secondary">Yet to come</Badge>
             )}
           </div>
         );
       },
     },
-
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
@@ -499,7 +468,9 @@ export function DataTable({
       ),
       cell: ({ row }) => {
         const dateValue = row.getValue("createdAt");
-        const date = dateValue ? new Date(dateValue) : null;
+        const date = dateValue
+          ? new Date(dateValue as string | number | Date)
+          : null;
         return <div>{date ? date.toLocaleDateString() : "-"}</div>;
       },
     },
@@ -575,7 +546,7 @@ export function DataTable({
                 className="cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/leadProfile?id=${lead._id}&status=${lead.status}`);
+                  navigate(`/leadProfile?id=${lead._id}`);
                 }}
               >
                 View Customer
@@ -865,7 +836,6 @@ export function DataTable({
                 <TabsTrigger className="cursor-pointer" value="dead">
                   Dead ({stageCounts?.dead || "0"})
                 </TabsTrigger>
-               
               </TabsList>
             </Tabs>
           </div>

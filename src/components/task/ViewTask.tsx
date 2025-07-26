@@ -10,7 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
-import { ChevronLeft, Mail, Phone } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Circle,
+  ClockFading,
+  Mail,
+  Phone,
+  UserIcon,
+} from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getTaskById } from "@/services/task/Task";
 import { useEffect, useState } from "react";
@@ -26,6 +34,7 @@ import {
 } from "../ui/select";
 import { toast } from "sonner";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 export type Task = {
   _id: string;
   title: string;
@@ -57,8 +66,7 @@ export type Task = {
   lead_id?: {
     _id: string;
     id: string;
-    c_name: string;
-    capacity: string;
+    name: string;
   };
 };
 export default function ViewTask() {
@@ -68,25 +76,13 @@ export default function ViewTask() {
   const [data, setData] = useState<Task | null>(null);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedRemarks, setSelectedRemarks] = useState("");
-  const allStatuses = ["pending", "in progress", "completed"];
-  const currentStatus = data?.current_status;
-  const otherStatuses = allStatuses.filter(
-    (status) => status !== currentStatus
-  );
+  const allStatuses = ["in progress", "completed"];
 
   const handleStatusChange = (value: string) => {
     if (value === "Change Status") {
       setSelectedStatus("");
     } else {
       setSelectedStatus(value);
-    }
-  };
-
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
     }
   };
 
@@ -161,15 +157,6 @@ export default function ViewTask() {
           </Button>
           <CardTitle className="text-xl font-semibold">Task Details</CardTitle>
         </div>
-
-        <div className="flex gap-2">
-          <Button className="bg-blue-500" size="sm">
-            Edit Task
-          </Button>
-          <Button variant="destructive" size="sm">
-            Remove Task
-          </Button>
-        </div>
       </div>
       <div className="flex gap-4 p-10">
         <Card className="min-w-[450px]">
@@ -178,7 +165,7 @@ export default function ViewTask() {
               <AvatarImage src="https://github.com/shadcn.png" />
               <AvatarFallback>KR</AvatarFallback>
             </Avatar>
-            <CardTitle className="mb-2">{data?.lead_id?.c_name}</CardTitle>
+            <CardTitle className="mb-2">{data?.lead_id?.name}</CardTitle>
             <CardDescription className="flex items-center gap-3">
               <span className="flex items-center gap-2">
                 <Mail size={18} /> abc@gmail.com
@@ -213,9 +200,7 @@ export default function ViewTask() {
                   <strong>Task Type:</strong>{" "}
                   <span className="capitalize">{data?.type}</span>
                 </p>
-                <p>
-                  <strong>Capacity:</strong> {data?.lead_id?.capacity}
-                </p>
+               
                 <p>
                   <strong>Priority:</strong>{" "}
                   <span
@@ -242,12 +227,36 @@ export default function ViewTask() {
                 <p>
                   <strong>Description:</strong> {data?.description}
                 </p>
-                <p>
-                  <strong>Assignees:</strong>{" "}
-                  <span>
-                    {data?.assigned_to?.map((user) => user.name).join(", ")}
-                  </span>
-                </p>
+               <p className="flex items-center gap-2">
+  <strong>Assignees:</strong>
+
+  {data?.assigned_to?.length > 0 && (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="flex items-center gap-1 cursor-pointer">
+          <UserIcon size={16} />
+          <span>{data.assigned_to[0]?.name}</span>
+          {data.assigned_to.length > 1 && (
+            <span className="text-xs bg-gray-200 rounded-full px-2">
+              +{data.assigned_to.length - 1}
+            </span>
+          )}
+        </span>
+      </TooltipTrigger>
+
+      <TooltipContent side="bottom" className="p-2">
+        <div className="flex flex-col gap-1">
+          {data.assigned_to.map((user, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <UserIcon size={14} className="text-gray-500" />
+              <span className="text-sm">{user.name}</span>
+            </div>
+          ))}
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  )}
+</p>
               </div>
             </div>
           </CardContent>
@@ -293,7 +302,7 @@ export default function ViewTask() {
                       <SelectItem value="Change Status">
                         Clear Status Filter
                       </SelectItem>
-                      {otherStatuses.map((status) => (
+                      {allStatuses.map((status) => (
                         <SelectItem key={status} value={status}>
                           {status.charAt(0).toUpperCase() + status.slice(1)}
                         </SelectItem>
@@ -319,13 +328,15 @@ export default function ViewTask() {
                 <ScrollArea className="h-48 w-full overflow-auto">
                   <div className="flex flex-col gap-3 p-2">
                     {data?.status_history?.map((entry, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src="https://github.com/vercel.png" />
-                          <AvatarFallback>
-                            {entry.user_id?.name?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
+                      <div key={index} className="flex items-center gap-2">
+                        {entry.status === "in progress" ? (
+                          <ClockFading size={18} />
+                        ) : entry.status === "completed" ? (
+                          <CheckCircle2 size={18} className="text-green-600" />
+                        ) : (
+                          <Circle size={18} className="text-gray-400" />
+                        )}
+
                         <div className="flex flex-col">
                           <span
                             className={`font-semibold capitalize ${
