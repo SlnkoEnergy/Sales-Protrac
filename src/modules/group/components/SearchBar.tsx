@@ -31,6 +31,7 @@ export default function SearchBarGroups({
      toast.error("No tasks selected for export.");
      return;
    }
+   
  
    try {
      await exportToCsv(selectedIds);
@@ -39,6 +40,7 @@ export default function SearchBarGroups({
      toast.error(error.message || "Failed to export CSV");
    }
  };
+ 
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -86,7 +88,10 @@ export default function SearchBarGroups({
           />
           <span
             className="cursor-pointer text-black hover:underline"
-            onClick={()=> handleExportToCsv(selectedIds)}
+            onClick={()=> {
+              console.log(selectedIds);
+              handleExportToCsv(selectedIds)
+            }}
           >
             Export Group
           </span>

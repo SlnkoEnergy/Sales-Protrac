@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Lock, Mail, MapPin, Phone, Plus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getLeadbyId, deleteLead } from "@/services/leads/LeadService";
+  import { getLeadbyId, deleteLead, getHandoverByLeadId } from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";
 import TasksCard from "../components/TaskCard";
@@ -203,17 +203,17 @@ export default function LeadProfile() {
     formRef.current?.resetForm();
   };
 
-  React.useEffect(() => {
-    const locked = formRef.current?.getStatus?.();
-    const status = formRef.current?.updated?.();
+  // React.useEffect(() => {
+  //   const locked = formRef.current?.getStatus?.();
+  //   const status = formRef.current?.updated?.();
 
-    if (locked) {
-      setIsLocked(locked === "locked");
-    }
-    if (status) {
-      setUpdate(status === "Rejected");
-    }
-  }, [formRef.current]);
+  //   if (locked) {
+  //     setIsLocked(locked === "locked");
+  //   }
+  //   if (status) {
+  //     setUpdate(status === "Rejected");
+  //   }
+  // }, [formRef.current]);
 
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
@@ -260,6 +260,41 @@ export default function LeadProfile() {
   const displayedComment = isTruncated
     ? fullComment.slice(0, charLimit) + "..."
     : fullComment;
+
+
+
+  const statusColorClass = {
+    won: "bg-green-500",
+    followUp: "bg-yellow-400",
+    initial: "bg-blue-500",
+    dead: "bg-red-500",
+    warm: "bg-orange-400",
+  };
+
+  const normalizedStatus = data?.current_status?.name?.toLowerCase?.();
+  
+React.useEffect(() => {
+  const fetchLeads = async () => {
+    try {
+      const params = {
+        leadId: data?.id,
+      };
+      const res = await getHandoverByLeadId(params);
+
+      const locked = res?.data?.is_locked;
+      console.log({locked})
+      if (locked !== undefined) {
+        setIsLocked(locked === "locked");
+      }
+    } catch (err) {
+      console.error("Error fetching leads:", err);
+    }
+  };
+
+  if (data?.id) {
+    fetchLeads();
+  }
+}, [data]);
 
   return (
     <div className="p-6 space-y-4">
