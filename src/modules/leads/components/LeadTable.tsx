@@ -241,7 +241,7 @@ export function DataTable({
     []
   );
   const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
-
+  const [leadOwner, setLeadOwner] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -334,7 +334,6 @@ export function DataTable({
           navigate(`/leadProfile?id=${row.original._id}`);
         };
 
-       
         const name = row?.original?.name || "";
         const truncatedName =
           name.length > 15 ? `${name.slice(0, 15)}...` : name;
@@ -577,6 +576,7 @@ export function DataTable({
   const Handoverfilter = searchParams.get("handover");
   const LeadAgingFilter = searchParams.get("aging") || "";
   const InActiveDays = searchParams.get("inActiveDays");
+  const NameFilter = searchParams.get("name");
 
   React.useEffect(() => {
     setIsLoading(true);
@@ -601,6 +601,7 @@ export function DataTable({
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
+          name: NameFilter || "",
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -629,6 +630,7 @@ export function DataTable({
     Handoverfilter,
     LeadAgingFilter,
     InActiveDays,
+    NameFilter
   ]);
 
   React.useEffect(() => {
@@ -726,9 +728,12 @@ export function DataTable({
         updated.delete("inActiveDays");
       }
 
+      if (leadOwner) updated.set("name", leadOwner);
+      else updated.delete("name");
+
       return updated;
     });
-  }, [selectedStates, handoverStatus, leadAging, inactiveDays]);
+  }, [selectedStates, handoverStatus, leadAging, inactiveDays, leadOwner]);
 
   const handleTransferLead = async () => {
     if (!selectedLeadId || !selectedUser) {
@@ -1022,24 +1027,36 @@ export function DataTable({
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  Lead Owner Filter
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                  <DropdownMenuRadioGroup
+                    value={leadOwner}
+                    onValueChange={(value) => {
+                      setLeadOwner(value);
 
-              {totalFilters > 0 && (
-                <div className="px-2 py-1">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => {
-                      setSelectedStates([]);
-                      setHandoverStatus("");
-                      setLeadAging("");
-                      setSearchParams({});
+                      const newParams = new URLSearchParams(
+                        searchParams.toString()
+                      );
+                      if (value) {
+                        newParams.set("name", value);
+                      } else {
+                        newParams.delete("name");
+                      }
+                      setSearchParams(newParams);
                     }}
-                    className="w-full"
                   >
-                    Clear All Filters
-                  </Button>
-                </div>
-              )}
+                    <DropdownMenuRadioItem value="">All</DropdownMenuRadioItem>
+                    {users.map((user) => (
+                      <DropdownMenuRadioItem key={user._id} value={user.name}>
+                        {user.name}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
 
