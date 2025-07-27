@@ -100,7 +100,7 @@ export function TaskTable({
   const [total, setTotal] = React.useState(0);
 
   const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "100");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [tab, setTab] = React.useState(statusFromUrl || "pending");
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -193,13 +193,7 @@ export function TaskTable({
         const truncatedTitle =
           title.length > 15 ? title.slice(0, 15) + "..." : title;
 
-        return (
-          <div
-            className="capitalize"
-          >
-            {truncatedTitle}
-          </div>
-        );
+        return <div className="capitalize">{truncatedTitle}</div>;
       },
     },
     {
@@ -539,6 +533,13 @@ export function TaskTable({
     };
   }, []);
 
+  React.useEffect(() => {
+    setPagination({
+      pageIndex: page - 1,
+      pageSize: pageSize,
+    });
+  }, [page, pageSize]);
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center py-4 px-2">
@@ -599,7 +600,7 @@ export function TaskTable({
               value={pageSize.toString()}
               onValueChange={(value) => handleLimitChange(Number(value))}
             >
-              <SelectTrigger className="w-24 h-9 text-sm">
+              <SelectTrigger className="w-24 h-9 text-sm cursor-pointer">
                 <SelectValue placeholder="Select limit" />
               </SelectTrigger>
               <SelectContent>
