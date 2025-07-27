@@ -18,7 +18,7 @@ import Handover from "./modules/team/pages/HandoverDashboard";
 import Group from "./modules/group/pages/AddGroup";
 import Groups from "./modules/group/pages/Groups";
 import GroupDetail from "./modules/group/pages/GroupDetail";
-
+import NotFound from "./modules/not found/NotFound";
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<NotFound />} />
           <Route
             path="/"
             element={
@@ -36,9 +37,9 @@ function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="group" element={<Groups />} />
-            <Route path="groupDetail" element = {<GroupDetail />} />
+            <Route path="groupDetail" element={<GroupDetail />} />
             <Route path="leads" element={<Leads />} />
-            <Route path="document-viewer" element={<DocumentViewer />} /> {/* ✅ FIXED */}
+            <Route path="document-viewer" element={<DocumentViewer />} />
             <Route path="leadProfile" element={<LeadProfile />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="addtask" element={<AddTasks />} />
