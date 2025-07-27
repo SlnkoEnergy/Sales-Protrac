@@ -189,7 +189,7 @@ export function DataTable({
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "100");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [open, setOpen] = React.useState(false);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
@@ -560,6 +560,16 @@ export function DataTable({
   const InActiveDays = searchParams.get("inActiveDays");
   const NameFilter = searchParams.get("name");
 
+  const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  const user = getCurrentUser().name;
+
   React.useEffect(() => {
     setIsLoading(true);
   }, [stageFromUrl]);
@@ -583,9 +593,9 @@ export function DataTable({
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
-          name:NameFilter || "",
+          name: NameFilter || "",
         };
-        
+
         if (fromDate) params.fromDate = fromDate;
         if (toDate) params.toDate = toDate;
 
@@ -612,7 +622,7 @@ export function DataTable({
     Handoverfilter,
     LeadAgingFilter,
     InActiveDays,
-    NameFilter
+    NameFilter,
   ]);
 
   React.useEffect(() => {
@@ -745,6 +755,13 @@ export function DataTable({
     pageSize: pageSize,
   });
 
+  React.useEffect(() => {
+    setPagination({
+      pageIndex: page - 1,
+      pageSize: pageSize,
+    });
+  }, [page, pageSize]);
+
   const totalPages = Math.ceil(total / pageSize);
 
   const table = useReactTable({
@@ -794,7 +811,24 @@ export function DataTable({
   };
 
   const totalFilters =
-    selectedStates.length + (handoverStatus ? 1 : 0) + (leadAging ? 1 : 0);
+    selectedStates.length +
+    (handoverStatus ? 1 : 0) +
+    (leadAging ? 1 : 0) +
+    (inactiveDays ? 1 : 0);
+
+  const daysOptions = [
+    { value: "7", label: "1 week" },
+    { value: "14", label: "2 weeks" },
+    { value: "21", label: "3 weeks" },
+    { value: "30", label: "1 month" },
+    { value: "90", label: "3 months" },
+    { value: "180", label: "6 months" },
+    { value: "270", label: "9 months" },
+    { value: "365", label: "1 year" },
+    { value: "730", label: "2 years" },
+    { value: "1095", label: "3 years" },
+    { value: "custom", label: "Custom" },
+  ];
 
   return (
     <div
@@ -846,10 +880,13 @@ export function DataTable({
             <DropdownMenuContent className="w-60">
               {/* State Filter */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Filter by State</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  Filter by State
+                </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                   {allStates.map((state) => (
                     <DropdownMenuCheckboxItem
+                      className="cursor-pointer"
                       key={state}
                       checked={selectedStates.includes(state)}
                       onCheckedChange={() => toggleState(state)}
@@ -863,7 +900,7 @@ export function DataTable({
               {/* Handover Filter */}
               {(tab === "" || tab === "won") && (
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
                     Handover Filter
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -883,14 +920,35 @@ export function DataTable({
                         setSearchParams(newParams);
                       }}
                     >
-                      <DropdownMenuRadioItem value="pending">
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="pending"
+                      >
                         Pending
                       </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="in process">
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="in process"
+                      >
                         In-Procress
                       </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="completed">
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="completed"
+                      >
                         Completed
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value=""
+                        className="text-red-500 hover:bg-red-100 cursor-pointer"
+                        onClick={() => {
+                          const updated = new URLSearchParams(searchParams);
+                          updated.delete("handover");
+                          updated.set("page", "1");
+                          setSearchParams(updated);
+                        }}
+                      >
+                        Clear Filter
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
                   </DropdownMenuSubContent>
@@ -899,7 +957,7 @@ export function DataTable({
 
               {/* Lead Aging Filter */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="cursor-pointer">
                   Lead Aging Filter
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
@@ -907,58 +965,37 @@ export function DataTable({
                     value={leadAging}
                     onValueChange={setLeadAging}
                   >
-                    <DropdownMenuRadioItem value="1">
-                      1 day
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="3">
-                      3 days
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="5">
-                      5 days
-                    </DropdownMenuRadioItem>
+                    {daysOptions.map((opt) => (
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        key={opt.value}
+                        value={opt.value}
+                      >
+                        {opt.label}
+                      </DropdownMenuRadioItem>
+                    ))}
 
-                    <DropdownMenuRadioItem value="7">
-                      1 week
+                    <DropdownMenuRadioItem
+                      value=""
+                      className="text-red-500 hover:bg-red-100 cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        const updated = new URLSearchParams(searchParams);
+                        updated.delete("aging");
+                        updated.set("page", "1");
+                        setSearchParams(updated);
+                        setLeadAging("");
+                      }}
+                    >
+                      Clear Filter
                     </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="14">
-                      2 weeks
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="21">
-                      3 weeks
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="30">
-                      1 month
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="90">
-                      3 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="180">
-                      6 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="270">
-                      9 months
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="365">
-                      1 year
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="730">
-                      2 years
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="1095">
-                      3 years
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="custom">
-  Custom
-</DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+
               {/* Inactive Days Filter */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="cursor-pointer">
                   Inactive Days Filter
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
@@ -966,82 +1003,73 @@ export function DataTable({
                     value={inactiveDays}
                     onValueChange={setInactiveDays}
                   >
-                    <DropdownMenuRadioItem value="1">
-                      1 day
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="3">
-                      3 days
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="5">
-                      5 days
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="7">
-                      1 week
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="14">
-                      2 weeks
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="21">
-                      3 weeks
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="30">
-                      1 month
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="90">
-                      3 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="180">
-                      6 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="270">
-                      9 months
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="365">
-                      1 year
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="730">
-                      2 years
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="1095">
-                      3 years
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  Lead Owner Filter
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                  <DropdownMenuRadioGroup
-                    value={leadOwner}
-                    onValueChange={(value) => {
-                      setLeadOwner(value);
-
-                      const newParams = new URLSearchParams(
-                        searchParams.toString()
-                      );
-                      if (value) {
-                        newParams.set("name", value);
-                      } else {
-                        newParams.delete("name");
-                      }
-                      setSearchParams(newParams);
-                    }}
-                  >
-                    <DropdownMenuRadioItem value="">All</DropdownMenuRadioItem>
-                    {users.map((user) => (
-                      <DropdownMenuRadioItem key={user._id} value={user.name}>
-                        {user.name}
+                    {daysOptions.map((opt) => (
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        key={opt.value}
+                        value={opt.value}
+                      >
+                        {opt.label}
                       </DropdownMenuRadioItem>
                     ))}
+
+                    <DropdownMenuRadioItem
+                      value=""
+                      className="text-red-500 hover:bg-red-100 cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        const updated = new URLSearchParams(searchParams);
+                        updated.delete("inActiveDays");
+                        updated.set("page", "1");
+                        setSearchParams(updated);
+                        setInactiveDays("");
+                      }}
+                    >
+                      Clear Filter
+                    </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+
+              {user === "admin" ||
+                user === "IT Team" ||
+                (user === "Deepak Manodi" && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      Lead Owner Filter
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                      <DropdownMenuRadioGroup
+                        value={leadOwner}
+                        onValueChange={(value) => {
+                          setLeadOwner(value);
+
+                          const newParams = new URLSearchParams(
+                            searchParams.toString()
+                          );
+                          if (value) {
+                            newParams.set("name", value);
+                          } else {
+                            newParams.delete("name");
+                          }
+                          setSearchParams(newParams);
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="">
+                          All
+                        </DropdownMenuRadioItem>
+                        {users.map((user) => (
+                          <DropdownMenuRadioItem
+                            key={user._id}
+                            value={user.name}
+                          >
+                            {user.name}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                ))}
             </DropdownMenuContent>
           </DropdownMenu>
 

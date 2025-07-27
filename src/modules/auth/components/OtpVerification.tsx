@@ -153,7 +153,7 @@ export function OtpVerification({
         ))}
       </div>
 
-      <Button type="submit" className="w-40 bg-[#214b7b]" disabled={submitting}>
+      <Button type="submit" className="w-40 bg-[#214b7b] cursor-pointer" disabled={submitting}>
         {submitting ? "Verifying..." : "Verify OTP"}
       </Button>
     </form>

@@ -87,7 +87,7 @@ export function HandoverTable({
   const [tab, setTab] = React.useState(statusFromUrl || "Rejected");
   const [total, setTotal] = React.useState(0);
   const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "100");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -271,7 +271,7 @@ export function HandoverTable({
         const params = {
           status: statusFromUrl,
           search,
-          page:page,
+          page: page,
           limit: pageSize,
         };
         const res = await getAllHandover(params);
@@ -343,6 +343,13 @@ export function HandoverTable({
     onSelectionChange(selectedIds);
   }, [table.getSelectedRowModel().rows, onSelectionChange]);
 
+  React.useEffect(() => {
+    setPagination({
+      pageIndex: page - 1,
+      pageSize: pageSize,
+    });
+  }, [page, pageSize]);
+
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
     params.set("pageSize", newLimit.toString());
@@ -388,7 +395,7 @@ export function HandoverTable({
               value={pageSize.toString()}
               onValueChange={(value) => handleLimitChange(Number(value))}
             >
-              <SelectTrigger className="w-24 h-9 text-sm">
+              <SelectTrigger className="w-24 h-9 text-sm cursor-pointer">
                 <SelectValue placeholder="Select limit" />
               </SelectTrigger>
               <SelectContent>
