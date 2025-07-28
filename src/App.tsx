@@ -19,8 +19,13 @@ import Group from "./modules/group/pages/AddGroup";
 import Groups from "./modules/group/pages/Groups";
 import GroupDetail from "./modules/group/pages/GroupDetail";
 import NotFound from "./modules/not found/NotFound";
+import { useEffect } from "react";
 
 function App() {
+    useEffect(() => {
+      localStorage.clear();
+      console.log("LocalStorage cleared due to version mismatch");
+  }, []);
   return (
     <DateFilterProvider>
       <Router>

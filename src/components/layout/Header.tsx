@@ -64,7 +64,7 @@ export default function Header() {
 
   const handleLogout = async() => {
     try {
-      await logout();
+      // await logout();
       localStorage.clear();
       toast.success("You have been Logged Out");
       navigate("/login");

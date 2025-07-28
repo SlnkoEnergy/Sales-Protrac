@@ -59,7 +59,7 @@ export const updateGroupStatus = async ({ id, status, remarks }) => {
 };
 export const exportToCsvGroup = async(Ids) =>{
   try {
-    const response = await Axios.post( "/group-export", {Ids}, {responseType : "blob"});
+    const response = await Axios.post( "/bddashboard/group-export", {Ids}, {responseType : "blob"});
     const blob = new Blob([response.data], {type: "text/csv"});
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
