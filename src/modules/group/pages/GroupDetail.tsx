@@ -276,13 +276,8 @@ export default function GroupDetail() {
                 parseFloat(
                   typeof data?.project_details?.capacity === "string"
                     ? data.project_details.capacity
-                    : "0"
-                ) -
-                parseFloat(
-                  typeof data?.total_lead_capacity === "string"
-                    ? data.total_lead_capacity
-                    : "0"
-                )
+                    : data?.project_details?.capacity || "0"
+                ) - (parseFloat(data?.total_lead_capacity) || 0)
               ).toFixed(2)}{" "}
               MW
             </p>
