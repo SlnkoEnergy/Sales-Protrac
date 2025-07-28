@@ -7,7 +7,6 @@ import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
-import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
 import { exportToCsvGroup } from "@/services/group/GroupService";
 
@@ -32,8 +31,6 @@ export default function SearchBarGroups({
      toast.error("No tasks selected for export.");
      return;
    }
-   
- 
    try {
      await exportToCsvGroup(selectedIds);
      toast.success("CSV exported successfully");
@@ -42,7 +39,13 @@ export default function SearchBarGroups({
    }
  };
  
-
+  const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center gap-2 w-full max-w-md">
@@ -81,6 +84,7 @@ export default function SearchBarGroups({
         >
           + Add Group
         </span>
+        {getCurrentUser().name === "admin" && (
         <div>
           <img
             src={exportImg}
@@ -96,7 +100,9 @@ export default function SearchBarGroups({
           >
             Export Group
           </span>
+         
         </div>
+         )}
       </div>
     </div>
   );
