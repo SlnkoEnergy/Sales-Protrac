@@ -87,7 +87,7 @@ export function HandoverTable({
   const [tab, setTab] = React.useState(statusFromUrl || "Rejected");
   const [total, setTotal] = React.useState(0);
   const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "100");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -134,18 +134,23 @@ export function HandoverTable({
     {
       accessorKey: "customer_details.customer",
       header: "Name",
-      cell: ({ row }) => (
-        <div
-          className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
-          onClick={() =>
-            navigate(
-              `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
-            )
-          }
-        >
-          {row.original.customer_details?.customer || "-"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const name = row.original.customer_details?.customer || "-";
+        const truncated = name.length > 15 ? name.slice(0, 15) + "..." : name;
+
+        return (
+          <div
+            className="capitalize cursor-pointer text-black hover:text-[#214b7b]"
+            onClick={() =>
+              navigate(
+                `/leadProfile?id=${row.original?.leadDetails?._id}&tab=handover`
+              )
+            }
+          >
+            {truncated}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "customer_details.p_group",
@@ -176,7 +181,8 @@ export function HandoverTable({
 
         return (
           <div className="capitalize">
-           {kwp ? `${kwp} kwp` : "- kwp"} / {proposed ? `${proposed} kwp` : "- kwp"}
+            {kwp ? `${kwp} kwp` : "- kwp"} /{" "}
+            {proposed ? `${proposed} kwp` : "- kwp"}
           </div>
         );
       },
@@ -258,13 +264,14 @@ export function HandoverTable({
     pageSize: pageSize,
   });
   const totalPages = Math.ceil(total / pageSize);
+
   React.useEffect(() => {
     const fetchHandover = async () => {
       try {
         const params = {
           status: statusFromUrl,
           search,
-          page,
+          page: page,
           limit: pageSize,
         };
         const res = await getAllHandover(params);
@@ -276,7 +283,7 @@ export function HandoverTable({
     };
 
     fetchHandover();
-  }, [search, pageSize, statusFromUrl]);
+  }, [search, pageSize, statusFromUrl, page]);
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
@@ -336,6 +343,13 @@ export function HandoverTable({
     onSelectionChange(selectedIds);
   }, [table.getSelectedRowModel().rows, onSelectionChange]);
 
+  React.useEffect(() => {
+    setPagination({
+      pageIndex: page - 1,
+      pageSize: pageSize,
+    });
+  }, [page, pageSize]);
+
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
     params.set("pageSize", newLimit.toString());
@@ -381,7 +395,7 @@ export function HandoverTable({
               value={pageSize.toString()}
               onValueChange={(value) => handleLimitChange(Number(value))}
             >
-              <SelectTrigger className="w-24 h-9 text-sm">
+              <SelectTrigger className="w-24 h-9 text-sm cursor-pointer">
                 <SelectValue placeholder="Select limit" />
               </SelectTrigger>
               <SelectContent>
@@ -425,7 +439,7 @@ export function HandoverTable({
           </DropdownMenu>
         </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border max-h-[calc(100vh-290px)] overflow-y-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

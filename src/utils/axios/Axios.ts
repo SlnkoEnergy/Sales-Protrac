@@ -5,6 +5,7 @@ const Axios = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true
 });
 
 Axios.interceptors.request.use((config) => {

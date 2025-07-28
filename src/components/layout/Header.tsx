@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { logout } from "@/services/auth/Auth";
 
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
@@ -61,12 +62,16 @@ export default function Header() {
     fetchData();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    toast.success("You have been logged out.");
-    navigate("/login");
+  const handleLogout = async() => {
+    try {
+      // await logout();
+      localStorage.clear();
+      toast.success("You have been Logged Out");
+      navigate("/login");
+    } catch (error) {
+      toast.error('Logout Failed')
+    }
   };
-
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {

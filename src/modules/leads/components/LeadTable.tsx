@@ -69,7 +69,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Select,
@@ -79,27 +78,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import Loader from "@/components/loader/Loader";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
-import {
-  ContextMenu,
-  ContextMenuCheckboxItem,
-  ContextMenuContent,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 
 export type Lead = {
   _id: string;
@@ -152,6 +134,8 @@ export type Lead = {
   group_code: string;
   group_name: string;
   group_id: string;
+  fromDate?: string;
+  toDate?: string;
 };
 
 const allStates = [
@@ -193,14 +177,6 @@ const allStates = [
   "Puducherry",
 ];
 
-export type stageCounts = {
-  lead_without_task: number;
-  initial: number;
-  "follow up": number;
-  warm: number;
-  dead: number;
-  all: number;
-};
 export function DataTable({
   search,
   onSelectionChange,
@@ -213,7 +189,7 @@ export function DataTable({
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
   const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "100");
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [open, setOpen] = React.useState(false);
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [data, setData] = React.useState<Lead[]>([]);
@@ -222,7 +198,14 @@ export function DataTable({
   const [users, setUsers] = React.useState([]);
   const [selectedUser, setSelectedUser] = React.useState(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [stageCounts, setStageCounts] = React.useState("");
+  const [stageCounts, setStageCounts] = React.useState<{
+    initial?: number;
+    "follow up"?: number;
+    warm?: number;
+    won?: number;
+    dead?: number;
+    all?: number;
+  }>({});
   const [tab, setTab] = React.useState(stageFromUrl || "");
   const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
@@ -239,15 +222,12 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [selectedStates, setSelectedStates] = React.useState("");
-
+  const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
+  const [leadOwner, setLeadOwner] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const isValidDate = (d: any) => {
-    const parsed = new Date(d);
-    return d && !isNaN(parsed.getTime());
-  };
+
   const navigate = useNavigate();
   const isFromGroup = location.pathname === "/groupDetail";
 
@@ -303,7 +283,6 @@ export function DataTable({
       cell: ({ row }) => (
         <StatusCell
           leadId={row.original._id}
-          status={row.original.current_status?.name}
           currentStatus={row.original.current_status?.name}
           expected_closing_date={row.original?.expected_closing_date}
         />
@@ -337,11 +316,6 @@ export function DataTable({
           navigate(`/leadProfile?id=${row.original._id}`);
         };
 
-        const mobile = row.original?.contact_details?.mobile;
-        const mobiles = Array.isArray(mobile) ? mobile : mobile ? [mobile] : [];
-        const first = mobiles[0];
-        const remaining = mobiles.slice(1);
-        const tooltipContent = remaining.join(", ");
         const name = row?.original?.name || "";
         const truncatedName =
           name.length > 15 ? `${name.slice(0, 15)}...` : name;
@@ -352,33 +326,6 @@ export function DataTable({
             className="cursor-pointer hover:text-[#214b7b]"
           >
             <div className="font-medium">{truncatedName}</div>
-
-            {mobiles.length > 0 ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex gap-1 text-sm text-gray-500 items-center">
-                      <div>{first}</div>
-                      {remaining.length > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs px-2 py-0.5 cursor-default"
-                        >
-                          <Phone size={14} />+{remaining.length}
-                        </Badge>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  {remaining.length > 0 && (
-                    <TooltipContent side="bottom" align="start">
-                      {tooltipContent}
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <div className="text-sm text-gray-500">-</div>
-            )}
           </div>
         );
       },
@@ -418,35 +365,37 @@ export function DataTable({
       },
     },
     {
-      accessorKey: "inactiveDays", // Backend-mapped key
-      header: "Inactive (Days)", // No sorting
+      accessorKey: "inactiveDays",
+      header: "Inactive (Days)",
       cell: ({ row }) => {
         const days = row.original.inactiveDays;
         let display = "";
 
-        if (days < 7) {
-          const rounded = Math.floor(days);
-          display = `${rounded} ${rounded === 1 ? "day" : "days"}`;
-        } else if (days >= 7 && days < 30) {
-          const weeks = Math.floor(days / 7);
+        const numDays = Number(days);
+
+        if (numDays < 7) {
+          const rounded = Math.floor(numDays);
+          display = `${rounded} ${rounded <= 1 ? "day" : "days"}`;
+        } else if (numDays >= 7 && numDays < 30) {
+          const weeks = Math.floor(numDays / 7);
           display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
-        } else if (days >= 30 && days < 365) {
-          const months = Math.floor(days / 30);
+        } else if (numDays >= 30 && numDays < 365) {
+          const months = Math.floor(numDays / 30);
           display = `${months} ${months === 1 ? "month" : "months"}`;
         } else {
-          const years = Math.floor(days / 365);
+          const years = Math.floor(numDays / 365);
           display = `${years} ${years === 1 ? "year" : "years"}`;
         }
 
         return <div>{display}</div>;
       },
     },
-
     {
-      accessorKey: "leadAging", // Mapped to backend key
-      header: "Lead Aging", // Simple header without sorting button
+      accessorKey: "leadAging",
+      header: "Lead Aging",
       cell: ({ row }) => {
-        const aging = row.original.leadAging;
+        const agingRaw = row.original.leadAging;
+        const aging = Number(agingRaw);
 
         let display = "";
 
@@ -463,30 +412,31 @@ export function DataTable({
         return <div>{display}</div>;
       },
     },
-
     {
       accessorKey: "expectedClosing",
       header: "Exp Closing Date",
       cell: ({ row }) => {
         const expectedClosing = row.original.expected_closing_date;
 
+        const isValidDate =
+          expectedClosing &&
+          typeof expectedClosing === "string" &&
+          expectedClosing !== "-";
+
         return (
-          <div className="flex items-center text-sm  gap-1">
-            {expectedClosing && expectedClosing !== "-" ? (
+          <div className="flex items-center text-sm gap-1">
+            {isValidDate ? (
               <>
                 <CalendarDays className="w-3.5 h-3.5" />
                 <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
               </>
             ) : (
-              <>
-                <Badge variant="secondary">Yet to come</Badge>
-              </>
+              <Badge variant="secondary">Yet to come</Badge>
             )}
           </div>
         );
       },
     },
-
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
@@ -499,7 +449,9 @@ export function DataTable({
       ),
       cell: ({ row }) => {
         const dateValue = row.getValue("createdAt");
-        const date = dateValue ? new Date(dateValue) : null;
+        const date = dateValue
+          ? new Date(dateValue as string | number | Date)
+          : null;
         return <div>{date ? date.toLocaleDateString() : "-"}</div>;
       },
     },
@@ -575,7 +527,7 @@ export function DataTable({
                 className="cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/leadProfile?id=${lead._id}&status=${lead.status}`);
+                  navigate(`/leadProfile?id=${lead._id}`);
                 }}
               >
                 View Customer
@@ -606,6 +558,17 @@ export function DataTable({
   const Handoverfilter = searchParams.get("handover");
   const LeadAgingFilter = searchParams.get("aging") || "";
   const InActiveDays = searchParams.get("inActiveDays");
+  const NameFilter = searchParams.get("name");
+
+  const getCurrentUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  const user = getCurrentUser().name;
 
   React.useEffect(() => {
     setIsLoading(true);
@@ -630,6 +593,7 @@ export function DataTable({
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
+          name: NameFilter || "",
         };
 
         if (fromDate) params.fromDate = fromDate;
@@ -658,6 +622,7 @@ export function DataTable({
     Handoverfilter,
     LeadAgingFilter,
     InActiveDays,
+    NameFilter,
   ]);
 
   React.useEffect(() => {
@@ -755,9 +720,12 @@ export function DataTable({
         updated.delete("inActiveDays");
       }
 
+      if (leadOwner) updated.set("name", leadOwner);
+      else updated.delete("name");
+
       return updated;
     });
-  }, [selectedStates, handoverStatus, leadAging, inactiveDays]);
+  }, [selectedStates, handoverStatus, leadAging, inactiveDays, leadOwner]);
 
   const handleTransferLead = async () => {
     if (!selectedLeadId || !selectedUser) {
@@ -786,6 +754,13 @@ export function DataTable({
     pageIndex: page - 1,
     pageSize: pageSize,
   });
+
+  React.useEffect(() => {
+    setPagination({
+      pageIndex: page - 1,
+      pageSize: pageSize,
+    });
+  }, [page, pageSize]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -836,7 +811,24 @@ export function DataTable({
   };
 
   const totalFilters =
-    selectedStates.length + (handoverStatus ? 1 : 0) + (leadAging ? 1 : 0);
+    selectedStates.length +
+    (handoverStatus ? 1 : 0) +
+    (leadAging ? 1 : 0) +
+    (inactiveDays ? 1 : 0);
+
+  const daysOptions = [
+    { value: "7", label: "1 week" },
+    { value: "14", label: "2 weeks" },
+    { value: "21", label: "3 weeks" },
+    { value: "30", label: "1 month" },
+    { value: "90", label: "3 months" },
+    { value: "180", label: "6 months" },
+    { value: "270", label: "9 months" },
+    { value: "365", label: "1 year" },
+    { value: "730", label: "2 years" },
+    { value: "1095", label: "3 years" },
+    { value: "custom", label: "Custom" },
+  ];
 
   return (
     <div
@@ -865,7 +857,6 @@ export function DataTable({
                 <TabsTrigger className="cursor-pointer" value="dead">
                   Dead ({stageCounts?.dead || "0"})
                 </TabsTrigger>
-               
               </TabsList>
             </Tabs>
           </div>
@@ -889,10 +880,13 @@ export function DataTable({
             <DropdownMenuContent className="w-60">
               {/* State Filter */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Filter by State</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  Filter by State
+                </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
                   {allStates.map((state) => (
                     <DropdownMenuCheckboxItem
+                      className="cursor-pointer"
                       key={state}
                       checked={selectedStates.includes(state)}
                       onCheckedChange={() => toggleState(state)}
@@ -906,7 +900,7 @@ export function DataTable({
               {/* Handover Filter */}
               {(tab === "" || tab === "won") && (
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
                     Handover Filter
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
@@ -926,14 +920,35 @@ export function DataTable({
                         setSearchParams(newParams);
                       }}
                     >
-                      <DropdownMenuRadioItem value="pending">
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="pending"
+                      >
                         Pending
                       </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="in process">
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="in process"
+                      >
                         In-Procress
                       </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="completed">
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="completed"
+                      >
                         Completed
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value=""
+                        className="text-red-500 hover:bg-red-100 cursor-pointer"
+                        onClick={() => {
+                          const updated = new URLSearchParams(searchParams);
+                          updated.delete("handover");
+                          updated.set("page", "1");
+                          setSearchParams(updated);
+                        }}
+                      >
+                        Clear Filter
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
                   </DropdownMenuSubContent>
@@ -942,7 +957,7 @@ export function DataTable({
 
               {/* Lead Aging Filter */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="cursor-pointer">
                   Lead Aging Filter
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
@@ -950,55 +965,37 @@ export function DataTable({
                     value={leadAging}
                     onValueChange={setLeadAging}
                   >
-                    <DropdownMenuRadioItem value="1">
-                      1 day
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="3">
-                      3 days
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="5">
-                      5 days
-                    </DropdownMenuRadioItem>
+                    {daysOptions.map((opt) => (
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        key={opt.value}
+                        value={opt.value}
+                      >
+                        {opt.label}
+                      </DropdownMenuRadioItem>
+                    ))}
 
-                    <DropdownMenuRadioItem value="7">
-                      1 week
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="14">
-                      2 weeks
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="21">
-                      3 weeks
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="30">
-                      1 month
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="90">
-                      3 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="180">
-                      6 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="270">
-                      9 months
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="365">
-                      1 year
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="730">
-                      2 years
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="1095">
-                      3 years
+                    <DropdownMenuRadioItem
+                      value=""
+                      className="text-red-500 hover:bg-red-100 cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        const updated = new URLSearchParams(searchParams);
+                        updated.delete("aging");
+                        updated.set("page", "1");
+                        setSearchParams(updated);
+                        setLeadAging("");
+                      }}
+                    >
+                      Clear Filter
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+
               {/* Inactive Days Filter */}
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger className="cursor-pointer">
                   Inactive Days Filter
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
@@ -1006,70 +1003,73 @@ export function DataTable({
                     value={inactiveDays}
                     onValueChange={setInactiveDays}
                   >
-                    <DropdownMenuRadioItem value="1">
-                      1 day
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="3">
-                      3 days
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="5">
-                      5 days
-                    </DropdownMenuRadioItem>
+                    {daysOptions.map((opt) => (
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        key={opt.value}
+                        value={opt.value}
+                      >
+                        {opt.label}
+                      </DropdownMenuRadioItem>
+                    ))}
 
-                    <DropdownMenuRadioItem value="7">
-                      1 week
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="14">
-                      2 weeks
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="21">
-                      3 weeks
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="30">
-                      1 month
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="90">
-                      3 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="180">
-                      6 months
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="270">
-                      9 months
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="365">
-                      1 year
-                    </DropdownMenuRadioItem>
-
-                    <DropdownMenuRadioItem value="730">
-                      2 years
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="1095">
-                      3 years
+                    <DropdownMenuRadioItem
+                      value=""
+                      className="text-red-500 hover:bg-red-100 cursor-pointer"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        const updated = new URLSearchParams(searchParams);
+                        updated.delete("inActiveDays");
+                        updated.set("page", "1");
+                        setSearchParams(updated);
+                        setInactiveDays("");
+                      }}
+                    >
+                      Clear Filter
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
-              {totalFilters > 0 && (
-                <div className="px-2 py-1">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => {
-                      setSelectedStates([]);
-                      setHandoverStatus("");
-                      setLeadAging("");
-                      setSearchParams({});
-                    }}
-                    className="w-full"
-                  >
-                    Clear All Filters
-                  </Button>
-                </div>
-              )}
+              {user === "admin" ||
+                user === "IT Team" ||
+                (user === "Deepak Manodi" && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      Lead Owner Filter
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                      <DropdownMenuRadioGroup
+                        value={leadOwner}
+                        onValueChange={(value) => {
+                          setLeadOwner(value);
+
+                          const newParams = new URLSearchParams(
+                            searchParams.toString()
+                          );
+                          if (value) {
+                            newParams.set("name", value);
+                          } else {
+                            newParams.delete("name");
+                          }
+                          setSearchParams(newParams);
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="">
+                          All
+                        </DropdownMenuRadioItem>
+                        {users.map((user) => (
+                          <DropdownMenuRadioItem
+                            key={user._id}
+                            value={user.name}
+                          >
+                            {user.name}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1138,7 +1138,6 @@ export function DataTable({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers
                   .filter((header) => {
-                    // Hide the column if it's "handover" and no won leads exist
                     if (header.column.id === "handover") {
                       return data.some(
                         (lead) => lead.current_status?.name === "won"

@@ -1,6 +1,11 @@
 import Axios from "@/utils/axios/Axios";
 
-export const getLeads = async (params = {}) => {
+export const getLeads = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {}
+) => {
   let url = "/bddashboard/all-lead";
 
   const query = Object.entries(params)
@@ -20,7 +25,12 @@ export const getLeads = async (params = {}) => {
   return response.data;
 };
 
-export const getLeadbyId = async (params = {}) => {
+export const getLeadbyId = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {}
+) => {
   let url = "/bddashboard/lead-details";
 
   const query = Object.entries(params)
@@ -35,6 +45,7 @@ export const getLeadbyId = async (params = {}) => {
   if (query) {
     url += `?${query}`;
   }
+
   const response = await Axios.get(url);
   return response.data;
 };
@@ -44,13 +55,19 @@ export const createBdLead = async ({ data }: { data: any }) => {
     const response = await Axios.post(`/bddashboard/lead`, data);
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.error || error.message || "Something went wrong";
+    const message =
+      error.response?.data?.error || error.message || "Something went wrong";
     throw new Error(message);
   }
 };
 
-
-export const editBdLead = async (params = {}, body = {}) => {
+export const editBdLead = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {},
+  body: Record<string, any> = {}
+) => {
   const { _id, ...queryParams } = params;
 
   let url = `/bddashboard/lead/${_id || ""}`;
@@ -84,7 +101,6 @@ export const transferLead = async (_id: string, assigned_to: string) => {
   return response.data;
 };
 
-
 export const exportToCsv = async (selectedIds: string[]) => {
 
   console.log(selectedIds);
@@ -112,17 +128,15 @@ export const exportToCsv = async (selectedIds: string[]) => {
 
 export const uploadDocuments = async (
   lead_id: string,
-  name: "loi" | "loa" | "ppa",
+  name: string,
   stage: string,
   remarks: string,
-  expected_closing_date: Date,
+  expected_closing_date: string,
   file: File,
   token?: string
 ) => {
   try {
     const formData = new FormData();
-
-    // Append JSON metadata
     formData.append(
       "data",
       JSON.stringify({
@@ -134,10 +148,8 @@ export const uploadDocuments = async (
       })
     );
 
-
     formData.append("file_0", file);
 
-    // Make PUT request
     const response = await Axios.put(`/bddashboard/uploadDocuments`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -157,7 +169,8 @@ export const updateLeadStatus = async (
   leadId: string,
   name: string,
   stage: string,
-  remarks: string
+  remarks: string,
+  pendingDate: string
 ) => {
   try {
     const response = await Axios.put(
@@ -166,6 +179,7 @@ export const updateLeadStatus = async (
         name: name,
         stage: stage,
         remarks: remarks,
+        expected_closing_date: pendingDate
       }
     );
     return response.data;
@@ -224,11 +238,18 @@ export const createHandover = async (
     const response = await Axios.post("/create-hand-over-sheet", payload);
     return response.data;
   } catch (error: any) {
-    throw new Error(error?.response?.data?.message || "Failed to create handover sheet");
+    throw new Error(
+      error?.response?.data?.message || "Failed to create handover sheet"
+    );
   }
 };
 
-export const getHandoverByLeadId = async (params = {}) => {
+export const getHandoverByLeadId = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {}
+) => {
   let url = "/get-handoversheet";
 
   const query = Object.entries(params)
@@ -243,21 +264,31 @@ export const getHandoverByLeadId = async (params = {}) => {
   if (query) {
     url += `?${query}`;
   }
+
   const response = await Axios.get(url);
   return response.data;
 };
 
-export const editHandover = async(_id, updatedData) => {
+export const editHandover = async (_id, updatedData) => {
   try {
-    const response = await Axios.put(`/edit-hand-over-sheet/${_id}`, updatedData);
+    const response = await Axios.put(
+      `/edit-hand-over-sheet/${_id}`,
+      updatedData
+    );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Failed to update handover");
+    throw new Error(
+      error.response?.data?.message || "Failed to update handover"
+    );
   }
-}
+};
 
-
-export const getAllHandover = async (params = {}) => {
+export const getAllHandover = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {}
+) => {
   let url = "/get-all-handover-sheet";
 
   const query = Object.entries(params)
@@ -299,12 +330,11 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
   }
 };
 
-export const getAllGroupName = async() =>{
+export const getAllGroupName = async () => {
   try {
-    
     const response = await Axios.get("/bddashboard/group-drop");
     return response;
   } catch (error) {
     console.log(error);
   }
-}
+};
