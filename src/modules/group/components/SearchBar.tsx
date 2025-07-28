@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import exportImg from "../../../../public/assets/export.png";
 import { exportToCsv } from "@/services/leads/LeadService";
 import { toast } from "sonner";
+import { exportToCsvGroup } from "@/services/group/GroupService";
 
 interface SearchBarGroupProps {
   searchValue: string;
@@ -34,7 +35,7 @@ export default function SearchBarGroups({
    
  
    try {
-     await exportToCsv(selectedIds);
+     await exportToCsvGroup(selectedIds);
      toast.success("CSV exported successfully");
    } catch (error: any) {
      toast.error(error.message || "Failed to export CSV");

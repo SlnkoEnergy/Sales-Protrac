@@ -458,7 +458,6 @@ export function GroupTable({
     const selectedIds = table
       .getSelectedRowModel()
       .rows.map((row) => row.original._id);
-
     onSelectionChange(selectedIds);
   }, [table.getSelectedRowModel().rows, onSelectionChange]);
 
