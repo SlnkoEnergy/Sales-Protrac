@@ -143,7 +143,6 @@ export default function LeadProfile() {
   };
 
   const id = searchParams.get("id");
-  const status = searchParams.get("status");
   const formRef = React.useRef<{
     submit: () => void;
     resetForm: () => void;
@@ -203,18 +202,6 @@ export default function LeadProfile() {
     formRef.current?.resetForm();
   };
 
-  // React.useEffect(() => {
-  //   const locked = formRef.current?.getStatus?.();
-  //   const status = formRef.current?.updated?.();
-
-  //   if (locked) {
-  //     setIsLocked(locked === "locked");
-  //   }
-  //   if (status) {
-  //     setUpdate(status === "Rejected");
-  //   }
-  // }, [formRef.current]);
-
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
     setSearchParams((prev) => {
@@ -261,17 +248,6 @@ export default function LeadProfile() {
     ? fullComment.slice(0, charLimit) + "..."
     : fullComment;
 
-
-
-  const statusColorClass = {
-    won: "bg-green-500",
-    followUp: "bg-yellow-400",
-    initial: "bg-blue-500",
-    dead: "bg-red-500",
-    warm: "bg-orange-400",
-  };
-
-  const normalizedStatus = data?.current_status?.name?.toLowerCase?.();
   
 React.useEffect(() => {
   const fetchLeads = async () => {
@@ -282,9 +258,13 @@ React.useEffect(() => {
       const res = await getHandoverByLeadId(params);
 
       const locked = res?.data?.is_locked;
+      const status = res?.data?.status_of_handoversheet;
       console.log({locked})
       if (locked !== undefined) {
         setIsLocked(locked === "locked");
+      }
+      if(status === "Rejected"){
+        setUpdate(status === "Rejected");
       }
     } catch (err) {
       console.error("Error fetching leads:", err);
