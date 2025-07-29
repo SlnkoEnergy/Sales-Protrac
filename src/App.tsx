@@ -22,10 +22,6 @@ import NotFound from "./modules/not found/NotFound";
 import { useEffect } from "react";
 
 function App() {
-    useEffect(() => {
-      localStorage.clear();
-      console.log("LocalStorage cleared due to version mismatch");
-  }, []);
   return (
     <DateFilterProvider>
       <Router>
