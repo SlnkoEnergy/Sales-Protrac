@@ -748,12 +748,12 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                   {
                     name: "project_detail.module_type",
                     label: "Module Type",
-                    options: ["N-Type", "P-Type", "Thin-Film"],
+                    options: ["N-TYPE", "P-TYPE", "Thin-Film"],
                   },
                   {
                     name: "project_detail.module_category",
                     label: "Module Content Category",
-                    options: ["DCR", "Non-DCR"],
+                    options: ["DCR", "Non DCR"],
                   },
                   {
                     name: "project_detail.loan_scope",
@@ -778,7 +778,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                   {
                     name: "project_detail.evacuation_voltage",
                     label: "Evacuation Voltage *",
-                    options: ["11kV", "33kV"],
+                    options: ["11 KV", "33 KV"],
                   },
                 ].map(({ name, label, options }) => (
                   <div key={name}>
