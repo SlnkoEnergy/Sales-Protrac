@@ -136,8 +136,8 @@ export function DataTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [total, setTotal] = React.useState(0);
   const [users, setUsers] = React.useState([]);
-  const [uniqueState, setUniqueState] = React.useState([]);
-
+  const [uniqueState, setUniqueState] = React.useState<string[]>([]);
+  console.log({ uniqueState });
   const [stageCounts, setStageCounts] = React.useState<{
     initial?: number;
     "follow up"?: number;
@@ -601,7 +601,7 @@ export function DataTable({
     const fetchStates = async () => {
       try {
         const res = await states();
-        setUniqueState(res);
+        setUniqueState(res.data);
       } catch (err) {
         console.error("Error fetching states:", err);
       }
@@ -802,16 +802,17 @@ export function DataTable({
                   Filter by State
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                  {uniqueState.map((state) => (
-                    <DropdownMenuCheckboxItem
-                      className="cursor-pointer"
-                      key={state}
-                      checked={selectedStates.includes(state)}
-                      onCheckedChange={() => toggleState(state)}
-                    >
-                      {state}
-                    </DropdownMenuCheckboxItem>
-                  ))}
+                  {Array.isArray(uniqueState) &&
+                    uniqueState.map((state) => (
+                      <DropdownMenuCheckboxItem
+                        className="cursor-pointer capitalize"
+                        key={state}
+                        checked={selectedStates.includes(state)}
+                        onCheckedChange={() => toggleState(state)}
+                      >
+                        {state}
+                      </DropdownMenuCheckboxItem>
+                    ))}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
