@@ -95,14 +95,13 @@ export const deleteLead = async (_id: string) => {
   return response.data;
 };
 
-export const transferLead = async (_id: string, assigned_to: string) => {
-  const url = `/bddashboard/assign-to/${_id}`;
-  const response = await Axios.put(url, { assigned_to });
+export const transferLead = async (leadIds: string[], assigned: string) => {
+  const url = `/bddashboard/assign-to`;
+  const response = await Axios.put(url, { leadIds, assigned });
   return response.data;
 };
 
 export const exportToCsv = async (selectedIds: string[]) => {
-
   console.log(selectedIds);
   try {
     const response = await Axios.post(
@@ -179,7 +178,7 @@ export const updateLeadStatus = async (
         name: name,
         stage: stage,
         remarks: remarks,
-        expected_closing_date: pendingDate
+        expected_closing_date: pendingDate,
       }
     );
     return response.data;
@@ -327,14 +326,5 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
     link.remove();
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to export CSV");
-  }
-};
-
-export const getAllGroupName = async () => {
-  try {
-    const response = await Axios.get("/bddashboard/group-drop");
-    return response;
-  } catch (error) {
-    console.log(error);
   }
 };

@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Loader from "@/components/loader/Loader";
 
 export type Handover = {
   _id: string;
@@ -91,6 +92,7 @@ export function HandoverTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [loading, setIsLoading] = React.useState(false);
 
   const columns: ColumnDef<Handover>[] = [
     {
@@ -266,6 +268,10 @@ export function HandoverTable({
   const totalPages = Math.ceil(total / pageSize);
 
   React.useEffect(() => {
+    setIsLoading(true);
+  }, [statusFromUrl]);
+
+  React.useEffect(() => {
     const fetchHandover = async () => {
       try {
         const params = {
@@ -279,6 +285,8 @@ export function HandoverTable({
         setTotal(res?.meta?.total || 0);
       } catch (err) {
         console.error("Error fetching leads:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -367,6 +375,8 @@ export function HandoverTable({
       });
     });
   };
+
+  if (loading) return <Loader />;
 
   return (
     <div className="w-full">
