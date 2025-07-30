@@ -354,6 +354,8 @@ export default function AddLead() {
                         name !== "subStationDistance" &&
                         name !== "tariff" &&
                         name !== "land" &&
+                        name !== "village" &&
+                        name !== "district" &&
                         !!selectedGroup
                       }
                     />
