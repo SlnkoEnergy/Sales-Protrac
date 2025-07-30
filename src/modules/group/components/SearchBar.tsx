@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, File, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import exportImg from "../../../../public/assets/export.png";
 import { toast } from "sonner";
 import { exportToCsvGroup } from "@/services/group/GroupService";
 
@@ -22,23 +21,23 @@ interface SearchBarGroupProps {
 export default function SearchBarGroups({
   searchValue,
   onSearchChange,
-  selectedIds
+  selectedIds,
 }: SearchBarGroupProps) {
   const navigate = useNavigate();
 
- const handleExportToCsv = async (selectedIds: string[]) => {
-   if (!selectedIds?.length) {
-     toast.error("No tasks selected for export.");
-     return;
-   }
-   try {
-     await exportToCsvGroup(selectedIds);
-     toast.success("CSV exported successfully");
-   } catch (error: any) {
-     toast.error(error.message || "Failed to export CSV");
-   }
- };
- 
+  const handleExportToCsv = async (selectedIds: string[]) => {
+    if (!selectedIds?.length) {
+      toast.error("No tasks selected for export.");
+      return;
+    }
+    try {
+      await exportToCsvGroup(selectedIds);
+      toast.success("CSV exported successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to export CSV");
+    }
+  };
+
   const getCurrentUser = () => {
     try {
       return JSON.parse(localStorage.getItem("user") || "{}");
@@ -84,25 +83,23 @@ export default function SearchBarGroups({
         >
           + Add Group
         </span>
-        {getCurrentUser().name === "admin" && (
-        <div>
-          <img
-            src={exportImg}
-            alt="Export"
-            className="inline-block w-3 h-3 mr-1"
-          />
-          <span
-            className="cursor-pointer text-black hover:underline"
-            onClick={()=> {
-              console.log(selectedIds);
-              handleExportToCsv(selectedIds)
-            }}
-          >
-            Export Group
-          </span>
-         
-        </div>
-         )}
+        {(getCurrentUser().name === "admin" ||
+          getCurrentUser().name === "IT Team" ||
+          getCurrentUser().name === "Deepak Manodi") &&
+          selectedIds.length > 0 && (
+            <div className="flex items-center gap-1">
+              <File size={14} />
+              <span
+                className="cursor-pointer text-black hover:underline"
+                onClick={() => {
+                  console.log(selectedIds);
+                  handleExportToCsv(selectedIds);
+                }}
+              >
+                Export Group
+              </span>
+            </div>
+          )}
       </div>
     </div>
   );

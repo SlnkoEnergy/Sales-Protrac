@@ -116,11 +116,11 @@ export default function Header() {
         <img
           src="/assets/slnko_white_logo.png"
           alt="Slnko Logo"
-          className="h-14 w-14"
+          className="h-24 w-24 mt-3"
         />
-        <div className="hidden sm:block h-10 border-l border-white/30 mx-2"></div>
+        <div className="hidden sm:block h-16 border-1 border-white/30 mx-2"></div>
         <span className="text-white text-xl font-medium hidden sm:block">
-          CRM
+          SALES
         </span>
       </div>
 

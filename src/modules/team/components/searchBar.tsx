@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, File, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import exportImg from "../../../../public/assets/export.png";
 import { toast } from "sonner";
 import { exportToCsvHandover } from "@/services/leads/LeadService";
 
@@ -22,23 +21,23 @@ interface SearchBarHandoverProps {
 export default function SearchBarHandover({
   searchValue,
   onSearchChange,
-  selectedIds
+  selectedIds,
 }: SearchBarHandoverProps) {
   const navigate = useNavigate();
 
-const handleExportToCsv = async (selectedIds: string[]) => {
-  if (!selectedIds?.length) {
-    toast.error("No tasks selected for export.");
-    return;
-  }
+  const handleExportToCsv = async (selectedIds: string[]) => {
+    if (!selectedIds?.length) {
+      toast.error("No tasks selected for export.");
+      return;
+    }
 
-  try {
-    await exportToCsvHandover(selectedIds);
-    toast.success("CSV exported successfully");
-  } catch (error: any) {
-    toast.error(error.message || "Failed to export CSV");
-  }
-};
+    try {
+      await exportToCsvHandover(selectedIds);
+      toast.success("CSV exported successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to export CSV");
+    }
+  };
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -78,19 +77,17 @@ const handleExportToCsv = async (selectedIds: string[]) => {
         >
           + Add Task
         </span>
-        <div>
-          <img
-            src={exportImg}
-            alt="Export"
-            className="inline-block w-3 h-3 mr-1"
-          />
-          <span
-            className="cursor-pointer text-black hover:underline"
-            onClick={()=>handleExportToCsv(selectedIds)}
-          >
-            Export Handover
-          </span>
-        </div>
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-1">
+            <File size={14} />
+            <span
+              className="cursor-pointer text-black hover:underline"
+              onClick={() => handleExportToCsv(selectedIds)}
+            >
+              Export Handover
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

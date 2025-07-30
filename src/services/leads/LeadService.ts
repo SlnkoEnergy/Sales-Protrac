@@ -328,3 +328,14 @@ export const exportToCsvHandover = async (selectedIds: string[]) => {
     throw new Error(error.response?.data?.message || "Failed to export CSV");
   }
 };
+
+export const states = async () => {
+  try {
+    const { data } = await Axios.get("/bddashboard/states");
+    return data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch states"
+    );
+  }
+};
