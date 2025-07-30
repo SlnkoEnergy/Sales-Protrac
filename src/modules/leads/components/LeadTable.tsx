@@ -46,30 +46,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  getLeads,
-  transferLead,
-  updateExpectedClosingDate,
-} from "@/services/leads/LeadService";
+import { getLeads, states } from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -138,45 +118,6 @@ export type Lead = {
   toDate?: string;
 };
 
-const allStates = [
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-  "Andaman and Nicobar Islands",
-  "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Jammu and Kashmir",
-  "Ladakh",
-  "Lakshadweep",
-  "Puducherry",
-];
-
 export function DataTable({
   search,
   onSelectionChange,
@@ -195,6 +136,7 @@ export function DataTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [total, setTotal] = React.useState(0);
   const [users, setUsers] = React.useState([]);
+  const [uniqueState, setUniqueState] = React.useState([]);
 
   const [stageCounts, setStageCounts] = React.useState<{
     initial?: number;
@@ -208,13 +150,6 @@ export function DataTable({
   const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
   const [inactiveDays, setInactiveDays] = React.useState("");
-  const [selectedLeadId, setSelectedLeadId] = React.useState<string | null>(
-    null
-  );
-  const [selectedAssignTo, setSelectedAssignTo] = React.useState<string | null>(
-    null
-  );
-  const [leadModel, setLeadModel] = React.useState<string | null>(null);
   const department = "BD";
   const [isLoading, setIsLoading] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -662,6 +597,19 @@ export function DataTable({
     fetchUser();
   }, []);
 
+  React.useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const res = await states();
+        setUniqueState(res);
+      } catch (err) {
+        console.error("Error fetching states:", err);
+      }
+    };
+
+    fetchStates();
+  }, []);
+
   const handleTabChange = (value: string) => {
     setTab(value);
     React.startTransition(() => {
@@ -854,7 +802,7 @@ export function DataTable({
                   Filter by State
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                  {allStates.map((state) => (
+                  {uniqueState.map((state) => (
                     <DropdownMenuCheckboxItem
                       className="cursor-pointer"
                       key={state}
@@ -1001,45 +949,42 @@ export function DataTable({
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
-              {user === "admin" ||
-                user === "IT Team" ||
-                (user === "Deepak Manodi" && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      Lead Owner Filter
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                      <DropdownMenuRadioGroup
-                        value={leadOwner}
-                        onValueChange={(value) => {
-                          setLeadOwner(value);
+              {(getCurrentUser().name === "admin" ||
+                getCurrentUser().name === "IT Team" ||
+                getCurrentUser().name === "Deepak Manodi") && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    Lead Owner Filter
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                    <DropdownMenuRadioGroup
+                      value={leadOwner}
+                      onValueChange={(value) => {
+                        setLeadOwner(value);
 
-                          const newParams = new URLSearchParams(
-                            searchParams.toString()
-                          );
-                          if (value) {
-                            newParams.set("name", value);
-                          } else {
-                            newParams.delete("name");
-                          }
-                          setSearchParams(newParams);
-                        }}
-                      >
-                        <DropdownMenuRadioItem value="">
-                          All
+                        const newParams = new URLSearchParams(
+                          searchParams.toString()
+                        );
+                        if (value) {
+                          newParams.set("name", value);
+                        } else {
+                          newParams.delete("name");
+                        }
+                        setSearchParams(newParams);
+                      }}
+                    >
+                      <DropdownMenuRadioItem value="">
+                        All
+                      </DropdownMenuRadioItem>
+                      {users.map((user) => (
+                        <DropdownMenuRadioItem key={user._id} value={user.name}>
+                          {user.name}
                         </DropdownMenuRadioItem>
-                        {users.map((user) => (
-                          <DropdownMenuRadioItem
-                            key={user._id}
-                            value={user.name}
-                          >
-                            {user.name}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                ))}
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 

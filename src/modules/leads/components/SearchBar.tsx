@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronLeft, Group, Search, User2 } from "lucide-react";
+import { ChevronLeft, File, Group, Search, User2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import exportImg from "../../../../public/assets/export.png";
 import { exportToCsv, transferLead } from "@/services/leads/LeadService";
 import { toast } from "sonner";
 import {
@@ -188,12 +187,8 @@ export default function SearchBarLeads({
           (getCurrentUser().name === "admin" ||
             getCurrentUser().name === "IT Team" ||
             getCurrentUser().name === "Deepak Manodi") && (
-            <div>
-              <img
-                src={exportImg}
-                alt="Export"
-                className="inline-block w-3 h-3 mr-1"
-              />
+            <div className="flex items-center gap-1">
+             <File size={14}/>
               <span
                 className="cursor-pointer text-black hover:underline"
                 onClick={() => handleExportToCsv(selectedIds)}
