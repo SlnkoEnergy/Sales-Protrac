@@ -601,7 +601,7 @@ export function DataTable({
     const fetchStates = async () => {
       try {
         const res = await states();
-        setUniqueState(res);
+        setUniqueState(res.data);
       } catch (err) {
         console.error("Error fetching states:", err);
       }
