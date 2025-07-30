@@ -9,11 +9,6 @@ export default function Tasks() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleClickFilter = () => {
     setSelectedStatus("");
@@ -35,7 +30,6 @@ export default function Tasks() {
     setSelectedStatus(statusFromUrl);
   }, [searchParams]);
 
-  if (loading) return <Loader />;
 
   return (
     <div className="w-full h-full">

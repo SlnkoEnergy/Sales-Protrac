@@ -64,8 +64,6 @@ export default function GroupDetailForm({ groupId, onClose }) {
     const requiredFields = [
       "group_name",
       "mobile",
-      "village",
-      "district",
       "state",
       "capacity",
     ];
@@ -180,8 +178,8 @@ export default function GroupDetailForm({ groupId, onClose }) {
             ["Email ID", "email", false],
             ["Mobile Number", "mobile", true],
             ["Alt Mobile Number", "altMobile", false],
-            ["Village Name", "village", true],
-            ["District Name", "district", true],
+            ["Village Name", "village", false],
+            ["District Name", "district", false],
             [
               "Select State",
               "state",
