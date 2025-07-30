@@ -61,6 +61,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import Loader from "@/components/loader/Loader";
 
 export type Task = {
   _id: string;
@@ -114,6 +115,7 @@ export function TaskTable({
   const [toDeadline, setToDeadline] = React.useState<string | null>(null);
   const fromDeadlineParam = searchParams.get("fromDeadline");
   const toDeadlineParam = searchParams.get("toDeadline");
+  const [isLoading, setIsLoading] = React.useState(false);
   const [range, setRange] = React.useState([
     {
       startDate: fromDeadlineParam ? parseISO(fromDeadlineParam) : null,
@@ -413,6 +415,10 @@ export function TaskTable({
   };
 
   React.useEffect(() => {
+    setIsLoading(true);
+  }, [statusFromUrl]);
+
+  React.useEffect(() => {
     const fetchTasks = async () => {
       try {
         const params = {
@@ -428,6 +434,8 @@ export function TaskTable({
         setData(res.data);
       } catch (err) {
         console.error("Error fetching leads:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -539,6 +547,8 @@ export function TaskTable({
       pageSize: pageSize,
     });
   }, [page, pageSize]);
+
+  if (isLoading) return <Loader />;
 
   return (
     <div className="w-full">

@@ -1,4 +1,3 @@
-import Loader from "@/components/loader/Loader";
 import { DataTable } from "@/modules/leads/components/LeadTable";
 import { useEffect, useState } from "react";
 import SearchBarLeads from "../components/SearchBar";
@@ -8,13 +7,8 @@ export default function Leads() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedStages, setSelectedStages] = useState("");
-  const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
-  }, []);
-
+ 
   const handleClickFilter = () => {
     setSelectedStages("");
     setSearchParams((prev) => {
@@ -34,7 +28,6 @@ export default function Leads() {
     setSelectedStages(stageFromURL);
   }, [searchParams]);
 
-  if (loading) return <Loader />;
 
   return (
     <div className="w-full h-full">
@@ -48,7 +41,7 @@ export default function Leads() {
       />
 
       <div className="h-[calc(100%-4rem)] p-4 overflow-auto">
-        <DataTable search={searchQuery} onSelectionChange={setSelectedIds}/>
+        <DataTable group_id="" search={searchQuery} onSelectionChange={setSelectedIds}/>
       </div>
     </div>
   );

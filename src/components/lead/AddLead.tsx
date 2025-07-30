@@ -12,10 +12,11 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { createBdLead, getAllGroupName } from "@/services/leads/LeadService";
+import { createBdLead } from "@/services/leads/LeadService";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { getAllGroupName } from "@/services/group/GroupService";
 
 export type GroupName = {
   _id: string;
@@ -143,8 +144,6 @@ export default function AddLead() {
     fetchData();
   }, []);
 
-  console.log({ data });
-
   return (
     <div>
       <div className="flex justify-between">
@@ -253,7 +252,7 @@ export default function AddLead() {
                         onValueChange={(val) => {
                           handleChange("source", val);
                           handleChange("sub_source", "");
-                          setSource(val); // ✅ this is needed for correct payload
+                          setSource(val);
                           setSubSource("");
                         }}
                         disabled={!!selectedGroup}
@@ -317,11 +316,9 @@ export default function AddLead() {
                           setShowGroupDropDown(val);
 
                           if (!val) {
-                            // Clear populated data
                             setSelectedGroup(null);
                             handleChange(name as string, "");
                             handleChange("groupname", "");
-
                             setFormData((prev: any) => ({
                               ...prev,
                               email: "",
@@ -408,9 +405,7 @@ export default function AddLead() {
                               email: group.contact_details?.email || "",
                               mobile: group.contact_details?.mobile[0] || "",
                               altMobile: group.contact_details?.mobile[1] || "",
-                              district: group.address?.district || "",
                               state: group.address?.state || "",
-                              village: group.address?.village || "",
                               scheme: group.project_details?.scheme || "",
                               source: group.source.from || "",
                               sub_source: group.source.sub_source || "",

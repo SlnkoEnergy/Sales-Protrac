@@ -427,9 +427,9 @@ React.useEffect(() => {
                   </Avatar>
                   <div className="flex gap-2 justify-evenly">
                     <div className="flex flex-col gap-2">
-                      <CardTitle className="capitalize">{data?.name}</CardTitle>
+                      <CardTitle className="capitalize max-w-[14vw]">{data?.name}</CardTitle>
                       {data?.contact_details?.email && (
-                        <CardDescription className="flex items-center gap-2">
+                        <CardDescription className="flex items-center gap-2 max-w-[14vw]">
                           <Mail size={16} />{" "}
                           {data?.contact_details?.email || "NA"}
                         </CardDescription>
