@@ -110,7 +110,10 @@ export type Lead = {
   leadAging: string;
   inactiveDays: string;
   expected_closing_date: Date;
-  handover: boolean;
+  handover_info:{
+    _id: string;
+    status_of_handoversheet: string;
+  };
   group_code: string;
   group_name: string;
   group_id: string;
@@ -136,8 +139,8 @@ export function DataTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [total, setTotal] = React.useState(0);
   const [users, setUsers] = React.useState([]);
-  const [uniqueState, setUniqueState] = React.useState([]);
-
+  const [uniqueState, setUniqueState] = React.useState<string[]>([]);
+  console.log({ uniqueState });
   const [stageCounts, setStageCounts] = React.useState<{
     initial?: number;
     "follow up"?: number;
@@ -388,37 +391,42 @@ export function DataTable({
         return <div>{date ? date.toLocaleDateString() : "-"}</div>;
       },
     },
-    {
-      accessorKey: "handover",
-      header: "Handover",
-      cell: ({ row }) => {
-        const isHandoverDone = row.original?.handover;
-        const leadId = row.original?._id;
-        const status = row.original?.current_status?.name;
+   {
+  accessorKey: "handover_info",
+  header: "Handover",
+  cell: ({ row }) => {
+    const leadId = row.original?._id;
+    const status = row.original?.current_status?.name;
+    const handoverInfo = row.original?.handover_info ?? [];
 
-        if (status !== "won") return null;
+    if (status !== "won") return null;
 
-        const handleClick = () => {
-          navigate(`/leadProfile?id=${leadId}&tab=handover`);
-        };
+    const handoverStatus = handoverInfo[0]?.status_of_handoversheet;
 
-        return (
-          <div
-            className="flex items-center justify-center cursor-pointer"
-            onClick={handleClick}
-            title={isHandoverDone ? "View Handover" : "Add Handover"}
-          >
-            {isHandoverDone === true ? (
-              <EyeIcon className="w-4 h-4 text-green-600" />
-            ) : isHandoverDone === false ? (
-              <PencilIcon className="w-4 h-4 text-gray-500" />
-            ) : (
-              <span className="text-xs text-gray-400">NA</span>
-            )}
-          </div>
-        );
-      },
-    },
+    const handleClick = () => {
+      navigate(`/leadProfile?id=${leadId}&tab=handover`);
+    };
+
+    return (
+      <div
+        className="flex items-center justify-center cursor-pointer"
+        onClick={handleClick}
+        title={
+          !handoverInfo.length || handoverStatus === "rejected"
+            ? "Add Handover"
+            : "View Handover"
+        }
+      >
+        {!handoverInfo.length || handoverStatus === "Rejected" ? (
+          <PencilIcon className="w-4 h-4 text-gray-500" />
+        ) : 
+          <EyeIcon className="w-4 h-4 text-green-600" />
+      }
+      </div>
+    );
+  },
+}
+,
     {
       accessorKey: "current_assigned?.user_id?.name",
       header: "Lead Owner",
@@ -802,16 +810,17 @@ export function DataTable({
                   Filter by State
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                  {uniqueState.map((state) => (
-                    <DropdownMenuCheckboxItem
-                      className="cursor-pointer"
-                      key={state}
-                      checked={selectedStates.includes(state)}
-                      onCheckedChange={() => toggleState(state)}
-                    >
-                      {state}
-                    </DropdownMenuCheckboxItem>
-                  ))}
+                  {Array.isArray(uniqueState) &&
+                    uniqueState.map((state) => (
+                      <DropdownMenuCheckboxItem
+                        className="cursor-pointer capitalize"
+                        key={state}
+                        checked={selectedStates.includes(state)}
+                        onCheckedChange={() => toggleState(state)}
+                      >
+                        {state}
+                      </DropdownMenuCheckboxItem>
+                    ))}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
