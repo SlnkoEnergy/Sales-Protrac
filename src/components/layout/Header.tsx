@@ -28,17 +28,20 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { logout } from "@/services/auth/Auth";
+import { NovuProvider, PopoverNotificationCenter } from "@novu/notification-center";
 
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchParams] = useSearchParams();
   const [notifications, setNotifications] = useState([]);
+  const [subscribeId, setSubscribeId] = useState("");
   const [user, setUser] = useState<{ name: string; emp_id: string } | null>(
     null
   );
   const location = useLocation();
   const navigate = useNavigate();
+  const ID = localStorage.getItem("userId")
 
   const isActiveHandover = location.pathname === "/handover";
   const isActiveTask = location.pathname === "/tasks";
@@ -58,11 +61,16 @@ export default function Header() {
     const fetchData = async () => {
       const data = await getNotification();
       setNotifications(data);
+      setSubscribeId(ID)
     };
     fetchData();
   }, []);
 
-  const handleLogout = async() => {
+  useEffect(() =>{
+    setSubscribeId(ID);
+  },[])
+
+  const handleLogout = async () => {
     try {
       // await logout();
       localStorage.clear();
@@ -180,7 +188,7 @@ export default function Header() {
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">
-        <div className="relative" ref={PickerRef}>
+        {/* <div className="relative" ref={PickerRef}>
           <div className="relative">
             <Bell
               size={18}
@@ -247,7 +255,27 @@ export default function Header() {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
+
+        <NovuProvider
+          subscriberId= {subscribeId}
+          applicationIdentifier="vHKf6fc5ojnD"
+        >
+          <div className="flex justify-end p-4">
+            <PopoverNotificationCenter colorScheme="light" position="bottom-end">
+              {({ unseenCount }) => (
+                <Button variant="ghost" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {(unseenCount ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1 text-xs">
+                      {unseenCount ?? 0}
+                    </span>
+                  )}
+                </Button>
+              )}
+            </PopoverNotificationCenter>
+          </div>
+        </NovuProvider>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
