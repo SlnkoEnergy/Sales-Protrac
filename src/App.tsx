@@ -19,11 +19,15 @@ import Group from "./modules/group/pages/AddGroup";
 import Groups from "./modules/group/pages/Groups";
 import GroupDetail from "./modules/group/pages/GroupDetail";
 import NotFound from "./modules/not found/NotFound";
+import SearchParamSyncer from "./SearchParamsSync";
+import ParentSearchSyncer from "./ParentSearchParamsSyncer";
 
 function App() {
   return (
     <DateFilterProvider>
       <Router>
+        <SearchParamSyncer />
+        <ParentSearchSyncer />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<NotFound />} />
