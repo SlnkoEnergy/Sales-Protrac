@@ -19,6 +19,7 @@ import { ChevronLeft } from "lucide-react";
 import { getAllGroupName } from "@/services/group/GroupService";
 
 export type GroupName = {
+  company_name: string;
   _id: string;
   group_code: string;
   group_name: string;
