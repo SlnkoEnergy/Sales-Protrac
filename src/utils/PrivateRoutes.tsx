@@ -1,16 +1,15 @@
-import { Navigate } from 'react-router-dom';
+// src/routes/PrivateRoute.tsx
+import { Navigate } from "react-router-dom";
+import { ReactElement } from "react";
 
 interface PrivateRouteProps {
-  children: JSX.Element;
+  children: ReactElement;
 }
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const token = localStorage.getItem("authToken");
 
-  console.log("PrivateRoute token:", token);
-
-  // Treat null, undefined, empty string, or invalid tokens as unauthenticated
-  if (!token || token === "null" || token === "undefined" || token.trim() === "") {
+  if (!token) {
     return <Navigate to="/login" replace />;
   }
 

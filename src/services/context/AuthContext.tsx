@@ -19,7 +19,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(initialToken);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(!!initialToken);
-  console.log({user})
   useEffect(() => {
     if (initialToken) {
       setRuntimeToken(initialToken);

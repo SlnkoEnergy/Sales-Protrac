@@ -10,12 +10,10 @@ const Axios = axios.create({
 });
 
 Axios.interceptors.request.use((config) => {
-  const token = getRuntimeToken();
+  const token = localStorage.getItem("authToken");
   if (token) {
     config.headers["x-auth-token"] = token;
-  } else {
-    console.warn("No auth token found for this request.");
-  }
+  } 
   return config;
 });
 

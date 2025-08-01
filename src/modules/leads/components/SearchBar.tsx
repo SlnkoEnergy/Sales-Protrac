@@ -223,7 +223,7 @@ export default function SearchBarLeads({
             {
               data
               .filter(group =>{
-                const userName = getCurrentUser().name;
+                const userName = user?.name;
                 const isAdmin = 
                 userName === "Admin" ||
                 userName === "IT Team" ||

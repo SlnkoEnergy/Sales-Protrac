@@ -21,8 +21,6 @@ const AuthSyncListener = () => {
   window.addEventListener("message", handleMessage);
   return () => window.removeEventListener("message", handleMessage);
 }, [setAuthData]);
-
-
   return null;
 };
 
