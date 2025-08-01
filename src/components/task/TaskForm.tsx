@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function TaskForm({
   type,
@@ -111,15 +112,10 @@ export default function TaskForm({
 
     fetchUser();
   }, [department]);
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const users = useAuth().user;
+  
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -139,13 +135,12 @@ export default function TaskForm({
       return null;
     }
   };
-const currentUser = getCurrentUser();
+const currentUser = users;
 const currentUserId = getUserIdFromToken();
 
 const handleSave = async () => {
   try {
-    const currentUser = getCurrentUser(); 
-    const userId = currentUser._id;
+    const userId = user._id;
       if (type !== "todo" && selected.length === 0) {
       toast.error("Please select at least one user to assign the task.");
       return;
@@ -167,7 +162,7 @@ const handleSave = async () => {
 
     createdTask.user_id = {
       _id: userId,
-      name: currentUser.name,
+      name: currentUser?.name,
     };
     
     toast.success("Task Created Successfully");
