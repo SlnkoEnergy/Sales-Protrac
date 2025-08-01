@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useAuth } from "@/services/context/AuthContext";
 
 interface TodoItem {
   id: string;
@@ -57,20 +58,13 @@ export default function TodoList() {
     setShowRemarksDialog(true);
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
-
+  const {user} = useAuth();
   const handleSubmitRemarks = async () => {
     try {
       await updateStatus({
         _id: selectedTodo?.id,
         status: "completed",
-        user_id: getCurrentUser()._id,
+        user_id: user._id,
         remarks: remarks,
       });
 

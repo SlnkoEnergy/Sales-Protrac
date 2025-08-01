@@ -49,38 +49,38 @@ export function LoginForm({
   const from = location.state?.from?.pathname || "/";
 
   // Get Location and Address
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
+  // useEffect(() => {
+  //   navigator.geolocation.getCurrentPosition(
+  //     async (position) => {
+  //       const latitude = position.coords.latitude;
+  //       const longitude = position.coords.longitude;
 
-        let fullAddress = "";
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await res.json();
-          fullAddress = data.display_name || "";
-        } catch (err) {
-          toast.error("Reverse geocoding failed");
-        }
+  //       let fullAddress = "";
+  //       try {
+  //         const res = await fetch(
+  //           `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+  //         );
+  //         const data = await res.json();
+  //         fullAddress = data.display_name || "";
+  //       } catch (err) {
+  //         toast.error("Reverse geocoding failed");
+  //       }
 
-        setGeoInfo({ latitude, longitude, fullAddress });
-      },
-      (error) => {
-        toast.error("Location access denied. Enable location to login.");
-      }
-    );
-  }, []);
+  //       setGeoInfo({ latitude, longitude, fullAddress });
+  //     },
+  //     (error) => {
+  //       toast.error("Location access denied. Enable location to login.");
+  //     }
+  //   );
+  // }, []);
 
   const onSubmit = async (data: LoginFormInputs) => {
-    if (!geoInfo.latitude || !geoInfo.longitude || !geoInfo.fullAddress) {
-      toast.error(
-        "Location is required to login. Please enable location access."
-      );
-      return;
-    }
+    // if (!geoInfo.latitude || !geoInfo.longitude || !geoInfo.fullAddress) {
+    //   toast.error(
+    //     "Location is required to login. Please enable location access."
+    //   );
+    //   return;
+    // }
 
     try {
       const payload = {
@@ -96,7 +96,7 @@ export function LoginForm({
         throw new Error("Missing token or userId from login response");
       }
 
-      localStorage.setItem("token", result.token);
+      localStorage.setItem("authToken", result.token);
       localStorage.setItem("userId", result.userId);
 
       const userData = await getUserById(result.userId);
@@ -201,7 +201,7 @@ export function LoginForm({
       </form>
 
       {/* OTP Dialog */}
-      <Dialog open={otpDialogOpen} onOpenChange={setOtpDialogOpen}>
+      {/* <Dialog open={otpDialogOpen} onOpenChange={setOtpDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>OTP Verification</DialogTitle>
@@ -211,7 +211,7 @@ export function LoginForm({
             onSuccess={() => setOtpDialogOpen(false)}
           />
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 }

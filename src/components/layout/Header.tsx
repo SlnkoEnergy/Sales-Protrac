@@ -19,15 +19,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { getNotification, toggleViewTask } from "@/services/task/Task";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { logout } from "@/services/auth/Auth";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
@@ -64,7 +56,6 @@ export default function Header() {
 
   const handleLogout = async() => {
     try {
-      // await logout();
       localStorage.clear();
       toast.success("You have been Logged Out");
       navigate("/login");
@@ -72,16 +63,19 @@ export default function Header() {
       toast.error('Logout Failed')
     }
   };
+  
+  const userData = useAuth();
+
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse user data:", error);
-      }
+    if (userData.user) {
+      setUser({
+        name: userData.user?.name,
+        emp_id: userData.user?.emp_id,
+      });
     }
-  }, []);
+  }, [userData.user]);
+
+
 
   const handleDelete = async (_id: string) => {
     try {
@@ -248,61 +242,6 @@ export default function Header() {
             </div>
           )}
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div className="flex items-center gap-2 cursor-pointer">
-              <img
-                src="/assets/avatar.png"
-                alt="Profile"
-                className="w-8 h-8 rounded-full"
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-4 h-4 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" className="w-64 shadow-md">
-            <DropdownMenuLabel className="py-2 gap-2">
-              <div className="font-medium flex justify-between items-center gap-2 text-sm leading-tight">
-                <div className="flex items-center gap-2">
-                  <User2 className="w-4 h-4" />
-                  {user?.name || "User"}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {user?.emp_id || "user@example.com"}
-                </div>
-              </div>
-            </DropdownMenuLabel>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="text-red-600 flex items-center gap-2 font-medium cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       {/* Mobile Drawer */}

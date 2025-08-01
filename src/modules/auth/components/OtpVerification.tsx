@@ -106,7 +106,7 @@ export function OtpVerification({
         throw new Error("Missing token or userId from finalize login");
       }
 
-      localStorage.setItem("token", finalRes.token);
+      localStorage.setItem("authToken", finalRes.token);
       localStorage.setItem("userId", finalRes.userId);
 
       // Optional: Fetch and store user details if needed

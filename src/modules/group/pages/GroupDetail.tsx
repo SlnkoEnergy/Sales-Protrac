@@ -31,6 +31,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useAuth } from "@/services/context/AuthContext";
 
 export type Group = {
   _id: string;
@@ -90,8 +91,9 @@ export default function GroupDetail() {
     fetchGroup();
   }, [id]);
 
+
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -112,13 +114,7 @@ export default function GroupDetail() {
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+ const {user} = useAuth();
   const nextStatus =
     data?.current_status?.status === "open" ? "closed" : "open";
 

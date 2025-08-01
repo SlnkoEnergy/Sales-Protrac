@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { getGroupById } from "@/services/group/GroupService";
 import { updateGroup } from "@/services/group/GroupService";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function GroupDetailForm({ groupId, onClose }) {
   const [formData, setFormData] = useState<any>({});
@@ -33,13 +34,7 @@ export default function GroupDetailForm({ groupId, onClose }) {
     setFormData((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const {user} = useAuth();
 
   const isFromGroup = location.pathname === "/groupDetail";
 
@@ -97,20 +92,18 @@ export default function GroupDetailForm({ groupId, onClose }) {
         from: source,
         sub_source: subSource || "N/A",
       },
-      createdBy: getCurrentUser()._id,
+      createdBy: user._id,
     };
 
     try {
       if (isFromGroup) {
-        // ✅ UPDATE
         await updateGroup({ id: groupId, data: payload });
         toast.success("Group Updated Successfully!");
       } else {
-        // ✅ CREATE
         await createGroup({ data: payload });
         toast.success("Group Created Successfully!");
       }
-      onClose();
+      onClose;
     } catch (err) {
       toast.error("Failed to submit Group");
     }
