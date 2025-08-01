@@ -137,7 +137,6 @@ export function DataTable({
   const [total, setTotal] = React.useState(0);
   const [users, setUsers] = React.useState([]);
   const [uniqueState, setUniqueState] = React.useState<string[]>([]);
-  console.log({ uniqueState });
   const [stageCounts, setStageCounts] = React.useState<{
     initial?: number;
     "follow up"?: number;
@@ -189,6 +188,8 @@ export function DataTable({
       );
     },
   };
+
+  console.log("the data " ,data);
 
   const columns: ColumnDef<Lead>[] = [
     {
