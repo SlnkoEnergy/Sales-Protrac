@@ -103,7 +103,7 @@ export default function GroupDetailForm({ groupId, onClose }) {
         await createGroup({ data: payload });
         toast.success("Group Created Successfully!");
       }
-      onClose();
+      onClose;
     } catch (err) {
       toast.error("Failed to submit Group");
     }

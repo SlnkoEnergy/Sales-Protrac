@@ -138,7 +138,6 @@ export default function SearchBarLeads({
     fetchData();
   }, []);
 
-  console.log("Data:", data);
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
@@ -221,7 +220,21 @@ export default function SearchBarLeads({
             <DialogTitle>Select Group to Transfer</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {data.map((group) => (
+            {
+              data
+              .filter(group =>{
+                const userName = getCurrentUser().name;
+                const isAdmin = 
+                userName === "Admin" ||
+                userName === "IT Team" ||
+                userName === "Deepak Manodi";
+
+                if(isAdmin) return true;
+
+                return group.createdBy.name === userName
+
+              })
+              .map((group) => (
               <div
                 key={group._id}
                 className="p-2 border rounded cursor-pointer hover:bg-gray-100"
@@ -230,7 +243,7 @@ export default function SearchBarLeads({
                   setConfirmOpenGroup(true);
                 }}
               >
-                {group.company_name}
+                {group.group_name}
               </div>
             ))}
           </div>

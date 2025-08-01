@@ -20,6 +20,7 @@ import { getAllGroupName } from "@/services/group/GroupService";
 import { useAuth } from "@/services/context/AuthContext";
 
 export type GroupName = {
+  company_name: string;
   _id: string;
   group_code: string;
   group_name: string;
