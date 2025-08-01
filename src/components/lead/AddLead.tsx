@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { getAllGroupName } from "@/services/group/GroupService";
+import { useAuth } from "@/services/context/AuthContext";
 
 export type GroupName = {
   _id: string;
@@ -52,6 +53,7 @@ export default function AddLead() {
   const [selectedGroup, setSelectedGroup] = useState<GroupName | null>(null);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const token = useAuth().token;
 
   const filtered = data.filter(
     (grp) =>
@@ -71,18 +73,31 @@ export default function AddLead() {
         return {
           ...prev,
           source: value,
-          sub_source: "", // reset sub_source on source change
+          sub_source: "",
         };
       }
       return { ...prev, [key]: value };
     });
   };
+  
+   const getUserIdFromToken = () => {
+    if (!token) return null;
 
-  const getCurrentUser = () => {
     try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
     }
   };
 
@@ -124,7 +139,7 @@ export default function AddLead() {
           sub_source: subSource || " ",
         },
         comments: formData.comments,
-        submitted_by: getCurrentUser()._id,
+        submitted_by: getUserIdFromToken()._id,
         documents: [],
       };
 

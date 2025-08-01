@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import StatusCell from "../components/StatusCell";
+import { useAuth } from "@/services/context/AuthContext";
 
 export type Lead = {
   expected_closing_date: Date;
@@ -212,7 +213,7 @@ export default function LeadProfile() {
   };
 
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -233,13 +234,7 @@ export default function LeadProfile() {
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const {user} = useAuth();
 
   const fullComment = data?.comments || "";
   const charLimit = 15;
@@ -250,6 +245,7 @@ export default function LeadProfile() {
 
   
 React.useEffect(() => {
+  
   const fetchLeads = async () => {
     try {
       const params = {
@@ -313,7 +309,7 @@ React.useEffect(() => {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 {["admin", "Deepak Manodi", "IT Team"].includes(
-                  getCurrentUser()?.name
+                  user?.name
                 ) && (
                   <Button
                     className="cursor-pointer"
@@ -627,7 +623,7 @@ React.useEffect(() => {
                 {(data?.current_assigned?.user_id?._id ===
                   getUserIdFromToken() ||
                   ["admin", "Deepak Manodi"].includes(
-                    getCurrentUser()?.name
+                    user?.name
                   )) && (
                   <LeadDocuments
                     data={data}

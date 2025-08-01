@@ -6,13 +6,21 @@ const SearchParamSyncer = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.addEventListener("message", (event) => {
-      const { type, search } = event.data || {};
-      if (type === "PARENT_PUSH_SEARCH_PARAMS" && search !== location.search) {
-        navigate(`${location.pathname}${search}`);
+    const handleMessage = (event) => {
+      const { type, path, search } = event.data || {};
+      if (type === "PARENT_PUSH_SEARCH_PARAMS") {
+        const fullPath = `${path || "/"}${search || ""}`;
+        const currentPath = `${location.pathname}${location.search}`;
+
+        if (fullPath !== currentPath) {
+          navigate(fullPath);
+        }
       }
-    });
-  }, [location]);
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [location, navigate]);
 
   return null;
 };

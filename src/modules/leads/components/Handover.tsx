@@ -20,6 +20,7 @@ import {
 } from "@/services/leads/LeadService";
 import { File, User2, Workflow } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/services/context/AuthContext";
 
 type HandoverFormRef = {
   submit: () => void;
@@ -128,13 +129,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   const [handover, setHandover] = useState();
   const id = searchParams.get("id");
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const {user} = useAuth();
 
   useImperativeHandle(ref, () => ({
     submit: () => handleSubmit(),
@@ -416,11 +411,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         other_details: originalOtherDetails,
       } = formData;
 
-      const user = getCurrentUser();
+      const users = user;
 
       const other_details = {
         ...originalOtherDetails,
-        submitted_by_BD: user?.name || "",
+        submitted_by_BD: users?.name || "",
       };
 
       const payload = {
@@ -431,7 +426,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         commercial_details,
         other_details,
         invoice_detail: {},
-        submitted_by: user?.name || "",
+        submitted_by: users?.name || "",
         status_of_handoversheet: "draft",
         is_locked: "locked",
       };
