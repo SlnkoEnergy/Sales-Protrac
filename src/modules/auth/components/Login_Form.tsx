@@ -96,7 +96,7 @@ export function LoginForm({
         throw new Error("Missing token or userId from login response");
       }
 
-      localStorage.setItem("token", result.token);
+      localStorage.setItem("authToken", result.token);
       localStorage.setItem("userId", result.userId);
 
       const userData = await getUserById(result.userId);

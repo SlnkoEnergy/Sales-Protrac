@@ -35,6 +35,7 @@ import {
 import { toast } from "sonner";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useAuth } from "@/services/context/AuthContext";
 export type Task = {
   _id: string;
   title: string;
@@ -87,7 +88,7 @@ export default function ViewTask() {
   };
 
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -249,7 +250,7 @@ export default function ViewTask() {
           {data.assigned_to.map((user, index) => (
             <div key={index} className="flex items-center gap-2">
               <UserIcon size={14} className="text-gray-500" />
-              <span className="text-sm">{user.name}</span>
+              <span className="text-sm">{user?.name}</span>
             </div>
           ))}
         </div>

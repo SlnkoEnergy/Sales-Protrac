@@ -62,6 +62,7 @@ import { format } from "date-fns";
 import Loader from "@/components/loader/Loader";
 import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
+import { useAuth } from "@/services/context/AuthContext";
 
 export type Lead = {
   _id: string;
@@ -488,15 +489,7 @@ export function DataTable({
   const InActiveDays = searchParams.get("inActiveDays");
   const NameFilter = searchParams.get("name");
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
-
-  const user = getCurrentUser().name;
+ const {user} = useAuth();
 
   React.useEffect(() => {
     setIsLoading(true);
@@ -756,6 +749,8 @@ export function DataTable({
     { value: "custom", label: "Custom" },
   ];
 
+  console.log({user});
+
   return (
     <div
       className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
@@ -958,9 +953,9 @@ export function DataTable({
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
-              {(getCurrentUser().name === "admin" ||
-                getCurrentUser().name === "IT Team" ||
-                getCurrentUser().name === "Deepak Manodi") && (
+              {(user?.name === "admin" ||
+                user?.name === "IT Team" ||
+                user?.name === "Deepak Manodi") && (
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     Lead Owner Filter
@@ -986,8 +981,8 @@ export function DataTable({
                         All
                       </DropdownMenuRadioItem>
                       {users.map((user) => (
-                        <DropdownMenuRadioItem key={user._id} value={user.name}>
-                          {user.name}
+                        <DropdownMenuRadioItem key={user?._id} value={user?.name}>
+                          {user?.name}
                         </DropdownMenuRadioItem>
                       ))}
                     </DropdownMenuRadioGroup>
