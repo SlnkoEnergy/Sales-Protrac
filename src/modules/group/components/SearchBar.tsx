@@ -43,16 +43,6 @@ export default function SearchBarGroups({
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center gap-2 w-full max-w-md">
-        <div className="flex flex-cols-2 justify-between">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => (window.location.href = "/")}
-            className="cursor-pointer"
-          >
-            <ChevronLeft />
-          </Button>
-        </div>
         <div className="relative bg-white w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
