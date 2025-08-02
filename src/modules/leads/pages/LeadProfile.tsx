@@ -51,11 +51,8 @@ import { useAuth } from "@/services/context/AuthContext";
 
 export type Lead = {
   expected_closing_date: Date;
-  documents: {
-    group_code: string;
-    group_name: string;
-    id: string;
-  };
+  group_code: string;
+  group_name: string;
   _id: string;
   id: string;
   current_status: {
@@ -468,11 +465,11 @@ React.useEffect(() => {
                   <p className="text-sm text-gray-800">
                     <strong>Lead ID:</strong> {data?.id}
                   </p>
-                  {data?.documents?.group_code && (
+                  {data?.group_code && (
                     <p className="text-sm text-gray-800">
                       <strong>Group :</strong>{" "}
-                      {data?.documents?.group_code || "N/A"} (
-                      {data?.documents?.group_name || "N/A"})
+                      {data?.group_code || "N/A"} (
+                      {data?.group_name || "N/A"})
                     </p>
                   )}
                   {data?.company_name && (
