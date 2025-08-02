@@ -29,7 +29,7 @@ function App() {
       <Router>
         <SearchParamSyncer />
         <ParentSearchSyncer />
-         <AuthSyncListener />
+         
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<NotFound />} />
