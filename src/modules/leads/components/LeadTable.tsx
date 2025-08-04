@@ -107,14 +107,10 @@ export type Lead = {
     id: string;
     name: string;
   };
-  lastModifiedTask: Date;
   leadAging: string;
   inactivedate: Date;
   expected_closing_date: Date;
-  handover_info: {
-    _id: string;
-    status_of_handoversheet: string;
-  };
+  status_of_handoversheet: string;
   group_code: string;
   group_name: string;
   group_id: string;
@@ -292,7 +288,6 @@ export function DataTable({
         );
       },
     },
-    ,
     {
       accessorKey: "project_details.capacity",
       header: "Capacity (MW AC)",
@@ -398,39 +393,39 @@ export function DataTable({
       },
     },
     {
-      accessorKey: "handover_info",
-      header: "Handover",
-      cell: ({ row }) => {
-        const leadId = row.original?._id;
-        const status = row.original?.current_status?.name;
-        const handoverInfo = row.original?.handover_info ?? [];
+  accessorKey: "status_of_handoversheet",
+  header: "Handover",
+  cell: ({ row }) => {
+    const leadId = row.original?._id;
+    const status = row.original?.current_status?.name;
+    const handoverStatus = row.original?.status_of_handoversheet;
 
-        if (status !== "won") return null;
+    const handleClick = () => {
+      navigate(`/leadProfile?id=${leadId}&tab=handover`);
+    };
 
-        const handoverStatus = handoverInfo[0]?.status_of_handoversheet;
+    if (status !== "won") {
+      return <div className="text-gray-400 text-sm ">Waiting for won</div>;
+    }
 
-        const handleClick = () => {
-          navigate(`/leadProfile?id=${leadId}&tab=handover`);
-        };
-
-        return (
-          <div
-            className="flex items-center justify-center cursor-pointer"
-            onClick={handleClick}
-            title={
-              !handoverInfo.length || handoverStatus === "rejected"
-                ? "Add Handover"
-                : "View Handover"
-            }
-          >
-            {!handoverInfo.length || handoverStatus === "Rejected" ? (
-              <PencilIcon className="w-4 h-4 text-gray-500" />
-            ) : (
-              <EyeIcon className="w-4 h-4 text-green-600" />
-            )}
-          </div>
-        );
-      },
+    return (
+      <div
+        className="flex cursor-pointer"
+        onClick={handleClick}
+        title={
+          handoverStatus === "false" || handoverStatus === "Rejected"
+            ? "Add Handover"
+            : "View Handover"
+        }
+      >
+        {handoverStatus === "false" || handoverStatus === "Rejected" ? (
+          <PencilIcon className="w-4 h-4 text-gray-500" />
+        ) : (
+          <EyeIcon className="w-4 h-4 text-green-600" />
+        )}
+      </div>
+    );
+  },
     },
     {
       accessorKey: "current_assigned?.user_id?.name",
@@ -494,7 +489,7 @@ export function DataTable({
   const NameFilter = searchParams.get("name");
 
   const { user } = useAuth();
-
+  
   React.useEffect(() => {
     setIsLoading(true);
   }, [stageFromUrl]);
@@ -621,8 +616,6 @@ export function DataTable({
       return params;
     });
   };
-
-  
 
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
@@ -869,59 +862,58 @@ export function DataTable({
               {/* Handover Filter */}
               {(tab === "" || tab === "won") && (
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="cursor-pointer">
-                    Handover Filter
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup
-                      value={handoverStatus}
-                      onValueChange={(value) => {
-                        setHandoverStatus(value);
+  <DropdownMenuSubTrigger className="cursor-pointer">
+    Handover Filter
+  </DropdownMenuSubTrigger>
+  <DropdownMenuSubContent>
+    <DropdownMenuRadioGroup
+      value={handoverStatus}
+      onValueChange={(value) => {
+        setHandoverStatus(value);
 
-                        const newParams = new URLSearchParams(
-                          searchParams.toString()
-                        );
-                        if (value) {
-                          newParams.set("handover", value);
-                        } else {
-                          newParams.delete("handover");
-                        }
-                        setSearchParams(newParams);
-                      }}
-                    >
-                      <DropdownMenuRadioItem
-                        className="cursor-pointer"
-                        value="pending"
-                      >
-                        Pending
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem
-                        className="cursor-pointer"
-                        value="in process"
-                      >
-                        In-Procress
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem
-                        className="cursor-pointer"
-                        value="completed"
-                      >
-                        Completed
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem
-                        value=""
-                        className="text-red-500 hover:bg-red-100 cursor-pointer"
-                        onClick={() => {
-                          const updated = new URLSearchParams(searchParams);
-                          updated.delete("handover");
-                          updated.set("page", "1");
-                          setSearchParams(updated);
-                        }}
-                      >
-                        Clear Filter
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
+        const newParams = new URLSearchParams(searchParams.toString());
+        if (value) {
+          newParams.set("handover", value);
+        } else {
+          newParams.delete("handover");
+        }
+        setSearchParams(newParams);
+      }}
+    >
+      <DropdownMenuRadioItem
+        className="cursor-pointer"
+        value="pending"
+      >
+        Pending
+      </DropdownMenuRadioItem>
+      <DropdownMenuRadioItem
+        className="cursor-pointer"
+        value="inprocess"
+      >
+        In-Process
+      </DropdownMenuRadioItem>
+      <DropdownMenuRadioItem
+        className="cursor-pointer"
+        value="completed"
+      >
+        Completed
+      </DropdownMenuRadioItem>
+      <DropdownMenuRadioItem
+        value=""
+        className="text-red-500 hover:bg-red-100 cursor-pointer"
+        onClick={() => {
+          const updated = new URLSearchParams(searchParams);
+          updated.delete("handover");
+          updated.set("page", "1");
+          setSearchParams(updated);
+        }}
+      >
+        Clear Filter
+      </DropdownMenuRadioItem>
+    </DropdownMenuRadioGroup>
+  </DropdownMenuSubContent>
+</DropdownMenuSub>
+
               )}
 
               {/* Lead Aging Filter */}
@@ -1030,7 +1022,7 @@ export function DataTable({
                       {users.map((user) => (
                         <DropdownMenuRadioItem
                           key={user?._id}
-                          value={user?.name}
+                          value={user?._id}
                         >
                           {user?.name}
                         </DropdownMenuRadioItem>
