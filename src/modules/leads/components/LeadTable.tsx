@@ -46,7 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getLeads, states } from "@/services/leads/LeadService";
+import { getLeads, getLeadsCount, states } from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -109,9 +109,9 @@ export type Lead = {
   };
   lastModifiedTask: Date;
   leadAging: string;
-  inactiveDays: string;
+  inactivedate: Date;
   expected_closing_date: Date;
-  handover_info:{
+  handover_info: {
     _id: string;
     status_of_handoversheet: string;
   };
@@ -302,21 +302,26 @@ export function DataTable({
       },
     },
     {
-      accessorKey: "inactiveDays",
+      accessorKey: "inactivedate",
       header: "Inactive (Days)",
       cell: ({ row }) => {
-        const days = row.original.inactiveDays;
+        const dateStr = row.original.inactivedate;
         let display = "";
 
-        const numDays = Number(days);
+        if (!dateStr) return <div>-</div>;
+
+        const inactiveDate = new Date(dateStr);
+        const now = new Date();
+
+        const diffTime = now - inactiveDate;
+        const numDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
         if (numDays < 7) {
-          const rounded = Math.floor(numDays);
-          display = `${rounded} ${rounded <= 1 ? "day" : "days"}`;
-        } else if (numDays >= 7 && numDays < 30) {
+          display = `${numDays} ${numDays <= 1 ? "day" : "days"}`;
+        } else if (numDays < 30) {
           const weeks = Math.floor(numDays / 7);
           display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
-        } else if (numDays >= 30 && numDays < 365) {
+        } else if (numDays < 365) {
           const months = Math.floor(numDays / 30);
           display = `${months} ${months === 1 ? "month" : "months"}`;
         } else {
@@ -392,42 +397,41 @@ export function DataTable({
         return <div>{date ? date.toLocaleDateString() : "-"}</div>;
       },
     },
-   {
-  accessorKey: "handover_info",
-  header: "Handover",
-  cell: ({ row }) => {
-    const leadId = row.original?._id;
-    const status = row.original?.current_status?.name;
-    const handoverInfo = row.original?.handover_info ?? [];
+    {
+      accessorKey: "handover_info",
+      header: "Handover",
+      cell: ({ row }) => {
+        const leadId = row.original?._id;
+        const status = row.original?.current_status?.name;
+        const handoverInfo = row.original?.handover_info ?? [];
 
-    if (status !== "won") return null;
+        if (status !== "won") return null;
 
-    const handoverStatus = handoverInfo[0]?.status_of_handoversheet;
+        const handoverStatus = handoverInfo[0]?.status_of_handoversheet;
 
-    const handleClick = () => {
-      navigate(`/leadProfile?id=${leadId}&tab=handover`);
-    };
+        const handleClick = () => {
+          navigate(`/leadProfile?id=${leadId}&tab=handover`);
+        };
 
-    return (
-      <div
-        className="flex items-center justify-center cursor-pointer"
-        onClick={handleClick}
-        title={
-          !handoverInfo.length || handoverStatus === "rejected"
-            ? "Add Handover"
-            : "View Handover"
-        }
-      >
-        {!handoverInfo.length || handoverStatus === "Rejected" ? (
-          <PencilIcon className="w-4 h-4 text-gray-500" />
-        ) : 
-          <EyeIcon className="w-4 h-4 text-green-600" />
-      }
-      </div>
-    );
-  },
-}
-,
+        return (
+          <div
+            className="flex items-center justify-center cursor-pointer"
+            onClick={handleClick}
+            title={
+              !handoverInfo.length || handoverStatus === "rejected"
+                ? "Add Handover"
+                : "View Handover"
+            }
+          >
+            {!handoverInfo.length || handoverStatus === "Rejected" ? (
+              <PencilIcon className="w-4 h-4 text-gray-500" />
+            ) : (
+              <EyeIcon className="w-4 h-4 text-green-600" />
+            )}
+          </div>
+        );
+      },
+    },
     {
       accessorKey: "current_assigned?.user_id?.name",
       header: "Lead Owner",
@@ -489,7 +493,7 @@ export function DataTable({
   const InActiveDays = searchParams.get("inActiveDays");
   const NameFilter = searchParams.get("name");
 
- const {user} = useAuth();
+  const { user } = useAuth();
 
   React.useEffect(() => {
     setIsLoading(true);
@@ -523,7 +527,6 @@ export function DataTable({
         const res = await getLeads(params);
         setTotal(res?.total || 0);
         setData(res.leads);
-        setStageCounts(res.stageCounts);
       } catch (err) {
         console.error("Error fetching leads:", err);
       } finally {
@@ -540,6 +543,50 @@ export function DataTable({
     toDate,
     stageFromUrl,
     state,
+    Handoverfilter,
+    LeadAgingFilter,
+    InActiveDays,
+    NameFilter,
+  ]);
+
+  React.useEffect(() => {
+    const fetchLeadCounts = async () => {
+      try {
+        const params = {
+          search,
+          group_id: isFromGroup ? group_id : "",
+          stateFilter: state || "",
+          lead_without_task:
+            stageFromUrl === "lead_without_task"
+              ? "true"
+              : isFromGroup
+              ? ""
+              : undefined,
+          handover_statusFilter: Handoverfilter || "",
+          leadAgingFilter: LeadAgingFilter || "",
+          inactiveFilter: InActiveDays || "",
+          name: NameFilter || "",
+        };
+
+        if (fromDate) params.fromDate = fromDate;
+        if (toDate) params.toDate = toDate;
+
+        const res = await getLeadsCount(params);
+        setStageCounts(res.stageCounts);
+      } catch (err) {
+        console.error("Error fetching leads:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeadCounts();
+  }, [
+    search,
+    fromDate,
+    toDate,
+    state,
+    stageFromUrl,
     Handoverfilter,
     LeadAgingFilter,
     InActiveDays,
@@ -574,6 +621,8 @@ export function DataTable({
       return params;
     });
   };
+
+  
 
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
@@ -617,6 +666,7 @@ export function DataTable({
       setSearchParams((prev) => {
         const newParams = new URLSearchParams(prev);
         newParams.set("stage", value);
+        newParams.set("page", "1");
         return newParams;
       });
     });
@@ -633,21 +683,18 @@ export function DataTable({
         updated.delete("aging");
       }
 
-      // Handover Status Filter
       if (handoverStatus) {
         updated.set("handover", handoverStatus);
       } else {
         updated.delete("handover");
       }
 
-      // State Filter
       if (selectedStates.length > 0) {
         updated.set("stateFilter", selectedStates.join(","));
       } else {
         updated.delete("stateFilter");
       }
 
-      // Inactive Days Filter
       if (inactiveDays) {
         updated.set("inActiveDays", inactiveDays);
       } else {
@@ -749,7 +796,7 @@ export function DataTable({
     { value: "custom", label: "Custom" },
   ];
 
-  console.log({user});
+  console.log({ user });
 
   return (
     <div
@@ -764,7 +811,7 @@ export function DataTable({
                   All ({stageCounts?.all || "0"})
                 </TabsTrigger>
                 <TabsTrigger className="cursor-pointer" value="initial">
-                  Initial ({stageCounts?.initial || "0"})
+                  Initial ({stageCounts?.initial ?? "0"})
                 </TabsTrigger>
                 <TabsTrigger className="cursor-pointer" value="follow up">
                   Follow Up ({stageCounts?.["follow up"] || "0"})
@@ -981,7 +1028,10 @@ export function DataTable({
                         All
                       </DropdownMenuRadioItem>
                       {users.map((user) => (
-                        <DropdownMenuRadioItem key={user?._id} value={user?.name}>
+                        <DropdownMenuRadioItem
+                          key={user?._id}
+                          value={user?.name}
+                        >
                           {user?.name}
                         </DropdownMenuRadioItem>
                       ))}
