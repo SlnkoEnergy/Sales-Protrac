@@ -48,7 +48,6 @@ export function LoginForm({
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
-  // Get Location and Address
   // useEffect(() => {
   //   navigator.geolocation.getCurrentPosition(
   //     async (position) => {
@@ -67,9 +66,6 @@ export function LoginForm({
   //       }
 
   //       setGeoInfo({ latitude, longitude, fullAddress });
-  //     },
-  //     (error) => {
-  //       toast.error("Location access denied. Enable location to login.");
   //     }
   //   );
   // }, []);

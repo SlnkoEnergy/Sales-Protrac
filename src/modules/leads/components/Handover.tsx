@@ -713,96 +713,116 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                   </div>
                 ))}
 
-                {[
-                  {
-                    name: "project_detail.project_type",
-                    label: "Project Type",
-                    options: ["On-Grid", "Off-Grid", "Hybrid"],
-                  },
-                  {
-                    name: "order_details.type_business",
-                    label: "Type of Business *",
-                    options: ["KUSUM", "Government", "Prebid", "Others"],
-                  },
-                  {
-                    name: "project_detail.project_component",
-                    label: "Project Component",
-                    options: ["Kusum A", "Kusum C", "Kusum C2", "Other"],
-                  },
-                  {
-                    name: "commercial_details.type",
-                    label: "Type",
-                    options: ["CapEx", "Resco", "OpEx", "Retainership"],
-                  },
+               {[
+  {
+    name: "project_detail.project_type",
+    label: "Project Type",
+    options: ["On-Grid", "Off-Grid", "Hybrid"],
+  },
+  {
+    name: "order_details.type_business",
+    label: "Type of Business *",
+    options: ["Kusum", "Government", "Prebid", "Others"],
+  },
+  {
+    name: "project_detail.project_component",
+    label: "Project Component",
+    options: [
+      { label: "Kusum A", value: "KA" },
+      { label: "Kusum C", value: "KC" },
+      { label: "Kusum C2", value: "KC2" },
+      { label: "Other", value: "Other" },
+    ],
+  },
+  {
+    name: "commercial_details.type",
+    label: "Type",
+    options: ["CapEx", "Resco", "OpEx", "Retainership"],
+  },
+  {
+    name: "project_detail.work_by_slnko",
+    label: "Work By Slnko *",
+    options: ["ENG", "EPMC", "PMC", "EP", "ALL"],
+  },
+  {
+    name: "project_detail.module_type",
+    label: "Module Type",
+    options: ["N-TYPE", "P-TYPE", "Thin-Film"],
+  },
+  {
+    name: "project_detail.module_category",
+    label: "Module Content Category",
+    options: ["DCR", "Non DCR"],
+  },
+  {
+    name: "project_detail.loan_scope",
+    label: "Loan Scope",
+    options: ["Slnko", "Client", "TBD"],
+  },
+  {
+    name: "project_detail.liaisoning_net_metering",
+    label: "Liaisoning for Net-Metering *",
+    options: ["Yes", "No"],
+  },
+  {
+    name: "project_detail.ceig_ceg",
+    label: "CEIG/CEG Scope *",
+    options: ["Yes", "No"],
+  },
+  {
+    name: "project_detail.transmission_scope",
+    label: "Transmission Line Scope *",
+    options: ["Yes", "No"],
+  },
+  {
+    name: "project_detail.evacuation_voltage",
+    label: "Evacuation Voltage *",
+    options: ["11 KV", "33 KV"],
+  },
+].map(({ name, label, options }) => (
+  <div key={name}>
+    <label htmlFor={name} className="block mb-1 text-sm font-medium">
+      {label}
+    </label>
 
-                  {
-                    name: "project_detail.work_by_slnko",
-                    label: "Work By Slnko *",
-                    options: ["ENG", "EPCM", "PMC", "EP", "ALL"],
-                  },
-                  {
-                    name: "project_detail.module_type",
-                    label: "Module Type",
-                    options: ["N-TYPE", "P-TYPE", "Thin-Film"],
-                  },
-                  {
-                    name: "project_detail.module_category",
-                    label: "Module Content Category",
-                    options: ["DCR", "Non DCR"],
-                  },
-                  {
-                    name: "project_detail.loan_scope",
-                    label: "Loan Scope",
-                    options: ["Slnko", "Client", "TBD"],
-                  },
-                  {
-                    name: "project_detail.liaisoning_net_metering",
-                    label: "Liaisoning for Net-Metering *",
-                    options: ["Yes", "No"],
-                  },
-                  {
-                    name: "project_detail.ceig_ceg",
-                    label: "CEIG/CEG Scope *",
-                    options: ["Yes", "No"],
-                  },
-                  {
-                    name: "project_detail.transmission_scope",
-                    label: "Transmission Line Scope *",
-                    options: ["Yes", "No"],
-                  },
-                  {
-                    name: "project_detail.evacuation_voltage",
-                    label: "Evacuation Voltage *",
-                    options: ["11 KV", "33 KV"],
-                  },
-                ].map(({ name, label, options }) => (
-                  <div key={name}>
-                    <label
-                      htmlFor={name}
-                      className="block mb-1 text-sm font-medium"
-                    >
-                      {label}
-                    </label>
-                    <Select
-                      value={getValueByPath(formData, name) || ""}
-                      onValueChange={(value) => handleSelectChange(name, value)}
-                    >
-                      <SelectTrigger
-                        id={name}
-                        className="data-[placeholder]:text-gray-600"
-                      >
-                        <SelectValue placeholder={label} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+    <Select
+      value={getValueByPath(formData, name) || ""}
+      onValueChange={(value) => handleSelectChange(name, value)}
+    >
+      <SelectTrigger
+        id={name}
+        className="data-[placeholder]:text-gray-600"
+      >
+        <SelectValue placeholder={label}>
+          {(() => {
+            const selectedValue = getValueByPath(formData, name);
+            const matchedOption = options.find((opt) =>
+              typeof opt === "string"
+                ? opt === selectedValue
+                : opt.value === selectedValue
+            );
+            return typeof matchedOption === "string"
+              ? matchedOption
+              : matchedOption?.label || label;
+          })()}
+        </SelectValue>
+      </SelectTrigger>
+
+      <SelectContent>
+        {options.map((opt) => {
+          const value = typeof opt === "string" ? opt : opt.value;
+          const labelText = typeof opt === "string" ? opt : opt.label;
+          return (
+            <SelectItem key={value} value={value}>
+              {labelText}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+  </div>
+))}
+
 
                 <div className="md:col-span-2">
                   <label
