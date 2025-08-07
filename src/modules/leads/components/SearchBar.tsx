@@ -36,12 +36,14 @@ interface SearchBarLeadsProps {
   onValueChange: (value: string) => void;
   clearFilters: () => void;
   selectedIds: string[];
+  onTransferComplete: (value: string) => void;
 }
 
 export default function SearchBarLeads({
   searchValue,
   onSearchChange,
   selectedIds,
+  onTransferComplete,
 }: SearchBarLeadsProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -81,9 +83,7 @@ export default function SearchBarLeads({
 
       setOpen(false);
 
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      onTransferComplete(selectedUser._id);
     } catch (error: any) {
       console.error("Transfer lead failed:", error);
       const message =
@@ -104,9 +104,7 @@ export default function SearchBarLeads({
 
       setOpenGroup(false);
 
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      onTransferComplete(selectedGroup._id);
     } catch (error: any) {
       const message =
         error.response?.data?.error || error.message || "Something went wrong";

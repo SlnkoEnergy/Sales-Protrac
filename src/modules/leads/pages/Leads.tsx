@@ -8,7 +8,7 @@ export default function Leads() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedStages, setSelectedStages] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
- 
+  const [refreshKey, setRefreshKey] = useState(0);
   const handleClickFilter = () => {
     setSelectedStages("");
     setSearchParams((prev) => {
@@ -28,6 +28,9 @@ export default function Leads() {
     setSelectedStages(stageFromURL);
   }, [searchParams]);
 
+  const handleTransferComplete = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   return (
     <div className="w-full h-full">
@@ -38,10 +41,16 @@ export default function Leads() {
         onValueChange={handleValueChange}
         clearFilters={handleClickFilter}
         selectedIds={selectedIds}
+        onTransferComplete={handleTransferComplete}
       />
 
       <div className="h-[calc(100%-4rem)] p-4 overflow-auto">
-        <DataTable group_id="" search={searchQuery} onSelectionChange={setSelectedIds}/>
+        <DataTable
+          key={refreshKey}
+          group_id=""
+          search={searchQuery}
+          onSelectionChange={setSelectedIds}
+        />
       </div>
     </div>
   );
