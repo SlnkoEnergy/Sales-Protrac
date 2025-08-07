@@ -13,7 +13,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeft, Lock, Mail, MapPin, Phone, Plus } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-  import { getLeadbyId, deleteLead, getHandoverByLeadId } from "@/services/leads/LeadService";
+import {
+  getLeadbyId,
+  deleteLead,
+  getHandoverByLeadId,
+} from "@/services/leads/LeadService";
 import { Badge } from "@/components/ui/badge";
 import NotesCard from "../components/NotesCard";
 import TasksCard from "../components/TaskCard";
@@ -118,6 +122,7 @@ export default function LeadProfile() {
   const [showTaskModal, setShowTaskModal] = React.useState(false);
   const [showNotesModal, setShowNotesModal] = React.useState(false);
   const [selectedDoc, setSelectedDoc] = React.useState<string>("");
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const [files, setFiles] = React.useState<
     { type: string; file: File | null }[]
   >([]);
@@ -162,7 +167,7 @@ export default function LeadProfile() {
     };
 
     fetchLeads();
-  }, [id]);
+  }, [id, refreshKey]);
 
   React.useEffect(() => {
     const fetchTask = async () => {
@@ -178,8 +183,6 @@ export default function LeadProfile() {
     };
     fetchTask();
   }, [id]);
-
-  console.log(data);
 
   const handleDelete = async () => {
     try {
@@ -231,7 +234,7 @@ export default function LeadProfile() {
     }
   };
 
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   const fullComment = data?.comments || "";
   const charLimit = 15;
@@ -239,35 +242,36 @@ export default function LeadProfile() {
   const displayedComment = isTruncated
     ? fullComment.slice(0, charLimit) + "..."
     : fullComment;
-
-  
-React.useEffect(() => {
-  
-  const fetchLeads = async () => {
-    try {
-      const params = {
-        leadId: data?.id,
-      };
-      const res = await getHandoverByLeadId(params);
-
-      const locked = res?.data?.is_locked;
-      const status = res?.data?.status_of_handoversheet;
-      console.log({locked})
-      if (locked !== undefined) {
-        setIsLocked(locked === "locked");
-      }
-      if(status === "Rejected"){
-        setUpdate(status === "Rejected");
-      }
-    } catch (err) {
-      console.error("Error fetching leads:", err);
-    }
+  const handleTransferComplete = () => {
+    setRefreshKey((prev) => prev + 1);
   };
 
-  if (data?.id) {
-    fetchLeads();
-  }
-}, [data]);
+  React.useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        const params = {
+          leadId: data?.id,
+        };
+        const res = await getHandoverByLeadId(params);
+
+        const locked = res?.data?.is_locked;
+        const status = res?.data?.status_of_handoversheet;
+        console.log({ locked });
+        if (locked !== undefined) {
+          setIsLocked(locked === "locked");
+        }
+        if (status === "Rejected") {
+          setUpdate(status === "Rejected");
+        }
+      } catch (err) {
+        console.error("Error fetching leads:", err);
+      }
+    };
+
+    if (data?.id) {
+      fetchLeads();
+    }
+  }, [data]);
 
   return (
     <div className="p-6 space-y-4">
@@ -305,9 +309,7 @@ React.useEffect(() => {
           <div className="flex gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                {["admin", "Deepak Manodi", "IT Team"].includes(
-                  user?.name
-                ) && (
+                {["admin", "Deepak Manodi", "IT Team"].includes(user?.name) && (
                   <Button
                     className="cursor-pointer"
                     variant="destructive"
@@ -420,7 +422,9 @@ React.useEffect(() => {
                   </Avatar>
                   <div className="flex gap-2 justify-evenly">
                     <div className="flex flex-col gap-2">
-                      <CardTitle className="capitalize max-w-[14vw]">{data?.name}</CardTitle>
+                      <CardTitle className="capitalize max-w-[14vw]">
+                        {data?.name}
+                      </CardTitle>
                       {data?.contact_details?.email && (
                         <CardDescription className="flex items-center gap-2 max-w-[14vw]">
                           <Mail size={16} />{" "}
@@ -467,8 +471,7 @@ React.useEffect(() => {
                   </p>
                   {data?.group_code && (
                     <p className="text-sm text-gray-800">
-                      <strong>Group :</strong>{" "}
-                      {data?.group_code || "N/A"} (
+                      <strong>Group :</strong> {data?.group_code || "N/A"} (
                       {data?.group_name || "N/A"})
                     </p>
                   )}
@@ -619,15 +622,14 @@ React.useEffect(() => {
               <div className="w-full h-16/100">
                 {(data?.current_assigned?.user_id?._id ===
                   getUserIdFromToken() ||
-                  ["admin", "Deepak Manodi"].includes(
-                    user?.name
-                  )) && (
+                  ["admin", "Deepak Manodi"].includes(user?.name)) && (
                   <LeadDocuments
                     data={data}
                     files={files}
                     setFiles={setFiles}
                     selectedDoc={selectedDoc}
                     setSelectedDoc={setSelectedDoc}
+                    onTransferComplete={handleTransferComplete}
                   />
                 )}
               </div>
