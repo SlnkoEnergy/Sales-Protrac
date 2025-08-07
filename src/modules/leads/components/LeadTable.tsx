@@ -137,7 +137,7 @@ export function DataTable({
   const [total, setTotal] = React.useState(0);
   const [users, setUsers] = React.useState([]);
   const [uniqueState, setUniqueState] = React.useState<string[]>([]);
-  console.log({ uniqueState });
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const [stageCounts, setStageCounts] = React.useState<{
     initial?: number;
     "follow up"?: number;
@@ -189,6 +189,9 @@ export function DataTable({
       );
     },
   };
+  const handleTransferComplete = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
 
   const columns: ColumnDef<Lead>[] = [
     {
@@ -218,6 +221,7 @@ export function DataTable({
           leadId={row.original._id}
           currentStatus={row.original.current_status?.name}
           expected_closing_date={row.original?.expected_closing_date}
+          onTransferCompleteStatus={handleTransferComplete}
         />
       ),
     },
@@ -393,39 +397,39 @@ export function DataTable({
       },
     },
     {
-  accessorKey: "status_of_handoversheet",
-  header: "Handover",
-  cell: ({ row }) => {
-    const leadId = row.original?._id;
-    const status = row.original?.current_status?.name;
-    const handoverStatus = row.original?.status_of_handoversheet;
+      accessorKey: "status_of_handoversheet",
+      header: "Handover",
+      cell: ({ row }) => {
+        const leadId = row.original?._id;
+        const status = row.original?.current_status?.name;
+        const handoverStatus = row.original?.status_of_handoversheet;
 
-    const handleClick = () => {
-      navigate(`/leadProfile?id=${leadId}&tab=handover`);
-    };
+        const handleClick = () => {
+          navigate(`/leadProfile?id=${leadId}&tab=handover`);
+        };
 
-    if (status !== "won") {
-      return <div className="text-gray-400 text-sm ">Waiting for won</div>;
-    }
-
-    return (
-      <div
-        className="flex cursor-pointer"
-        onClick={handleClick}
-        title={
-          handoverStatus === "false" || handoverStatus === "Rejected"
-            ? "Add Handover"
-            : "View Handover"
+        if (status !== "won") {
+          return <div className="text-gray-400 text-sm ">Waiting for won</div>;
         }
-      >
-        {handoverStatus === "false" || handoverStatus === "Rejected" ? (
-          <PencilIcon className="w-4 h-4 text-gray-500" />
-        ) : (
-          <EyeIcon className="w-4 h-4 text-green-600" />
-        )}
-      </div>
-    );
-  },
+
+        return (
+          <div
+            className="flex cursor-pointer"
+            onClick={handleClick}
+            title={
+              handoverStatus === "false" || handoverStatus === "Rejected"
+                ? "Add Handover"
+                : "View Handover"
+            }
+          >
+            {handoverStatus === "false" || handoverStatus === "Rejected" ? (
+              <PencilIcon className="w-4 h-4 text-gray-500" />
+            ) : (
+              <EyeIcon className="w-4 h-4 text-green-600" />
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "current_assigned?.user_id?.name",
@@ -489,7 +493,7 @@ export function DataTable({
   const NameFilter = searchParams.get("name");
 
   const { user } = useAuth();
-  
+
   React.useEffect(() => {
     setIsLoading(true);
   }, [stageFromUrl]);
@@ -542,7 +546,10 @@ export function DataTable({
     LeadAgingFilter,
     InActiveDays,
     NameFilter,
+    refreshKey,
   ]);
+
+  console.log({ refreshKey });
 
   React.useEffect(() => {
     const fetchLeadCounts = async () => {
@@ -862,58 +869,59 @@ export function DataTable({
               {/* Handover Filter */}
               {(tab === "" || tab === "won") && (
                 <DropdownMenuSub>
-  <DropdownMenuSubTrigger className="cursor-pointer">
-    Handover Filter
-  </DropdownMenuSubTrigger>
-  <DropdownMenuSubContent>
-    <DropdownMenuRadioGroup
-      value={handoverStatus}
-      onValueChange={(value) => {
-        setHandoverStatus(value);
+                  <DropdownMenuSubTrigger className="cursor-pointer">
+                    Handover Filter
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup
+                      value={handoverStatus}
+                      onValueChange={(value) => {
+                        setHandoverStatus(value);
 
-        const newParams = new URLSearchParams(searchParams.toString());
-        if (value) {
-          newParams.set("handover", value);
-        } else {
-          newParams.delete("handover");
-        }
-        setSearchParams(newParams);
-      }}
-    >
-      <DropdownMenuRadioItem
-        className="cursor-pointer"
-        value="pending"
-      >
-        Pending
-      </DropdownMenuRadioItem>
-      <DropdownMenuRadioItem
-        className="cursor-pointer"
-        value="inprocess"
-      >
-        In-Process
-      </DropdownMenuRadioItem>
-      <DropdownMenuRadioItem
-        className="cursor-pointer"
-        value="completed"
-      >
-        Completed
-      </DropdownMenuRadioItem>
-      <DropdownMenuRadioItem
-        value=""
-        className="text-red-500 hover:bg-red-100 cursor-pointer"
-        onClick={() => {
-          const updated = new URLSearchParams(searchParams);
-          updated.delete("handover");
-          updated.set("page", "1");
-          setSearchParams(updated);
-        }}
-      >
-        Clear Filter
-      </DropdownMenuRadioItem>
-    </DropdownMenuRadioGroup>
-  </DropdownMenuSubContent>
-</DropdownMenuSub>
-
+                        const newParams = new URLSearchParams(
+                          searchParams.toString()
+                        );
+                        if (value) {
+                          newParams.set("handover", value);
+                        } else {
+                          newParams.delete("handover");
+                        }
+                        setSearchParams(newParams);
+                      }}
+                    >
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="pending"
+                      >
+                        Pending
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="inprocess"
+                      >
+                        In-Process
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        className="cursor-pointer"
+                        value="completed"
+                      >
+                        Completed
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value=""
+                        className="text-red-500 hover:bg-red-100 cursor-pointer"
+                        onClick={() => {
+                          const updated = new URLSearchParams(searchParams);
+                          updated.delete("handover");
+                          updated.set("page", "1");
+                          setSearchParams(updated);
+                        }}
+                      >
+                        Clear Filter
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               )}
 
               {/* Lead Aging Filter */}
