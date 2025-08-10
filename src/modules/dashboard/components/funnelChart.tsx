@@ -25,7 +25,7 @@ const FunnelChart = () => {
 
         const funnelData = [
           ["Initial Leads", data.initial?.count ?? 0],
-          ["Follow Up", data.followup?.count ?? 0],
+         ["Follow Up", data["follow up"]?.count ?? 0],
           ["Warm Leads", data.warm?.count ?? 0],
           ["Closed Leads", data.won?.count ?? 0],
           ["Dead Leads", data.dead?.count ?? 0],

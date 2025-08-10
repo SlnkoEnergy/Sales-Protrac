@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Banknote, User, BadgePercent, ActivitySquare } from "lucide-react";
+import { Banknote, User, BadgePercent, ActivitySquare, LucideBellElectric, BellElectric } from "lucide-react";
 import StatCard from "@/components/ui/statrCard";
 import { getSummary } from "@/services/leads/Dashboard";
 import { useDateFilter } from "@/modules/dashboard/components/DateFilterContext";
@@ -61,8 +61,8 @@ export default function DashboardStats() {
         />
 
         <StatCard
-          icon={<User size={20} />}
-          label="ASSIGNED TASKS"
+          icon={<BellElectric size={20} />}
+          label="Total MW CLOSED"
           value={stats.assigned_tasks.toString()}
           trend={{
             value: `${Math.abs(stats.assigned_tasks_change_percentage).toFixed(2)}%`,
