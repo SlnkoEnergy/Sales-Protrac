@@ -21,8 +21,8 @@ export default function DashboardStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const startDate = format(dateRange[0].startDate, "yyyy-MM-dd");
-        const endDate = format(dateRange[0].endDate, "yyyy-MM-dd");
+        const startDate =(dateRange[0].startDate);
+        const endDate = (dateRange[0].endDate);
 
         const data = await getSummary({ startDate, endDate });
 

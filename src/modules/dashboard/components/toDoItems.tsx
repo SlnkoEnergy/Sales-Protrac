@@ -36,7 +36,7 @@ export default function TodoList() {
     try {
       const res = await getToDoList();
       const mappedData: TodoItem[] = (res.data ?? []).map((item: any) => ({
-        id: item._id,
+        id: item?._id,
         title: item.title,
         date: item.updatedAt,
         by: item.user_id?.name ?? "N/A",
@@ -52,19 +52,40 @@ export default function TodoList() {
     setSelectedTodo(todo);
     setShowConfirm(true);
   };
+  
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
 
   const handleConfirmYes = () => {
     setShowConfirm(false);
     setShowRemarksDialog(true);
   };
 
-  const {user} = useAuth();
   const handleSubmitRemarks = async () => {
     try {
       await updateStatus({
         _id: selectedTodo?.id,
         status: "completed",
-        user_id: user._id,
+        user_id: getUserIdFromToken(),
         remarks: remarks,
       });
 
