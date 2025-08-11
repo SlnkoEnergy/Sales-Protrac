@@ -49,25 +49,23 @@ export function LoginForm({
   const from = location.state?.from?.pathname || "/";
 
   // useEffect(() => {
-  //   navigator.geolocation.getCurrentPosition(
-  //     async (position) => {
-  //       const latitude = position.coords.latitude;
-  //       const longitude = position.coords.longitude;
+  //   navigator.geolocation.getCurrentPosition(async (position) => {
+  //     const latitude = position.coords.latitude;
+  //     const longitude = position.coords.longitude;
 
-  //       let fullAddress = "";
-  //       try {
-  //         const res = await fetch(
-  //           `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-  //         );
-  //         const data = await res.json();
-  //         fullAddress = data.display_name || "";
-  //       } catch (err) {
-  //         toast.error("Reverse geocoding failed");
-  //       }
-
-  //       setGeoInfo({ latitude, longitude, fullAddress });
+  //     let fullAddress = "";
+  //     try {
+  //       const res = await fetch(
+  //         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+  //       );
+  //       const data = await res.json();
+  //       fullAddress = data.display_name || "";
+  //     } catch (err) {
+  //       toast.error("Reverse geocoding failed");
   //     }
-  //   );
+
+  //     setGeoInfo({ latitude, longitude, fullAddress });
+  //   });
   // }, []);
 
   const onSubmit = async (data: LoginFormInputs) => {

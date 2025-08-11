@@ -226,7 +226,7 @@ export default function Header() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="ml-2 mt-1"
+                        className="ml-2 mt-1 cursor-pointer"
                         onClick={() => handleDelete(note._id)}
                       >
                         <Trash className="w-4 h-4 text-red-500" />
