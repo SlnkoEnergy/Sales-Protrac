@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useAuth } from "@/services/context/AuthContext";
 
 interface TodoItem {
   id: string;
@@ -35,7 +36,7 @@ export default function TodoList() {
     try {
       const res = await getToDoList();
       const mappedData: TodoItem[] = (res.data ?? []).map((item: any) => ({
-        id: item._id,
+        id: item?._id,
         title: item.title,
         date: item.updatedAt,
         by: item.user_id?.name ?? "N/A",
@@ -51,18 +52,32 @@ export default function TodoList() {
     setSelectedTodo(todo);
     setShowConfirm(true);
   };
+  
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
 
   const handleConfirmYes = () => {
     setShowConfirm(false);
     setShowRemarksDialog(true);
-  };
-
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
   };
 
   const handleSubmitRemarks = async () => {
@@ -70,7 +85,7 @@ export default function TodoList() {
       await updateStatus({
         _id: selectedTodo?.id,
         status: "completed",
-        user_id: getCurrentUser()._id,
+        user_id: getUserIdFromToken(),
         remarks: remarks,
       });
 

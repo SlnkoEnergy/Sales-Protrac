@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, ChevronDown, ChevronUp, Pencil, UserIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import AddTask from "@/components/task/AddTask";
 import { getTaskById, updateStatus } from "@/services/task/Task";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function TasksCard({
   id,
@@ -43,7 +44,7 @@ export default function TasksCard({
   const [newRemarks, setNewRemarks] = useState("");
 
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -64,14 +65,7 @@ export default function TasksCard({
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
-
+  const {user} = useAuth();
   const userId = getUserIdFromToken();
 
   const handleChangeStatus = async () => {
@@ -85,7 +79,7 @@ export default function TasksCard({
       updatedAt: now.toISOString(),
       user_id: {
         _id: userId,
-        name: getCurrentUser().name || "Unknown",
+        name: user?.name || "Unknown",
       },
     };
 
@@ -336,7 +330,7 @@ export default function TasksCard({
                                         className="text-gray-600"
                                       />
                                       <span className="text-sm">
-                                        {user.name}
+                                        {user?.name}
                                       </span>
                                     </div>
                                   ))}

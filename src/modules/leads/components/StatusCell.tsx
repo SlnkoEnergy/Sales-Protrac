@@ -21,12 +21,14 @@ interface Props {
   leadId: string;
   currentStatus: string;
   expected_closing_date?: Date;
+  onTransferCompleteStatus: (value: string) => void;
 }
 
 const StatusCell: FC<Props> = ({
   leadId,
   currentStatus,
   expected_closing_date,
+  onTransferCompleteStatus,
 }) => {
   const [openModal, setOpenModal] = useState<"LOI" | "LOA" | "PPA" | null>(
     null
@@ -86,9 +88,7 @@ const StatusCell: FC<Props> = ({
       );
       toast.success(`File uploaded & status updated to ${stage}`);
       setOpenModal(null);
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      onTransferCompleteStatus(leadId);
     } catch (error: any) {
       toast.error(error.message || "❌ Upload failed");
     } finally {
@@ -129,9 +129,7 @@ const StatusCell: FC<Props> = ({
       toast.success(`Status updated to ${selectedStatus}`);
       setStatusDialogOpen(false);
       setRemarks("");
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      onTransferCompleteStatus(leadId);
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -272,7 +270,10 @@ const StatusCell: FC<Props> = ({
             >
               Cancel
             </Button>
-            <Button onClick={submitStatusUpdate} className="bg-[#214b7b] cursor-pointer">
+            <Button
+              onClick={submitStatusUpdate}
+              className="bg-[#214b7b] cursor-pointer"
+            >
               Submit
             </Button>
           </DialogFooter>
@@ -314,7 +315,6 @@ const StatusCell: FC<Props> = ({
               disabled={uploading || !selectedFile}
               onClick={handleFileUpload}
               className="bg-[#214b7b] cursor-pointer"
-
             >
               {uploading ? "Uploading..." : "Upload"}
             </Button>

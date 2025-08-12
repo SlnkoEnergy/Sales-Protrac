@@ -33,61 +33,39 @@ export default function SalesOverviewChart() {
   }, [dateRange]);
 
   const fetchWonAndLostData = async () => {
-    try {
-      const data = await getWonAndLost({
-        startDate: dateRange[0].startDate,
-        endDate: dateRange[0].endDate,
-      });
+  try {
+    const data = await getWonAndLost({
+      startDate: dateRange[0].startDate,
+      endDate: dateRange[0].endDate,
+    });
 
-      setStats([
-        { label: "Number of Leads", value: data.total_leads ?? 0 },
-        { label: "Active Leads", value: data.active_leads ?? 0 },
-        {
-          label: "Closed Leads",
-          value: data.won_leads ?? 0,
-          className: "text-green-600",
-        },
-        {
-          label: "Lost Leads",
-          value: data.lost_leads ?? 0,
-          className: "text-red-600",
-        },
-      ]);
+    setStats([
+      { label: "Number of Leads", value: data.total_leads ?? 0 },
+      { label: "Active Leads", value: data.active_leads ?? 0 },
+      {
+        label: "Closed Leads",
+        value: data.won_leads ?? 0,
+        className: "text-green-600",
+      },
+      {
+        label: "Lost Leads",
+        value: data.lost_leads ?? 0,
+        className: "text-red-600",
+      },
+    ]);
 
-      const allMonths = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
+    // Use only months from API response
+    const formattedChartData = (data.monthly_data ?? []).map((item) => ({
+      month: item.month,
+      closed: item.won_percentage ?? 0,
+      lost: item.lost_percentage ?? 0,
+    }));
 
-      const apiDataMap = {};
-      (data.monthly_data ?? []).forEach((item) => {
-        apiDataMap[item.month] = {
-          closed: item.won_percentage ?? 0,
-          lost: item.lost_percentage ?? 0,
-        };
-      });
-
-      const formattedChartData = allMonths.map((month) => ({
-        month,
-        closed: apiDataMap[month]?.closed ?? 0,
-        lost: apiDataMap[month]?.lost ?? 0,
-      }));
-
-      setChartData(formattedChartData);
-    } catch (error) {
-      console.error("Error fetching Won & Lost data:", error);
-    }
-  };
+    setChartData(formattedChartData);
+  } catch (error) {
+    console.error("Error fetching Won & Lost data:", error);
+  }
+};
 
   const handleNavigate = (type: "won" | "dead") => {
     const fromDate = dateRange[0].startDate.toISOString();

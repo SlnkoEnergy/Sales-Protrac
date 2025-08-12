@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { startOfDay, subDays, subMonths, subYears } from "date-fns";
 
 interface DateRangeType {
@@ -33,10 +33,16 @@ const filters: FilterItem[] = [
   { label: "Custom", range: null },
 ];
 
-const DateFilterContext = createContext<DateFilterContextType | undefined>(undefined);
+const DateFilterContext = createContext<DateFilterContextType | undefined>(
+  undefined
+);
 
-export const DateFilterProvider = ({ children }: { children: React.ReactNode }) => {
-  const [selectedFilter, _setSelectedFilter] = useState("Today");
+export const DateFilterProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [selectedFilter, _setSelectedFilter] = useState("1 Year");
   const [dateRange, setDateRange] = useState<DateRangeType[]>([
     {
       startDate: startOfDay(new Date()),
@@ -60,6 +66,10 @@ export const DateFilterProvider = ({ children }: { children: React.ReactNode }) 
       }
     }
   };
+
+  useEffect(() => {
+    setSelectedFilter("1 Year");
+  }, []);
 
   return (
     <DateFilterContext.Provider

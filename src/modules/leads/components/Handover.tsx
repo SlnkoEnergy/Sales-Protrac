@@ -20,6 +20,7 @@ import {
 } from "@/services/leads/LeadService";
 import { File, User2, Workflow } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/services/context/AuthContext";
 
 type HandoverFormRef = {
   submit: () => void;
@@ -128,21 +129,15 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   const [handover, setHandover] = useState();
   const id = searchParams.get("id");
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const { user } = useAuth();
 
   useImperativeHandle(ref, () => ({
     submit: () => handleSubmit(),
     resetForm: () => {
       setFormData(initialFormData);
     },
-    getStatus: () => handover?.is_locked,
-    updated: () => handover?.status_of_handoversheet,
+    getStatus: () => formData?.is_locked,
+    updated: () => formData?.status_of_handoversheet,
     update: () => handleEdit(),
   }));
 
@@ -177,7 +172,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
     fetchLeads();
   }, [data]);
-
 
   const [formData, setFormData] = useState({
     id: "",
@@ -227,6 +221,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       remarks_for_slnko: "",
       submitted_by_BD: "",
     },
+    status_of_handoversheet: "",
+    is_locked: "",
     submitted_by: "",
   });
 
@@ -416,11 +412,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         other_details: originalOtherDetails,
       } = formData;
 
-      const user = getCurrentUser();
+      const users = user;
 
       const other_details = {
         ...originalOtherDetails,
-        submitted_by_BD: user?.name || "",
+        submitted_by_BD: users?.name || "",
       };
 
       const payload = {
@@ -431,7 +427,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         commercial_details,
         other_details,
         invoice_detail: {},
-        submitted_by: user?.name || "",
+        submitted_by: users?.name || "",
         status_of_handoversheet: "draft",
         is_locked: "locked",
       };
@@ -450,13 +446,23 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       );
 
       toast.success("Handover Sheet Submitted Successfully");
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      setFormData({
+        id: payload.id,
+        customer_details: payload.customer_details,
+        order_details: payload.order_details,
+        project_detail: payload.project_detail,
+        commercial_details: payload.commercial_details,
+        other_details: payload.other_details,
+        status_of_handoversheet: payload.status_of_handoversheet,
+        is_locked: payload.is_locked,
+        submitted_by: payload.submitted_by,
+      });
     } catch (error: any) {
       toast.error("Error in Submitting Handover Sheet");
     }
   };
+
+  console.log({ formData });
 
   const handleEdit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -488,9 +494,15 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       const response = await editHandover(handover?._id, payload);
       toast.success("Handover Sheet Updated Successfully");
 
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      setFormData({
+        id: payload.id,
+        customer_details: payload.customer_details,
+        order_details: payload.order_details,
+        project_detail: payload.project_detail,
+        commercial_details: payload.commercial_details,
+        other_details: payload.other_details,
+        submitted_by: payload.submitted_by,
+      });
     } catch (error: any) {
       toast.error(error.message || "Error in Updating Handover Sheet");
     }
@@ -727,23 +739,27 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                   {
                     name: "order_details.type_business",
                     label: "Type of Business *",
-                    options: ["KUSUM", "Government", "Prebid", "Others"],
+                    options: ["Kusum", "Government", "Prebid", "Others"],
                   },
                   {
                     name: "project_detail.project_component",
                     label: "Project Component",
-                    options: ["Kusum A", "Kusum C", "Kusum C2", "Other"],
+                    options: [
+                      { label: "Kusum A", value: "KA" },
+                      { label: "Kusum C", value: "KC" },
+                      { label: "Kusum C2", value: "KC2" },
+                      { label: "Other", value: "Other" },
+                    ],
                   },
                   {
                     name: "commercial_details.type",
                     label: "Type",
                     options: ["CapEx", "Resco", "OpEx", "Retainership"],
                   },
-
                   {
                     name: "project_detail.work_by_slnko",
                     label: "Work By Slnko *",
-                    options: ["ENG", "EPCM", "PMC", "EP", "ALL"],
+                    options: ["ENG", "EPMC", "PMC", "EP", "ALL"],
                   },
                   {
                     name: "project_detail.module_type",
@@ -788,6 +804,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                     >
                       {label}
                     </label>
+
                     <Select
                       value={getValueByPath(formData, name) || ""}
                       onValueChange={(value) => handleSelectChange(name, value)}
@@ -796,14 +813,36 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                         id={name}
                         className="data-[placeholder]:text-gray-600"
                       >
-                        <SelectValue placeholder={label} />
+                        <SelectValue placeholder={label}>
+                          {(() => {
+                            const selectedValue = getValueByPath(
+                              formData,
+                              name
+                            );
+                            const matchedOption = options.find((opt) =>
+                              typeof opt === "string"
+                                ? opt === selectedValue
+                                : opt.value === selectedValue
+                            );
+                            return typeof matchedOption === "string"
+                              ? matchedOption
+                              : matchedOption?.label || label;
+                          })()}
+                        </SelectValue>
                       </SelectTrigger>
+
                       <SelectContent>
-                        {options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
+                        {options.map((opt) => {
+                          const value =
+                            typeof opt === "string" ? opt : opt.value;
+                          const labelText =
+                            typeof opt === "string" ? opt : opt.label;
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {labelText}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

@@ -27,18 +27,20 @@ import { uploadDocuments } from "@/services/leads/LeadService";
 import DocumentViewerModal from "@/components/lead/DocumentViewer";
 import { Input } from "@/components/ui/input";
 
-
-export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files, setFiles }) {
-
+export default function LeadDocuments({
+  data,
+  selectedDoc,
+  setSelectedDoc,
+  files,
+  setFiles,
+  onTransferComplete,
+}) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedViewDoc, setSelectedViewDoc] = useState<string>("");
   const [customDocName, setCustomDocName] = useState("");
   const [expectedDate, setExpectedDate] = useState<Date | null>(null);
-
-
-
 
   const handleDelete = (index: number) => {
     const updated = [...files];
@@ -64,8 +66,7 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
     const isExpectedDateValid =
       expectedDate instanceof Date && !isNaN(expectedDate.getTime());
 
-    const isClosingDateInvalid =
-      !closingDate || isNaN(closingDate.getTime());
+    const isClosingDateInvalid = !closingDate || isNaN(closingDate.getTime());
 
     if (
       isClosingDateInvalid &&
@@ -90,24 +91,20 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
       console.log({ customDocName });
       toast.success("✅ File Uploaded Successfully");
       setSelectedFile(null);
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+
+      onTransferComplete(data._id);
     } catch (error) {
       toast.error("❌ Upload failed.");
     } finally {
       setUploading(false);
     }
   };
-
-
-  console.log({ data });
-
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle className="text-lg font-medium">Lead Documents History</CardTitle>
-
+        <CardTitle className="text-lg font-medium">
+          Lead Documents History
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="max-h-64 overflow-hidden">
@@ -167,7 +164,7 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
                       className="w-[160px]"
                       value={
                         expectedDate instanceof Date &&
-                          !isNaN(expectedDate.getTime())
+                        !isNaN(expectedDate.getTime())
                           ? expectedDate.toISOString().split("T")[0]
                           : ""
                       }
@@ -199,7 +196,7 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
                   onClick={() =>
                     document
                       .querySelectorAll("input[type='file']")
-                    [index]?.click()
+                      [index]?.click()
                   }
                 />
 
@@ -218,10 +215,16 @@ export default function LeadDocuments({ data, selectedDoc, setSelectedDoc, files
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction className="cursor-pointer bg-[#214b7b]" onClick={() => handleDelete(index)}>
+                      <AlertDialogAction
+                        className="cursor-pointer bg-[#214b7b]"
+                        onClick={() => handleDelete(index)}
+                      >
                         Delete
                       </AlertDialogAction>
-                      <AlertDialogCancel className="cursor-pointer" onClick={() => setEditIndex(null)}>
+                      <AlertDialogCancel
+                        className="cursor-pointer"
+                        onClick={() => setEditIndex(null)}
+                      >
                         Cancel
                       </AlertDialogCancel>
                     </AlertDialogFooter>

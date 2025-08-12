@@ -27,6 +27,7 @@ import {
 import { useEffect, useState } from "react";
 import { getAllUser } from "@/services/task/Task";
 import { attachToGroup, getAllGroupName } from "@/services/group/GroupService";
+import { useAuth } from "@/services/context/AuthContext";
 
 interface SearchBarLeadsProps {
   searchValue: string;
@@ -35,12 +36,14 @@ interface SearchBarLeadsProps {
   onValueChange: (value: string) => void;
   clearFilters: () => void;
   selectedIds: string[];
+  onTransferComplete: (value: string) => void;
 }
 
 export default function SearchBarLeads({
   searchValue,
   onSearchChange,
   selectedIds,
+  onTransferComplete,
 }: SearchBarLeadsProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -66,13 +69,7 @@ export default function SearchBarLeads({
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const { user } = useAuth();
 
   const handleTransferLead = async () => {
     if (!selectedIds || !selectedUser) {
@@ -86,9 +83,7 @@ export default function SearchBarLeads({
 
       setOpen(false);
 
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      onTransferComplete(selectedUser._id);
     } catch (error: any) {
       console.error("Transfer lead failed:", error);
       const message =
@@ -109,9 +104,7 @@ export default function SearchBarLeads({
 
       setOpenGroup(false);
 
-      setTimeout(() => {
-        location.reload();
-      }, 300);
+      onTransferComplete(selectedGroup._id);
     } catch (error: any) {
       const message =
         error.response?.data?.error || error.message || "Something went wrong";
@@ -143,21 +136,9 @@ export default function SearchBarLeads({
     fetchData();
   }, []);
 
-  console.log("Data:", data);
-
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center gap-2 w-full max-w-md">
-        <div className="flex flex-cols-2 justify-between">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => (window.location.href = "/")}
-            className="cursor-pointer"
-          >
-            <ChevronLeft />
-          </Button>
-        </div>
         <div className="relative bg-white w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -184,11 +165,13 @@ export default function SearchBarLeads({
           + Add Group
         </span>
         {selectedIds.length > 0 &&
-          (getCurrentUser().name === "admin" ||
-            getCurrentUser().name === "IT Team" ||
-            getCurrentUser().name === "Deepak Manodi") && (
+          (user?.name === "admin" ||
+            user?.name === "IT Team" ||
+            user?.name === "Deepak Manodi" ||
+            user?.name === "Prachi Singh"
+          ) && (
             <div className="flex items-center gap-1">
-             <File size={14}/>
+              <File size={14} />
               <span
                 className="cursor-pointer text-black hover:underline"
                 onClick={() => handleExportToCsv(selectedIds)}
@@ -226,18 +209,30 @@ export default function SearchBarLeads({
             <DialogTitle>Select Group to Transfer</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {data.map((group) => (
-              <div
-                key={group._id}
-                className="p-2 border rounded cursor-pointer hover:bg-gray-100"
-                onClick={() => {
-                  setSelectedGroup(group);
-                  setConfirmOpenGroup(true);
-                }}
-              >
-                {group.company_name}
-              </div>
-            ))}
+            {data
+              .filter((group) => {
+                const userName = user?.name;
+                const isAdmin =
+                  userName === "Admin" ||
+                  userName === "IT Team" ||
+                  userName === "Deepak Manodi";
+
+                if (isAdmin) return true;
+
+                return group.createdBy.name === userName;
+              })
+              .map((group) => (
+                <div
+                  key={group._id}
+                  className="p-2 border rounded cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                    setSelectedGroup(group);
+                    setConfirmOpenGroup(true);
+                  }}
+                >
+                  {group.group_name}
+                </div>
+              ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -280,7 +275,7 @@ export default function SearchBarLeads({
                   setConfirmOpen(true);
                 }}
               >
-                {user.name}
+                {user?.name}
               </div>
             ))}
           </div>

@@ -16,12 +16,6 @@ import { ChevronLeft, Mail, MapPin, Phone, RotateCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { getGroupById, updateGroupStatus } from "@/services/group/GroupService";
 import LeadsCard from "./LeadsCard";
 import EditGroupModal from "../../../modules/group/components/EditGroup";
@@ -31,6 +25,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useAuth } from "@/services/context/AuthContext";
 
 export type Group = {
   _id: string;
@@ -90,8 +85,9 @@ export default function GroupDetail() {
     fetchGroup();
   }, [id]);
 
+
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -112,13 +108,7 @@ export default function GroupDetail() {
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+ const {user} = useAuth();
   const nextStatus =
     data?.current_status?.status === "open" ? "closed" : "open";
 
@@ -288,24 +278,6 @@ export default function GroupDetail() {
             <p>
               <strong>Company:</strong> {data?.company_name}
             </p>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <p className="text-sm text-gray-700 cursor-default max-w-[300px]">
-                    <strong>Description:</strong> {displayedComment}
-                  </p>
-                </TooltipTrigger>
-                {isTruncated && (
-                  <TooltipContent side="bottom" align="start">
-                    <div className="whitespace-pre-wrap text-sm max-w-[300px]">
-                      {fullComment.split("\n").map((line, i) => (
-                        <div key={i}>{line}</div>
-                      ))}
-                    </div>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 items-start">
             <Separator />

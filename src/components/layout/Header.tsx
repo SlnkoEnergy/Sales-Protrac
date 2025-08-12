@@ -29,6 +29,7 @@ import {
 } from "../ui/dropdown-menu";
 import { logout } from "@/services/auth/Auth";
 import { NovuProvider, PopoverNotificationCenter } from "@novu/notification-center";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function Header() {
   const [showDrawer, setShowDrawer] = useState(false);
@@ -72,7 +73,6 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      // await logout();
       localStorage.clear();
       toast.success("You have been Logged Out");
       navigate("/login");
@@ -80,16 +80,19 @@ export default function Header() {
       toast.error('Logout Failed')
     }
   };
+  
+  const userData = useAuth();
+
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse user data:", error);
-      }
+    if (userData.user) {
+      setUser({
+        name: userData.user?.name,
+        emp_id: userData.user?.emp_id,
+      });
     }
-  }, []);
+  }, [userData.user]);
+
+
 
   const handleDelete = async (_id: string) => {
     try {
@@ -240,7 +243,7 @@ export default function Header() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="ml-2 mt-1"
+                        className="ml-2 mt-1 cursor-pointer"
                         onClick={() => handleDelete(note._id)}
                       >
                         <Trash className="w-4 h-4 text-red-500" />
@@ -331,7 +334,8 @@ export default function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+        </div>
+
 
       {/* Mobile Drawer */}
       {showDrawer && (

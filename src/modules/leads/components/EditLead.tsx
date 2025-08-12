@@ -14,6 +14,7 @@ import { getLeadbyId, editBdLead } from "@/services/leads/LeadService";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function Edit() {
   const [formData, setFormData] = useState<any>({});
@@ -34,13 +35,7 @@ export default function Edit() {
     setFormData((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const {user} = useAuth();
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -102,7 +97,7 @@ export default function Edit() {
         ppa: "",
         loa: "",
         other_remarks: "",
-        submitted_by: getCurrentUser().name,
+        submitted_by: user?.name,
         token_money: "",
         group: formData.groupName,
         reffered_by: subSource || "",

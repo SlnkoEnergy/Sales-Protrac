@@ -6,8 +6,11 @@ interface PrivateRouteProps {
   children: ReactElement;
 }
 
+// Check if running inside an iframe
+const isInIframe = () => window.self !== window.top;
+
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("authToken");
 
   if (!token) {
     return <Navigate to="/login" replace />;

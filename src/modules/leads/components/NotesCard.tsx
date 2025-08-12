@@ -33,18 +33,41 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/services/context/AuthContext";
 
 export default function NotesCard({ showNotesModal, setShowNotesModal}) {
   const [searchParams] = useSearchParams();
   const lead_id = searchParams.get("id");
-  const user_id = localStorage.getItem("userId");
+  
+   const getUserIdFromToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
+
+  const user_id = getUserIdFromToken();
 
   const [data, setData] = useState([]);
   const [description, setDescription] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
 
   const fetchNotes = async () => {
     try {
@@ -93,19 +116,12 @@ export default function NotesCard({ showNotesModal, setShowNotesModal}) {
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+ const {user} = useAuth();
 
   useEffect(() => {
     fetchNotes();
   }, [lead_id]);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const handleSubmit = async () => {
     if (!description.trim()) {
@@ -208,9 +224,9 @@ export default function NotesCard({ showNotesModal, setShowNotesModal}) {
                   )}
                 </div>
                 <div className="ml-auto flex gap-1">
-                  {(getCurrentUser().name === "admin" ||
-                    getCurrentUser().name === "superadmin" ||
-                    getCurrentUser().name === "Deepak Manodi") && (
+                  {(user?.name === "admin" ||
+                    user?.name === "superadmin" ||
+                    user?.name === "Deepak Manodi") && (
                       <Pencil
                         className="h-4 w-4 text-muted-foreground cursor-pointer"
                         onClick={() => handleEdit(note)}
@@ -218,9 +234,9 @@ export default function NotesCard({ showNotesModal, setShowNotesModal}) {
                     )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      {(getCurrentUser().name === "admin" ||
-                        getCurrentUser().name === "superadmin" ||
-                        getCurrentUser().name === "Deepak Manodi") && (
+                      {(user?.name === "admin" ||
+                        user?.name === "superadmin" ||
+                        user?.name === "Deepak Manodi") && (
                           <Trash
                             className="h-4 w-4 text-muted-foreground cursor-pointer"
                             onClick={() => setDeleteId(note._id)}

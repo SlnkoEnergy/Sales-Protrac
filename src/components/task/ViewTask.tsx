@@ -35,6 +35,7 @@ import {
 import { toast } from "sonner";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useAuth } from "@/services/context/AuthContext";
 export type Task = {
   _id: string;
   title: string;
@@ -87,7 +88,7 @@ export default function ViewTask() {
   };
 
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return null;
 
     try {
@@ -200,7 +201,7 @@ export default function ViewTask() {
                   <strong>Task Type:</strong>{" "}
                   <span className="capitalize">{data?.type}</span>
                 </p>
-               
+
                 <p>
                   <strong>Priority:</strong>{" "}
                   <span
@@ -227,36 +228,39 @@ export default function ViewTask() {
                 <p>
                   <strong>Description:</strong> {data?.description}
                 </p>
-               <p className="flex items-center gap-2">
-  <strong>Assignees:</strong>
+                <p className="flex items-center gap-2">
+                  <strong>Assignees:</strong>
 
-  {data?.assigned_to?.length > 0 && (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="flex items-center gap-1 cursor-pointer">
-          <UserIcon size={16} />
-          <span>{data.assigned_to[0]?.name}</span>
-          {data.assigned_to.length > 1 && (
-            <span className="text-xs bg-gray-200 rounded-full px-2">
-              +{data.assigned_to.length - 1}
-            </span>
-          )}
-        </span>
-      </TooltipTrigger>
+                  {data?.assigned_to?.length > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="flex items-center gap-1 cursor-pointer">
+                          <UserIcon size={16} />
+                          <span>{data.assigned_to[0]?.name}</span>
+                          {data.assigned_to.length > 1 && (
+                            <span className="text-xs bg-gray-200 rounded-full px-2">
+                              +{data.assigned_to.length - 1}
+                            </span>
+                          )}
+                        </span>
+                      </TooltipTrigger>
 
-      <TooltipContent side="bottom" className="p-2">
-        <div className="flex flex-col gap-1">
-          {data.assigned_to.map((user, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <UserIcon size={14} className="text-gray-500" />
-              <span className="text-sm">{user.name}</span>
-            </div>
-          ))}
-        </div>
-      </TooltipContent>
-    </Tooltip>
-  )}
-</p>
+                      <TooltipContent side="bottom" className="p-2">
+                        <div className="flex flex-col gap-1">
+                          {data.assigned_to.map((user, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2"
+                            >
+                              <UserIcon size={14} className="text-gray-500" />
+                              <span className="text-sm">{user?.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>

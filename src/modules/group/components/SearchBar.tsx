@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { exportToCsvGroup } from "@/services/group/GroupService";
+import { useAuth } from "@/services/context/AuthContext";
 
 interface SearchBarGroupProps {
   searchValue: string;
@@ -38,26 +39,10 @@ export default function SearchBarGroups({
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch {
-      return {};
-    }
-  };
+  const {user} = useAuth();
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center gap-2 w-full max-w-md">
-        <div className="flex flex-cols-2 justify-between">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => (window.location.href = "/")}
-            className="cursor-pointer"
-          >
-            <ChevronLeft />
-          </Button>
-        </div>
         <div className="relative bg-white w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -83,9 +68,9 @@ export default function SearchBarGroups({
         >
           + Add Group
         </span>
-        {(getCurrentUser().name === "admin" ||
-          getCurrentUser().name === "IT Team" ||
-          getCurrentUser().name === "Deepak Manodi") &&
+        {(user?.name === "admin" ||
+          user?.name === "IT Team" ||
+          user?.name === "Deepak Manodi") &&
           selectedIds.length > 0 && (
             <div className="flex items-center gap-1">
               <File size={14} />
