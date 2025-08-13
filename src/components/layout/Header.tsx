@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { logout } from "@/services/auth/Auth";
-import { NovuProvider, PopoverNotificationCenter } from "@novu/notification-center";
+import { NovuProvider, PopoverNotificationCenter, useNotifications } from "@novu/notification-center";
 import { useAuth } from "@/services/context/AuthContext";
 
 export default function Header() {
@@ -67,9 +67,9 @@ export default function Header() {
     fetchData();
   }, []);
 
-  useEffect(() =>{
+  useEffect(() => {
     setSubscribeId(ID);
-  },[])
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -80,7 +80,7 @@ export default function Header() {
       toast.error('Logout Failed')
     }
   };
-  
+
   const userData = useAuth();
 
   useEffect(() => {
@@ -120,6 +120,9 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const notification = useNotifications();
+  console.log(notification);
 
   return (
     <div className="bg-[#1F487C] w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md  top-0 z-50 relative">
@@ -261,11 +264,22 @@ export default function Header() {
         </div> */}
 
         <NovuProvider
-          subscriberId= {subscribeId}
+          subscriberId={subscribeId}
           applicationIdentifier="vHKf6fc5ojnD"
         >
           <div className="flex justify-end p-4">
-            <PopoverNotificationCenter colorScheme="light" position="bottom-end">
+            <PopoverNotificationCenter colorScheme="light" position="bottom-end"
+
+              onNotificationClick={(notification) => {
+                const link = notification?.payload?.link;
+                if (link) {
+                  console.log("hello", notification.payload.link);
+                  navigate(notification.payload.link);
+                }
+
+              }}
+
+            >
               {({ unseenCount }) => (
                 <Button variant="ghost" className="relative">
                   <Bell className="h-5 w-5" />
