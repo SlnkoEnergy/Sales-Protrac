@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { startOfDay, subDays, subMonths, subYears } from "date-fns";
 
 interface DateRangeType {
@@ -20,6 +20,8 @@ interface DateFilterContextType {
   showPicker: boolean;
   setShowPicker: React.Dispatch<React.SetStateAction<boolean>>;
   filters: FilterItem[];
+  selectedLeadOwner: string;
+  setSelectedLeadOwner: (owner: string) => void;
 }
 
 const filters: FilterItem[] = [
@@ -52,6 +54,9 @@ export const DateFilterProvider = ({
   ]);
   const [showPicker, setShowPicker] = useState(false);
 
+  // New state for lead owner filter
+  const [selectedLeadOwner, setSelectedLeadOwner] = useState<string>("All");
+
   const setSelectedFilter = (label: string) => {
     _setSelectedFilter(label);
 
@@ -81,6 +86,8 @@ export const DateFilterProvider = ({
         showPicker,
         setShowPicker,
         filters,
+        selectedLeadOwner,
+        setSelectedLeadOwner,
       }}
     >
       {children}
