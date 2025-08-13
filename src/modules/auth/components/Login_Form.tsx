@@ -195,7 +195,7 @@ export function LoginForm({
       </form>
 
       {/* OTP Dialog */}
-      {/* <Dialog open={otpDialogOpen} onOpenChange={setOtpDialogOpen}>
+      <Dialog open={otpDialogOpen} onOpenChange={setOtpDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>OTP Verification</DialogTitle>
@@ -205,7 +205,7 @@ export function LoginForm({
             onSuccess={() => setOtpDialogOpen(false)}
           />
         </DialogContent>
-      </Dialog> */}
+      </Dialog>
     </>
   );
 }

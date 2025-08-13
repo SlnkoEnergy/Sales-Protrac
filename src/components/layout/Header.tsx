@@ -334,8 +334,7 @@ export default function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        </div>
-
+      </div>
 
       {/* Mobile Drawer */}
       {showDrawer && (
