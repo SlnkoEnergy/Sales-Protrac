@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { startOfDay, subDays, subMonths, subYears } from "date-fns";
 
 interface DateRangeType {
@@ -20,6 +20,8 @@ interface DateFilterContextType {
   showPicker: boolean;
   setShowPicker: React.Dispatch<React.SetStateAction<boolean>>;
   filters: FilterItem[];
+  selectedLeadOwner: string;
+  setSelectedLeadOwner: (owner: string) => void;
 }
 
 const filters: FilterItem[] = [
@@ -33,10 +35,16 @@ const filters: FilterItem[] = [
   { label: "Custom", range: null },
 ];
 
-const DateFilterContext = createContext<DateFilterContextType | undefined>(undefined);
+const DateFilterContext = createContext<DateFilterContextType | undefined>(
+  undefined
+);
 
-export const DateFilterProvider = ({ children }: { children: React.ReactNode }) => {
-  const [selectedFilter, _setSelectedFilter] = useState("Today");
+export const DateFilterProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [selectedFilter, _setSelectedFilter] = useState("1 Year");
   const [dateRange, setDateRange] = useState<DateRangeType[]>([
     {
       startDate: startOfDay(new Date()),
@@ -45,6 +53,9 @@ export const DateFilterProvider = ({ children }: { children: React.ReactNode }) 
     },
   ]);
   const [showPicker, setShowPicker] = useState(false);
+
+  // New state for lead owner filter
+  const [selectedLeadOwner, setSelectedLeadOwner] = useState<string>("All");
 
   const setSelectedFilter = (label: string) => {
     _setSelectedFilter(label);
@@ -61,6 +72,10 @@ export const DateFilterProvider = ({ children }: { children: React.ReactNode }) 
     }
   };
 
+  useEffect(() => {
+    setSelectedFilter("1 Year");
+  }, []);
+
   return (
     <DateFilterContext.Provider
       value={{
@@ -71,6 +86,8 @@ export const DateFilterProvider = ({ children }: { children: React.ReactNode }) 
         showPicker,
         setShowPicker,
         filters,
+        selectedLeadOwner,
+        setSelectedLeadOwner,
       }}
     >
       {children}

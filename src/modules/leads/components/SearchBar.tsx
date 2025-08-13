@@ -69,7 +69,7 @@ export default function SearchBarLeads({
     }
   };
 
- const {user} = useAuth();
+  const { user } = useAuth();
 
   const handleTransferLead = async () => {
     if (!selectedIds || !selectedUser) {
@@ -136,7 +136,6 @@ export default function SearchBarLeads({
     fetchData();
   }, []);
 
-
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center gap-2 w-full max-w-md">
@@ -168,9 +167,11 @@ export default function SearchBarLeads({
         {selectedIds.length > 0 &&
           (user?.name === "admin" ||
             user?.name === "IT Team" ||
-            user?.name === "Deepak Manodi") && (
+            user?.name === "Deepak Manodi" ||
+            user?.name === "Prachi Singh"
+          ) && (
             <div className="flex items-center gap-1">
-             <File size={14}/>
+              <File size={14} />
               <span
                 className="cursor-pointer text-black hover:underline"
                 onClick={() => handleExportToCsv(selectedIds)}
@@ -208,32 +209,30 @@ export default function SearchBarLeads({
             <DialogTitle>Select Group to Transfer</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {
-              data
-              .filter(group =>{
+            {data
+              .filter((group) => {
                 const userName = user?.name;
-                const isAdmin = 
-                userName === "Admin" ||
-                userName === "IT Team" ||
-                userName === "Deepak Manodi";
+                const isAdmin =
+                  userName === "Admin" ||
+                  userName === "IT Team" ||
+                  userName === "Deepak Manodi";
 
-                if(isAdmin) return true;
+                if (isAdmin) return true;
 
-                return group.createdBy.name === userName
-
+                return group.createdBy.name === userName;
               })
               .map((group) => (
-              <div
-                key={group._id}
-                className="p-2 border rounded cursor-pointer hover:bg-gray-100"
-                onClick={() => {
-                  setSelectedGroup(group);
-                  setConfirmOpenGroup(true);
-                }}
-              >
-                {group.group_name}
-              </div>
-            ))}
+                <div
+                  key={group._id}
+                  className="p-2 border rounded cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                    setSelectedGroup(group);
+                    setConfirmOpenGroup(true);
+                  }}
+                >
+                  {group.group_name}
+                </div>
+              ))}
           </div>
         </DialogContent>
       </Dialog>

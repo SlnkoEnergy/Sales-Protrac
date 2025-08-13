@@ -46,6 +46,8 @@ export default function SearchBar() {
 
   const navigate = useNavigate();
 
+  
+
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
       <div className="flex items-center  px-4 py-2 w-1/3 min-w-[200px] ">

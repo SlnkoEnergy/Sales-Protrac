@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { getTeamAvailability } from "@/services/leads/Dashboard";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -14,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDateFilter } from "./DateFilterContext";
 
 interface TeamMember {
   name: string;
@@ -26,11 +22,15 @@ interface TeamMember {
 export default function TeamAvailability() {
   const [teamData, setTeamData] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const { dateRange } = useDateFilter();
 
   useEffect(() => {
     const fetchTeam = async () => {
       try {
-        const data = await getTeamAvailability();
+        const data = await getTeamAvailability({
+          startDate: dateRange[0].startDate,
+          endDate: dateRange[0].endDate,
+        });
         const formatted = data.map((member: any) => ({
           name: member.name,
           email: "",
@@ -47,7 +47,7 @@ export default function TeamAvailability() {
     };
 
     fetchTeam();
-  }, []);
+  }, [dateRange]);
 
   return (
     <Card className="bg-white rounded-2xl border p-8 w-full max-w-full mx-auto">

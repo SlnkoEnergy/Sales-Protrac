@@ -23,31 +23,49 @@ const FunnelChart = () => {
           endDate: dateRange[0].endDate,
         });
 
+        const statusColors: Record<string, string> = {
+          initial: "#4B5563",
+          "follow up": "#2563EB",
+          warm: "#EA580C",
+          won: "#16A34A",
+          dead: "#DC2626",
+        };
+
         const funnelData = [
-          ["Initial Leads", data.initial?.count ?? 0],
-          ["Follow Up", data.followup?.count ?? 0],
-          ["Warm Leads", data.warm?.count ?? 0],
-          ["Closed Leads", data.won?.count ?? 0],
-          ["Dead Leads", data.dead?.count ?? 0],
+          ["Initial Leads", data.initial?.count ?? 0, statusColors.initial],
+          [
+            "Follow Up",
+            data["follow up"]?.count ?? 0,
+            statusColors["follow up"],
+          ],
+          ["Warm Leads", data.warm?.count ?? 0, statusColors.warm],
+          ["Closed Leads", data.won?.count ?? 0, statusColors.won],
+          ["Dead Leads", data.dead?.count ?? 0, statusColors.dead],
         ];
 
         const containerWidth = chartRef.current.offsetWidth;
         const funnelHeight = containerWidth * 0.6;
 
         const funnel = new D3Funnel(chartRef.current);
+
         funnel.draw(funnelData, {
           chart: {
             width: containerWidth,
             height: funnelHeight,
             bottomPinch: 1,
           },
-          block: { dynamicHeight: true, minHeight: 15, highlight: true },
+          block: {
+            dynamicHeight: true,
+            minHeight: 15,
+            highlight: true,
+          },
           label: { fontSize: "16px", fill: "#fff" },
           tooltip: {
             enabled: true,
             format: (label, value) => `${label}: ${value}`,
           },
         });
+
         const labelToStageMap = {
           0: "initial",
           1: "followup",
@@ -63,9 +81,11 @@ const FunnelChart = () => {
             pathEl.style.cursor = "pointer";
             pathEl.addEventListener("click", () => {
               const fromDate = dateRange[0].startDate.toISOString();
-  const toDate = dateRange[0].endDate.toISOString();
+              const toDate = dateRange[0].endDate.toISOString();
 
-  navigate(`/leads?stage=${stage}&fromDate=${fromDate}&toDate=${toDate}`);
+              navigate(
+                `/leads?stage=${stage}&fromDate=${fromDate}&toDate=${toDate}`
+              );
             });
           }
         });

@@ -2,11 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, AlertTriangle, GripVertical, PlusCircle, Eye } from "lucide-react";
+import {
+  Check,
+  AlertTriangle,
+  GripVertical,
+  PlusCircle,
+  Eye,
+} from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { getToDoList } from "@/services/leads/Dashboard";
 import { updateStatus } from "@/services/task/Task";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -31,16 +43,18 @@ export default function TodoList() {
   useEffect(() => {
     fetchData();
   }, []);
+  
 
   const fetchData = async () => {
     try {
       const res = await getToDoList();
       const mappedData: TodoItem[] = (res.data ?? []).map((item: any) => ({
-        id: item._id,
-        title: item.title,
-        date: item.updatedAt,
-        by: item.user_id?.name ?? "N/A",
-        status: item.current_status,
+        id: item?._id,
+        title: item?.title,
+        date: item?.updatedAt,
+        by: item?.user_id?.name ?? "N/A",
+        status: item?.current_status,
+        lead_id: item?.lead_id
       }));
       setTodos(mappedData);
     } catch (error) {
@@ -53,18 +67,39 @@ export default function TodoList() {
     setShowConfirm(true);
   };
 
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
+
   const handleConfirmYes = () => {
     setShowConfirm(false);
     setShowRemarksDialog(true);
   };
 
-  const {user} = useAuth();
   const handleSubmitRemarks = async () => {
     try {
       await updateStatus({
         _id: selectedTodo?.id,
         status: "completed",
-        user_id: user._id,
+        user_id: getUserIdFromToken(),
         remarks: remarks,
       });
 
@@ -97,45 +132,56 @@ export default function TodoList() {
               onClick={() => navigate("/addtask")}
             >
               <PlusCircle size={16} />
-               Add Task
+              Add Task
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
-         
           <div>
             <div className="flex items-center text-yellow-500 font-medium mb-2">
               <AlertTriangle size={16} className="mr-2" />
               Latest pending to do's
             </div>
-            {todos.filter(t => t.status !== "completed").map(todo => (
-              <TodoRow key={todo.id} todo={todo} onCheckboxClick={handleCheckboxClick} />
-            ))}
+            {todos
+              .filter((t) => t.status !== "completed")
+              .map((todo) => (
+                <TodoRow
+                  key={todo.id}
+                  todo={todo}
+                  onCheckboxClick={handleCheckboxClick}
+                />
+              ))}
           </div>
 
-          
           <div>
             <div className="flex items-center text-green-500 font-medium mb-2">
               <Check size={16} className="mr-2" />
               Latest completed to do's
             </div>
-            {todos.filter(t => t.status === "completed").map(todo => (
-              <TodoRow key={todo.id} todo={todo} />
-            ))}
+            {todos
+              .filter((t) => t.status === "completed")
+              .map((todo) => (
+                <TodoRow key={todo.id} todo={todo} />
+              ))}
           </div>
         </CardContent>
       </Card>
 
-     
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mark task as completed?</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you have completed the task "{selectedTodo?.title}"?</p>
+          <p>
+            Are you sure you have completed the task "{selectedTodo?.title}"?
+          </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirm(false)} className="cursor-pointer">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirm(false)}
+              className="cursor-pointer"
+            >
               Cancel
             </Button>
             <Button onClick={handleConfirmYes} className="cursor-pointer">
@@ -145,7 +191,6 @@ export default function TodoList() {
         </DialogContent>
       </Dialog>
 
-     
       <Dialog open={showRemarksDialog} onOpenChange={setShowRemarksDialog}>
         <DialogContent>
           <DialogHeader>
@@ -157,10 +202,18 @@ export default function TodoList() {
             onChange={(e) => setRemarks(e.target.value)}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRemarksDialog(false)} className="cursor-pointer">
+            <Button
+              variant="outline"
+              onClick={() => setShowRemarksDialog(false)}
+              className="cursor-pointer"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmitRemarks} disabled={!remarks.trim()} className="cursor-pointer">
+            <Button
+              onClick={handleSubmitRemarks}
+              disabled={!remarks.trim()}
+              className="cursor-pointer"
+            >
               Submit
             </Button>
           </DialogFooter>
@@ -176,12 +229,12 @@ interface TodoRowProps {
 }
 
 function TodoRow({ todo, onCheckboxClick }: TodoRowProps) {
+  const navigate = useNavigate();
   return (
     <div className="flex items-start justify-between border-t pt-2">
       <div className="flex items-start gap-2">
         <GripVertical size={16} className="mt-1 text-gray-400" />
 
-       
         {todo.status !== "completed" && onCheckboxClick ? (
           <input
             type="checkbox"
@@ -193,7 +246,7 @@ function TodoRow({ todo, onCheckboxClick }: TodoRowProps) {
         )}
 
         <div>
-          <div className="text-base">{todo.title}</div>
+          <div className="text-base cursor-pointer" onClick={()=> navigate(`/leadProfile?id=${todo.lead_id}`)}>{todo.title}</div>
           <div className="text-xs text-gray-500 mt-1">
             {new Date(todo.date).toLocaleString()} by{" "}
             <span className="italic underline">{todo.by}</span>
