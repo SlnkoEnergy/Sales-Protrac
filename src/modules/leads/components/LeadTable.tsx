@@ -151,6 +151,7 @@ export function DataTable({
   const [tab, setTab] = React.useState(stageFromUrl || "");
   const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
+  const [expectedClosing, setExpectedClosing] = React.useState<string[]>([]);
   const [inactiveDays, setInactiveDays] = React.useState("");
   const department = "BD";
   const [isLoading, setIsLoading] = React.useState(false);
@@ -162,6 +163,8 @@ export function DataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  let ClosingMonthFilter = "";
 
   const navigate = useNavigate();
   const isFromGroup = location.pathname === "/groupDetail";
@@ -194,6 +197,7 @@ export function DataTable({
   const handleTransferComplete = () => {
     setRefreshKey((prev) => prev + 1);
   };
+
 
   const columns: ColumnDef<Lead>[] = [
     {
@@ -486,13 +490,17 @@ export function DataTable({
     },
   ];
 
+
+
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
   const state = searchParams.get("stateFilter");
+  const ClosingDateFilter = searchParams.get("closingdatefilter");
   const Handoverfilter = searchParams.get("handover");
   const LeadAgingFilter = searchParams.get("aging") || "";
   const InActiveDays = searchParams.get("inActiveDays");
   const NameFilter = searchParams.get("name");
+
 
   const { user } = useAuth();
 
@@ -514,9 +522,10 @@ export function DataTable({
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
-              ? ""
-              : undefined,
+                ? ""
+                : undefined,
           handover_statusFilter: Handoverfilter || "",
+          ClosingDateFilter: ClosingMonthFilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
           name: NameFilter || "",
@@ -544,6 +553,7 @@ export function DataTable({
     toDate,
     stageFromUrl,
     state,
+    ClosingDateFilter,
     Handoverfilter,
     LeadAgingFilter,
     InActiveDays,
@@ -560,12 +570,13 @@ export function DataTable({
           search,
           group_id: isFromGroup ? group_id : "",
           stateFilter: state || "",
+          ClosingDateFilter: ClosingMonthFilter || "",
           lead_without_task:
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
-              ? ""
-              : undefined,
+                ? ""
+                : undefined,
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
@@ -590,6 +601,7 @@ export function DataTable({
     fromDate,
     toDate,
     state,
+    ClosingDateFilter,
     stageFromUrl,
     Handoverfilter,
     LeadAgingFilter,
@@ -697,6 +709,12 @@ export function DataTable({
         updated.delete("stateFilter");
       }
 
+      if (expectedClosing.length > 0) {
+        updated.set("closingdatefilter", expectedClosing.join(","));
+      } else {
+        updated.delete("closingdatefilter");
+      }
+
       if (inactiveDays) {
         updated.set("inActiveDays", inactiveDays);
       } else {
@@ -708,7 +726,7 @@ export function DataTable({
 
       return updated;
     });
-  }, [selectedStates, handoverStatus, leadAging, inactiveDays, leadOwner]);
+  }, [selectedStates, handoverStatus, leadAging, inactiveDays, leadOwner, expectedClosing]);
 
   const [pagination, setPagination] = React.useState({
     pageIndex: page - 1,
@@ -757,6 +775,8 @@ export function DataTable({
   const isActiveLeadWithoutTask =
     location.pathname === "/leads" &&
     searchParams.get("stage") === "lead_without_task";
+
+
   const toggleState = (state: string) => {
     let updatedStates = [...selectedStates];
 
@@ -778,8 +798,30 @@ export function DataTable({
     setSearchParams(newParams);
   };
 
+  const toggleMonth = (months: string) => {
+    let updatedMonths = [...expectedClosing];
+
+    if (updatedMonths.includes(months)) {
+      updatedMonths = updatedMonths.filter((s) => s !== months);
+    } else {
+      updatedMonths.push(months);
+    }
+
+    setExpectedClosing(updatedMonths);
+
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (updatedMonths.length > 0) {
+      newParams.set("closingdatefilter", updatedMonths.join(","));
+    } else {
+      newParams.delete("closingdatefilter");
+    }
+
+    setSearchParams(newParams);
+  }
+
   const totalFilters =
     selectedStates.length +
+    expectedClosing.length +
     (handoverStatus ? 1 : 0) +
     (leadAging ? 1 : 0) +
     (inactiveDays ? 1 : 0);
@@ -798,7 +840,32 @@ export function DataTable({
     { value: "custom", label: "Custom" },
   ];
 
-  console.log({ user });
+  const MonthOptions = [
+    { value: "0", label: "Jan" },
+    { value: "2", label: "Feb" },
+    { value: "3", label: "Mar" },
+    { value: "4", label: "Apr" },
+    { value: "5", label: "May" },
+    { value: "6", label: "Jun" },
+    { value: "7", label: "Jul" },
+    { value: "8", label: "Aug" },
+    { value: "9", label: "Sep" },
+    { value: "10", label: "Oct" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dec" },
+  ]
+
+  if (ClosingDateFilter) {
+    const monthnumber = ClosingDateFilter.split(",");
+    ClosingMonthFilter = monthnumber
+      .map(m => {
+        const found = MonthOptions.find(opt => opt.label === m);
+        return found ? found.value : null;
+      })
+      .filter(Boolean)
+      .join(",");
+
+  }
 
   return (
     <div
@@ -1002,45 +1069,63 @@ export function DataTable({
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  Filter By Expected Closing Date
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent >
+                  {MonthOptions.map((opt) => (
+                    <DropdownMenuCheckboxItem
+                      className="cursor-pointer capitalize"
+                      key={opt.value}
+                      checked={expectedClosing.includes(opt.label)}
+                      onCheckedChange={() => toggleMonth(opt.label)}
+                    >
+                      {opt.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
               {(user?.name === "admin" ||
                 user?.name === "IT Team" ||
                 user?.name === "Deepak Manodi") && (
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    Lead Owner Filter
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                    <DropdownMenuRadioGroup
-                      value={leadOwner}
-                      onValueChange={(value) => {
-                        setLeadOwner(value);
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      Lead Owner Filter
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                      <DropdownMenuRadioGroup
+                        value={leadOwner}
+                        onValueChange={(value) => {
+                          setLeadOwner(value);
 
-                        const newParams = new URLSearchParams(
-                          searchParams.toString()
-                        );
-                        if (value) {
-                          newParams.set("name", value);
-                        } else {
-                          newParams.delete("name");
-                        }
-                        setSearchParams(newParams);
-                      }}
-                    >
-                      <DropdownMenuRadioItem value="">
-                        All
-                      </DropdownMenuRadioItem>
-                      {users.map((user) => (
-                        <DropdownMenuRadioItem
-                          key={user?._id}
-                          value={user?._id}
-                        >
-                          {user?.name}
+                          const newParams = new URLSearchParams(
+                            searchParams.toString()
+                          );
+                          if (value) {
+                            newParams.set("name", value);
+                          } else {
+                            newParams.delete("name");
+                          }
+                          setSearchParams(newParams);
+                        }}
+                      >
+                        <DropdownMenuRadioItem value="">
+                          All
                         </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              )}
+                        {users.map((user) => (
+                          <DropdownMenuRadioItem
+                            key={user?._id}
+                            value={user?._id}
+                          >
+                            {user?.name}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1121,9 +1206,9 @@ export function DataTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
               </TableRow>
