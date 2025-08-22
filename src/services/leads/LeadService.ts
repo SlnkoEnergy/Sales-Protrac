@@ -164,28 +164,28 @@ export const uploadDocuments = async (
   }
 };
 
-export const updateLeadStatus = async (
-  leadId: string,
+export const updateLeadStatusBulk = async (
+  ids: string[],
   name: string,
   stage: string,
   remarks: string,
-  pendingDate: string
+  pendingDate?: string
 ) => {
   try {
-    const response = await Axios.put(
-      `/bddashboard/${leadId}/updateLeadStatus`,
-      {
-        name: name,
-        stage: stage,
-        remarks: remarks,
-        expected_closing_date: pendingDate,
-      }
-    );
+    const response = await Axios.put(`/bddashboard/updateLeadStatus`, {
+      ids, 
+      name,
+      stage,
+      remarks,
+      expected_closing_date: pendingDate,
+    });
     return response.data;
   } catch (error: any) {
-    throw new Error(
-      error.response?.data?.message || "Failed to update lead status"
-    );
+    const msg =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      "Failed to bulk update lead statuses";
+    throw new Error(msg);
   }
 };
 
