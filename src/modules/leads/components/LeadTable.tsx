@@ -218,253 +218,282 @@ export function DataTable({
     setRefreshKey((prev) => prev + 1);
   };
 
-  const columns = React.useMemo<ColumnDef<Lead>[]>(
-    () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "current_status.name",
-        header: "Status",
-        cell: ({ row }) => (
-          <StatusCell
-            leadId={row.original._id}
-            currentStatus={row.original.current_status?.name}
-            expected_closing_date={row.original?.expected_closing_date}
-            onTransferCompleteStatus={handleTransferComplete}
-          />
-        ),
-      },
-      {
-        accessorKey: "id",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  console.log("the data " ,data);
+
+  const columns: ColumnDef<Lead>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "current_status.name",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusCell
+          leadId={row.original._id}
+          currentStatus={row.original.current_status?.name}
+          expected_closing_date={row.original?.expected_closing_date}
+          onTransferCompleteStatus={handleTransferComplete}
+        />
+      ),
+    },
+    {
+      accessorKey: "id",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Lead Id <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => <div>{row.getValue("id")}</div>,
+    },
+    {
+      id: "client_info",
+      accessorFn: (row) => row?.name,
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Client Info <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const navigateToLeadProfile = () => {
+          navigate(`/leadProfile?id=${row.original._id}`);
+        };
+
+        const name = row?.original?.name || "";
+        const truncatedName =
+          name.length > 15 ? `${name.slice(0, 15)}...` : name;
+
+        return (
+          <div
+            onClick={navigateToLeadProfile}
+            className="cursor-pointer hover:text-[#214b7b]"
           >
-            Lead Id <ArrowUpDown />
-          </Button>
-        ),
-        cell: ({ row }) => <div>{row.getValue("id") as string}</div>,
+            <div className="font-medium">{truncatedName}</div>
+          </div>
+        );
       },
-      {
-        id: "client_info",
-        accessorFn: (row) => row?.name,
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    },
+    ...(isFromGroup ? [] : [groupInfoColumn]),
+    {
+      id: "location_info",
+      header: "State",
+      cell: ({ row }) => {
+        const state = row.original?.address?.state || "";
+        const scheme = row.original?.project_details?.scheme || "";
+
+        const capitalizedState =
+          state.charAt(0).toUpperCase() + state.slice(1).toLowerCase();
+
+        const capitalizedScheme = scheme
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+
+        return (
+          <div>
+            <div className="font-medium">{capitalizedState}</div>
+            <div className="text-sm text-gray-500">{capitalizedScheme}</div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "project_details.capacity",
+      header: "Capacity (MW AC)",
+      cell: ({ row }) => {
+        const capacity = row.original.project_details?.capacity;
+        return <div>{capacity ?? "N/A"}</div>;
+      },
+    },
+    {
+      accessorKey: "inactivedate",
+      header: "Inactive (Days)",
+      cell: ({ row }) => {
+        const dateStr = row.original.inactivedate;
+        let display = "";
+
+        if (!dateStr) return <div>-</div>;
+
+        const inactiveDate = new Date(dateStr);
+        const now = new Date();
+
+        const diffTime = now - inactiveDate;
+        const numDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (numDays < 7) {
+          display = `${numDays} ${numDays <= 1 ? "day" : "days"}`;
+        } else if (numDays < 30) {
+          const weeks = Math.floor(numDays / 7);
+          display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+        } else if (numDays < 365) {
+          const months = Math.floor(numDays / 30);
+          display = `${months} ${months === 1 ? "month" : "months"}`;
+        } else {
+          const years = Math.floor(numDays / 365);
+          display = `${years} ${years === 1 ? "year" : "years"}`;
+        }
+
+        return <div>{display}</div>;
+      },
+    },
+    {
+      accessorKey: "leadAging",
+      header: "Lead Aging",
+      cell: ({ row }) => {
+        const agingRaw = row.original.leadAging;
+        const aging = Number(agingRaw);
+
+        let display = "";
+
+        if (aging < 7) {
+          display = `${aging} ${aging === 1 ? "day" : "days"}`;
+        } else if (aging >= 7 && aging < 30) {
+          const weeks = Math.floor(aging / 7);
+          display = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+        } else {
+          const months = Math.floor(aging / 30);
+          display = `${months} ${months === 1 ? "month" : "months"}`;
+        }
+
+        return <div>{display}</div>;
+      },
+    },
+    {
+      accessorKey: "expectedClosing",
+      header: "Exp Closing Date",
+      cell: ({ row }) => {
+        const expectedClosing = row.original.expected_closing_date;
+
+        const isValidDate =
+          expectedClosing &&
+          typeof expectedClosing === "string" &&
+          expectedClosing !== "-";
+
+        return (
+          <div className="flex items-center text-sm gap-1">
+            {isValidDate ? (
+              <>
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>{format(new Date(expectedClosing), "MMM d, yyyy")}</span>
+              </>
+            ) : (
+              <Badge variant="secondary">Yet to come</Badge>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created Date <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const dateValue = row.getValue("createdAt");
+        const date = dateValue
+          ? new Date(dateValue as string | number | Date)
+          : null;
+        return <div>{date ? date.toLocaleDateString() : "-"}</div>;
+      },
+    },
+    {
+      accessorKey: "status_of_handoversheet",
+      header: "Handover",
+      cell: ({ row }) => {
+        const leadId = row.original?._id;
+        const status = row.original?.current_status?.name;
+        const handoverStatus = row.original?.status_of_handoversheet;
+
+        const handleClick = () => {
+          navigate(`/leadProfile?id=${leadId}&tab=handover`);
+        };
+
+        if (status !== "won") {
+          return <div className="text-gray-400 text-sm ">Waiting for won</div>;
+        }
+
+        return (
+          <div
+            className="flex cursor-pointer"
+            onClick={handleClick}
+            title={
+              handoverStatus === "false" || handoverStatus === "Rejected"
+                ? "Add Handover"
+                : "View Handover"
+            }
           >
-            Client Info <ArrowUpDown />
-          </Button>
-        ),
-        cell: ({ row }) => {
-          const navigateToLeadProfile = () => {
-            navigate(`/leadProfile?id=${row.original._id}`);
-          };
-          const name = row?.original?.name || "";
-          const truncated = name.length > 15 ? `${name.slice(0, 15)}...` : name;
-          return (
-            <div
-              onClick={navigateToLeadProfile}
-              className="cursor-pointer hover:text-[#214b7b]"
-            >
-              <div className="font-medium">{truncated}</div>
-            </div>
-          );
-        },
+            {handoverStatus === "false" || handoverStatus === "Rejected" ? (
+              <PencilIcon className="w-4 h-4 text-gray-500" />
+            ) : (
+              <EyeIcon className="w-4 h-4 text-green-600" />
+            )}
+          </div>
+        );
       },
-      ...(!isFromGroup
-        ? [
-          {
-            id: "group_info",
-            accessorFn: (row) => row?.name,
-            header: "Group Name",
-            cell: ({ row }) => {
-              const navigateToGroupProfile = () => {
-                navigate(`/groupDetail?id=${row.original.group_id?._id}`);
-              };
-              const code = row?.original?.group_id?.group_code || "";
-              const name = row?.original?.group_id?.group_name || "";
-              if (!code) return <div className="text-gray-500">-</div>;
-              return (
-                <div
-                  onClick={navigateToGroupProfile}
-                  className="cursor-pointer hover:text-[#214b7b]"
-                >
-                  <div className="font-medium">{code}</div>
-                  <div className="text-sm text-gray-500">{name}</div>
-                </div>
-              );
-            },
-          } as ColumnDef<Lead>,
-        ]
-        : []),
-      {
-        id: "location_info",
-        header: "State",
-        cell: ({ row }) => {
-          const state = row.original?.address?.state || "";
-          const scheme = row.original?.project_details?.scheme || "";
-          const capState = state
-            ? state.charAt(0).toUpperCase() + state.slice(1).toLowerCase()
-            : "";
-          const capScheme = scheme
-            ? scheme
-              .toLowerCase()
-              .split(" ")
-              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-              .join(" ")
-            : "";
-          return (
-            <div>
-              <div className="font-medium">{capState}</div>
-              <div className="text-sm text-gray-500">{capScheme}</div>
-            </div>
-          );
-        },
-      },
-      {
-        id: "capacity",
-        header: "Capacity (MW AC)",
-        cell: ({ row }) => {
-          const capacity = row.original.project_details?.capacity;
-          return <div>{capacity ?? "N/A"}</div>;
-        },
-      },
-      {
-        accessorKey: "inactivedate",
-        header: "Inactive (Days)",
-        cell: ({ row }) => {
-          const d = row.original.inactivedate;
-          if (!d) return <div>-</div>;
-          const inactiveDate = new Date(d);
-          const now = new Date();
-          const diffMs = now.getTime() - inactiveDate.getTime();
-          const numDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          if (numDays < 7) return <div>{`${numDays} ${numDays <= 1 ? "day" : "days"}`}</div>;
-          if (numDays < 30) return <div>{`${Math.floor(numDays / 7)} week${Math.floor(numDays / 7) === 1 ? "" : "s"}`}</div>;
-          if (numDays < 365) return <div>{`${Math.floor(numDays / 30)} month${Math.floor(numDays / 30) === 1 ? "" : "s"}`}</div>;
-          return <div>{`${Math.floor(numDays / 365)} year${Math.floor(numDays / 365) === 1 ? "" : "s"}`}</div>;
-        },
-      },
-      {
-        id: "leadAging",
-        header: "Lead Aging",
-        cell: ({ row }) => {
-          const aging = Number(row.original.leadAging ?? 0);
-          if (aging < 7) return <div>{`${aging} ${aging === 1 ? "day" : "days"}`}</div>;
-          if (aging < 30) return <div>{`${Math.floor(aging / 7)} week${Math.floor(aging / 7) === 1 ? "" : "s"}`}</div>;
-          return <div>{`${Math.floor(aging / 30)} month${Math.floor(aging / 30) === 1 ? "" : "s"}`}</div>;
-        },
-      },
-      {
-        id: "expectedClosing",
-        header: "Exp Closing Date",
-        cell: ({ row }) => {
-          const expected = row.original.expected_closing_date as any;
-          const isValid = expected && typeof expected === "string" && expected !== "-";
-          return (
-            <div className="flex items-center text-sm gap-1">
-              {isValid ? (
-                <>
-                  <CalendarDays className="w-3.5 h-3.5" />
-                  <span>{format(new Date(expected), "MMM d, yyyy")}</span>
-                </>
-              ) : (
-                <Badge variant="secondary">Yet to come</Badge>
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "createdAt",
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Created Date <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-        cell: ({ row }) => {
-          const v = row.getValue("createdAt") as string | number | Date | null;
-          const d = v ? new Date(v) : null;
-          return <div>{d ? d.toLocaleDateString() : "-"}</div>;
-        },
-      },
-      {
-        id: "status_of_handoversheet",
-        header: "Handover",
-        cell: ({ row }) => {
-          const leadId = row.original?._id;
-          const status = row.original?.current_status?.name;
-          const handoverStatus = row.original?.status_of_handoversheet;
-          const handleClick = () => navigate(`/leadProfile?id=${leadId}&tab=handover`);
-          if (status !== "won") return <div className="text-gray-400 text-sm ">Waiting for won</div>;
-          const showAdd = handoverStatus === "false" || handoverStatus === "Rejected";
-          return (
-            <div className="flex cursor-pointer" onClick={handleClick} title={showAdd ? "Add Handover" : "View Handover"}>
-              {showAdd ? (
-                <PencilIcon className="w-4 h-4 text-gray-500" />
-              ) : (
-                <EyeIcon className="w-4 h-4 text-green-600" />
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        id: "lead_owner",
-        header: "Lead Owner",
-        cell: ({ row }) => <div>{row.original.current_assigned?.user_id?.name}</div>,
-      },
-      {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-          const lead = row.original;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  onClick={(e) => e.stopPropagation()}
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                >
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(lead.id);
-                    toast.success(`Lead ID ${lead.id} copied successfully`);
-                  }}
-                >
-                  Copy Lead ID
-                </DropdownMenuItem>
+    },
+    {
+      accessorKey: "current_assigned?.user_id?.name",
+      header: "Lead Owner",
+      cell: ({ row }) => (
+        <div>{row.original.current_assigned?.user_id?.name}</div>
+      ),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const lead = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                onClick={(e) => e.stopPropagation()}
+                variant="ghost"
+                className="h-8 w-8 p-0"
+              >
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(lead.id);
+                  toast.success(`Lead ID ${lead.id} copied successfully`);
+                }}
+              >
+                Copy Lead ID
+              </DropdownMenuItem>
 
                 <DropdownMenuItem
                   className="cursor-pointer"

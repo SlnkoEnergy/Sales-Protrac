@@ -48,33 +48,33 @@ export function LoginForm({
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
+  // useEffect(() => {
+  //   navigator.geolocation.getCurrentPosition(async (position) => {
+  //     const latitude = position.coords.latitude;
+  //     const longitude = position.coords.longitude;
 
-      let fullAddress = "";
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-        );
-        const data = await res.json();
-        fullAddress = data.display_name || "";
-      } catch (err) {
-        toast.error("Reverse geocoding failed");
-      }
+  //     let fullAddress = "";
+  //     try {
+  //       const res = await fetch(
+  //         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+  //       );
+  //       const data = await res.json();
+  //       fullAddress = data.display_name || "";
+  //     } catch (err) {
+  //       toast.error("Reverse geocoding failed");
+  //     }
 
-      setGeoInfo({ latitude, longitude, fullAddress });
-    });
-  }, []);
+  //     setGeoInfo({ latitude, longitude, fullAddress });
+  //   });
+  // }, []);
 
   const onSubmit = async (data: LoginFormInputs) => {
-    if (!geoInfo.latitude || !geoInfo.longitude || !geoInfo.fullAddress) {
-      toast.error(
-        "Location is required to login. Please enable location access."
-      );
-      return;
-    }
+    // if (!geoInfo.latitude || !geoInfo.longitude || !geoInfo.fullAddress) {
+    //   toast.error(
+    //     "Location is required to login. Please enable location access."
+    //   );
+    //   return;
+    // }
 
     try {
       const payload = {
