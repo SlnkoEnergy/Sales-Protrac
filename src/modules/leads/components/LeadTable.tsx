@@ -111,9 +111,11 @@ export type Lead = {
   inactivedate: Date;
   expected_closing_date: Date;
   status_of_handoversheet: string;
-  group_code: string;
-  group_name: string;
-  group_id: string;
+  group_id: {
+    _id: string;
+    group_code: string;
+    group_name: string;
+  };
   fromDate?: string;
   toDate?: string;
 };
@@ -170,11 +172,11 @@ export function DataTable({
     header: "Group Name",
     cell: ({ row }) => {
       const navigateToGroupProfile = () => {
-        navigate(`/groupDetail?id=${row.original.group_id}`);
+        navigate(`/groupDetail?id=${row.original.group_id?._id}`);
       };
 
-      const code = row?.original?.group_code || "";
-      const name = row?.original?.group_name;
+      const code = row?.original?.group_id?.group_code || "";
+      const name = row?.original?.group_id?.group_name;
 
       if (!code) return <div className="text-gray-500">-</div>;
 
