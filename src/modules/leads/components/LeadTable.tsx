@@ -195,6 +195,8 @@ export function DataTable({
     setRefreshKey((prev) => prev + 1);
   };
 
+  console.log("the data " ,data);
+
   const columns: ColumnDef<Lead>[] = [
     {
       id: "select",

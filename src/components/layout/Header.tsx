@@ -19,6 +19,16 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { getNotification, toggleViewTask } from "@/services/task/Task";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { logout } from "@/services/auth/Auth";
+import { NovuProvider, PopoverNotificationCenter, useNotifications } from "@novu/notification-center";
 import { useAuth } from "@/services/context/AuthContext";
 
 export default function Header() {
@@ -26,11 +36,13 @@ export default function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchParams] = useSearchParams();
   const [notifications, setNotifications] = useState([]);
+  const [subscribeId, setSubscribeId] = useState("");
   const [user, setUser] = useState<{ name: string; emp_id: string } | null>(
     null
   );
   const location = useLocation();
   const navigate = useNavigate();
+  const ID = localStorage.getItem("userId")
 
   const isActiveHandover = location.pathname === "/handover";
   const isActiveTask = location.pathname === "/tasks";
@@ -50,11 +62,16 @@ export default function Header() {
     const fetchData = async () => {
       const data = await getNotification();
       setNotifications(data);
+      setSubscribeId(ID)
     };
     fetchData();
   }, []);
 
-  const handleLogout = async() => {
+  useEffect(() => {
+    setSubscribeId(ID);
+  }, [])
+
+  const handleLogout = async () => {
     try {
       localStorage.clear();
       toast.success("You have been Logged Out");
@@ -63,7 +80,7 @@ export default function Header() {
       toast.error('Logout Failed')
     }
   };
-  
+
   const userData = useAuth();
 
   useEffect(() => {
@@ -174,7 +191,7 @@ export default function Header() {
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">
-        <div className="relative" ref={PickerRef}>
+        {/* <div className="relative" ref={PickerRef}>
           <div className="relative">
             <Bell
               size={18}
@@ -241,7 +258,93 @@ export default function Header() {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
+
+        <NovuProvider
+          subscriberId={subscribeId}
+          applicationIdentifier="vHKf6fc5ojnD"
+        >
+          <div className="flex justify-end p-4">
+            <PopoverNotificationCenter colorScheme="light" position="bottom-end"
+
+              onNotificationClick={(notification) => {
+                const link = notification?.payload?.link;
+                if (link) {
+                  console.log("hello", notification.payload.link);
+                  navigate(notification.payload.link);
+                }
+
+              }}
+
+            >
+              {({ unseenCount }) => (
+                <Button variant="ghost" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {(unseenCount ?? 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1 text-xs">
+                      {unseenCount ?? 0}
+                    </span>
+                  )}
+                </Button>
+              )}
+            </PopoverNotificationCenter>
+          </div>
+        </NovuProvider>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <img
+                src="/assets/avatar.png"
+                alt="Profile"
+                className="w-8 h-8 rounded-full"
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-64 shadow-md">
+            <DropdownMenuLabel className="py-2 gap-2">
+              <div className="font-medium flex justify-between items-center gap-2 text-sm leading-tight">
+                <div className="flex items-center gap-2">
+                  <User2 className="w-4 h-4" />
+                  {user?.name || "User"}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {user?.emp_id || "user@example.com"}
+                </div>
+              </div>
+            </DropdownMenuLabel>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 flex items-center gap-2 font-medium cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Mobile Drawer */}
