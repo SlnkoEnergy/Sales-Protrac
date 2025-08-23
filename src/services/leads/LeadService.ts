@@ -102,7 +102,6 @@ export const transferLead = async (leadIds: string[], assigned: string) => {
 };
 
 export const exportToCsv = async (selectedIds: string[]) => {
-  console.log(selectedIds);
   try {
     const response = await Axios.post(
       "/bddashboard/export-lead",

@@ -462,7 +462,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     }
   };
 
-  console.log({ formData });
 
   const handleEdit = async (e?: React.FormEvent) => {
     e?.preventDefault();
