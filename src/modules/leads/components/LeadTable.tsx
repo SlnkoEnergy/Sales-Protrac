@@ -163,6 +163,32 @@ export function DataTable({
     []
   );
 
+  const groupInfoColumn = {
+    id: "group_info",
+    accessorFn: (row) => row?.name,
+    header: "Group Name",
+    cell: ({ row }) => {
+      const navigateToGroupProfile = () => {
+        navigate(`/groupDetail?id=${row.original.group_id?._id}`);
+      };
+
+      const code = row?.original?.group_id?.group_code || "";
+      const name = row?.original?.group_id?.group_name;
+
+      if (!code) return <div className="text-gray-500">-</div>;
+
+      return (
+        <div
+          onClick={navigateToGroupProfile}
+          className="cursor-pointer hover:text-[#214b7b]"
+        >
+          <div className="font-medium">{code}</div>
+          <div className="text-sm text-gray-500">{name}</div>
+        </div>
+      );
+    },
+  };  
+
   const MonthOptions = React.useMemo(
     () => [
       { value: "1", label: "Jan" },
@@ -509,9 +535,8 @@ export function DataTable({
           );
         },
       },
-    ],
-    [isFromGroup, navigate]
-  );
+  ]
+    
 
   // Debounce search input for API & URL sync
   React.useEffect(() => {
