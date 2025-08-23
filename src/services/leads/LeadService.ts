@@ -189,6 +189,30 @@ export const updateLeadStatus = async (
   }
 };
 
+export const updateLeadStatusBulk = async (
+  ids: string[],
+  name: string,
+  stage: string,
+  remarks: string
+) => {
+  try {
+    const response = await Axios.put(`/bddashboard/updateLeadStatusBulk`, {
+      ids,
+      name,
+      stage,
+      remarks
+    });
+    return response.data;
+  } catch (error: any) {
+    const msg =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      "Failed to bulk update lead statuses";
+    throw new Error(msg);
+  }
+};
+
+
 export const updateExpectedClosingDate = async (
   leadId: string,
   date: string

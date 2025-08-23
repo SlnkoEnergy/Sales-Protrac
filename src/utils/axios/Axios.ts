@@ -1,5 +1,4 @@
 import axios from "axios";
-import { getRuntimeToken } from "./AuthSetter";
 
 const Axios = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
