@@ -262,7 +262,7 @@ export default function Header() {
 
         <NovuProvider
           subscriberId={subscribeId}
-          applicationIdentifier="vHKf6fc5ojnD"
+          applicationIdentifier={import.meta.env.VITE_NOVU_IDENTIFIER}
         >
           <div className="flex justify-end p-4">
             <PopoverNotificationCenter colorScheme="light" position="bottom-end"
