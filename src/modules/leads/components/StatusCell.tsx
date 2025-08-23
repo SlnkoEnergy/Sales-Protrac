@@ -95,55 +95,46 @@ const StatusCell: FC<Props> = ({
       setUploading(false);
     }
   };
-const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+
   const submitStatusUpdate = async () => {
-    setSelectedLeadIds([leadId]);
+    if (!leadId || !selectedStatus) return;
 
-  if (!Array.isArray(selectedLeadIds) || selectedLeadIds.length === 0 || !selectedStatus) {
-    toast.error("Please select at least one lead and a status");
-    return;
-  }
+    let dateToSend = "";
 
-  let dateToSend = "";
+    if (
+      expected_closing_date instanceof Date &&
+      !isNaN(expected_closing_date.getTime())
+    ) {
+      dateToSend = expected_closing_date.toISOString();
+    } else if (pendingDate instanceof Date && !isNaN(pendingDate.getTime())) {
+      dateToSend = pendingDate.toISOString();
+    }
 
-  if (
-    expected_closing_date instanceof Date &&
-    !isNaN(expected_closing_date.getTime())
-  ) {
-    dateToSend = expected_closing_date.toISOString();
-  } else if (pendingDate instanceof Date && !isNaN(pendingDate.getTime())) {
-    dateToSend = pendingDate.toISOString();
-  }
-
-  // Validation: if status is "warm" we need a closing date
-  if (
-    selectedStatus === "warm" &&
-    !dateToSend &&
-    (expected_closing_date === undefined || expected_closing_date === null)
-  ) {
-    toast.error("Expected Closing Date is required");
-    return;
-  }
-
-  try {
-    await updateLeadStatus(
-      selectedLeadIds,          // array of IDs
-      selectedStatus,           // stage/status
-      selectedLabel,            // name/label
-      remarks || "",
-      dateToSend                // normalized date string
-    );
-
-    toast.success(`Status updated to ${selectedStatus} for ${selectedLeadIds.length} leads`);
-    setStatusDialogOpen(false);
-    setRemarks("");
-    // optional: refresh each updated row
-    selectedLeadIds.forEach((id) => onTransferCompleteStatus(id));
-  } catch (err: any) {
-    toast.error(err.message);
-  }
-};
-
+    if (
+      selectedStatus === "warm" &&
+      !dateToSend &&
+      (expected_closing_date === undefined || expected_closing_date === null)
+    ) {
+      toast.error("Expected Closing Date is required");
+      return;
+    }
+    try {
+      await updateLeadStatus(
+        leadId,
+        selectedStatus,
+        selectedLabel,
+        remarks || "",
+        pendingDate
+      );
+      toast.success(`Status updated to ${selectedStatus}`);
+      setStatusDialogOpen(false);
+      setRemarks("");
+      onTransferCompleteStatus(leadId);
+      setStatusSelectOpen(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   const handleStatusUpdate = (status: string, label: string) => {
     setSelectedStatus(status);
@@ -213,7 +204,7 @@ const [selectedLeadIds, setSelectedLeadIds] = useState([]);
                   <Button
                     key={status}
                     variant="outline"
-                    className="cursor-pointer"
+                    className="cursor-pointer capitalize"
                     onClick={() => handleStatusUpdate(status, "as per choice")}
                   >
                     {status}

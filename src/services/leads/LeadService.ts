@@ -164,20 +164,43 @@ export const uploadDocuments = async (
   }
 };
 
+export const updateLeadStatus = async (
+  leadId: string,
+  name: string,
+  stage: string,
+  remarks: string,
+  pendingDate: string
+) => {
+  try {
+    const response = await Axios.put(
+      `/bddashboard/${leadId}/updateLeadStatus`,
+      {
+        name: name,
+        stage: stage,
+        remarks: remarks,
+        expected_closing_date: pendingDate,
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to update lead status"
+    );
+  }
+};
+
 export const updateLeadStatusBulk = async (
   ids: string[],
   name: string,
   stage: string,
-  remarks: string,
-  pendingDate?: string
+  remarks: string
 ) => {
   try {
-    const response = await Axios.put(`/bddashboard/updateLeadStatus`, {
-      ids, 
+    const response = await Axios.put(`/bddashboard/updateLeadStatusBulk`, {
+      ids,
       name,
       stage,
-      remarks,
-      expected_closing_date: pendingDate,
+      remarks
     });
     return response.data;
   } catch (error: any) {
@@ -188,6 +211,7 @@ export const updateLeadStatusBulk = async (
     throw new Error(msg);
   }
 };
+
 
 export const updateExpectedClosingDate = async (
   leadId: string,

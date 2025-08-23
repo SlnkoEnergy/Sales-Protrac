@@ -442,10 +442,12 @@ export default function LeadProfile() {
                       <StatusCell
                         leadId={data?._id}
                         currentStatus={data?.current_status?.name}
+                        onTransferCompleteStatus={handleTransferComplete}
                         expected_closing_date={
                           data?.expected_closing_date
                             ? new Date(data.expected_closing_date)
                             : undefined
+                        
                         }
                       />
                     </div>

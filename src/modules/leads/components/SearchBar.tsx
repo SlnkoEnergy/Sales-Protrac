@@ -1,18 +1,33 @@
 "use client";
 
-import { ChevronLeft, File, Group, Search, User2 } from "lucide-react";
+import {
+  File,
+  Group,
+  Info,
+  Search,
+  User2,
+  AlarmClock,
+  Skull,
+  Trophy,
+  Loader2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { exportToCsv, transferLead } from "@/services/leads/LeadService";
+import {
+  exportToCsv,
+  transferLead,
+  updateLeadStatusBulk,
+} from "@/services/leads/LeadService";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -24,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getAllUser } from "@/services/task/Task";
 import { attachToGroup, getAllGroupName } from "@/services/group/GroupService";
 import { useAuth } from "@/services/context/AuthContext";
@@ -39,6 +54,25 @@ interface SearchBarLeadsProps {
   onTransferComplete: (value: string) => void;
 }
 
+type BDUser = {
+  _id: string;
+  name: string;
+};
+
+type GroupItem = {
+  _id: string;
+  group_name: string;
+  company_name?: string;
+  createdBy?: { name?: string };
+};
+
+const STATUS_OPTIONS = [
+  { key: "initial", label: "Initial", icon: Info },
+  { key: "follow up", label: "Follow Up", icon: AlarmClock },
+  { key: "won", label: "Won", icon: Trophy },
+  { key: "dead", label: "Dead", icon: Skull },
+] as const;
+
 export default function SearchBarLeads({
   searchValue,
   onSearchChange,
@@ -48,96 +82,164 @@ export default function SearchBarLeads({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [openStatus, setOpenStatus] = useState(false);
+  // below other useState hooks
+  const [isExporting, setIsExporting] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [isAttaching, setIsAttaching] = useState(false);
+  const [isApplyingStatus, setIsApplyingStatus] = useState(false);
+  const [selectedStage, setSelectedStage] = useState("as per choice");
+  const [remarks, setRemarks] = useState(" ");
+  const [selectedUser, setSelectedUser] = useState<BDUser | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupItem | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmOpenGroup, setConfirmOpenGroup] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [data, setData] = useState([]);
-  const department = "BD";
-  const handleExportToCsv = async (selectedIds: string[]) => {
-    if (!selectedIds?.length) {
-      toast.error("No tasks selected for export.");
-      return;
-    }
 
-    try {
-      await exportToCsv(selectedIds);
-      toast.success("CSV exported successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to export CSV");
-    }
-  };
+  const [users, setUsers] = useState<BDUser[]>([]);
+  const [data, setData] = useState<GroupItem[]>([]);
+  const department = "BD";
 
   const { user } = useAuth();
 
+  const canExport = useMemo(() => {
+    if (!(selectedIds.length > 0)) return false;
+    const u = user?.name || "";
+    return (
+      u === "admin" ||
+      u === "Admin" ||
+      u === "IT Team" ||
+      u === "Deepak Manodi" ||
+      u === "Prachi Singh"
+    );
+  }, [selectedIds.length, user?.name]);
+
+  // --------- Export ----------
+  const handleExportToCsv = async (ids: string[]) => {
+    if (!ids?.length) {
+      toast.error("No tasks selected for export.");
+      return;
+    }
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await exportToCsv(ids);
+      toast.success("CSV exported successfully");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to export CSV");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // --------- Transfer ----------
   const handleTransferLead = async () => {
     if (!selectedIds || !selectedUser) {
       toast.error("Missing lead or user selection");
       return;
     }
-
+    if (isTransferring) return;
+    setIsTransferring(true);
     try {
       await transferLead(selectedIds, selectedUser._id);
       toast.success("Lead transferred successfully");
-
       setOpen(false);
-
       onTransferComplete(selectedUser._id);
     } catch (error: any) {
-      console.error("Transfer lead failed:", error);
       const message =
         error?.response?.data?.message || "Failed to transfer lead";
       toast.error(message);
+    } finally {
+      setIsTransferring(false);
     }
   };
 
+  // --------- Attach to Group ----------
   const handleAttachToGroup = async () => {
     if (!selectedIds || !selectedGroup) {
       toast.error("Missing lead or group selection");
       return;
     }
-
+    if (isAttaching) return;
+    setIsAttaching(true);
     try {
       await attachToGroup(selectedGroup._id, selectedIds);
       toast.success("Leads attached to group successfully");
-
       setOpenGroup(false);
-
       onTransferComplete(selectedGroup._id);
     } catch (error: any) {
       const message =
-        error.response?.data?.error || error.message || "Something went wrong";
+        error?.response?.data?.error ||
+        error?.message ||
+        "Something went wrong";
       toast.info(message);
+    } finally {
+      setIsAttaching(false);
+    }
+  };
+
+  const handleApplyStatusBulk = async () => {
+    if (!selectedIds?.length) {
+      toast.error("Select at least one lead");
+      return;
+    }
+    if (!selectedStatus) {
+      toast.error("Please select a status");
+      return;
+    }
+    if (isApplyingStatus) return;
+
+    setIsApplyingStatus(true);
+    try {
+      await updateLeadStatusBulk(
+        selectedIds,
+        selectedStatus,
+        selectedStage,
+        remarks
+      );
+      toast.success("Status updated successfully");
+      setOpenStatus(false);
+      setSelectedStatus("");
+      setRemarks("");
+      onTransferComplete(selectedStatus);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || "Failed to update status";
+      toast.error(message);
+    } finally {
+      setIsApplyingStatus(false);
     }
   };
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const params = {
-          department: department,
-        };
+        const params = { department };
         const res = await getAllUser(params);
-        setUsers(res.data);
+        setUsers(res.data || []);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
     };
-
     fetchUser();
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await getAllGroupName();
-      setData(res.data.data);
+      try {
+        const res = await getAllGroupName();
+        setData(res.data?.data || []);
+      } catch (e) {
+        console.error("Error fetching groups", e);
+      }
     };
     fetchData();
   }, []);
 
   return (
     <div className="bg-[#e5e5e5] w-full px-4 py-3 flex justify-between items-center shadow-sm relative z-30">
+      {/* Search */}
       <div className="flex items-center gap-2 w-full max-w-md">
         <div className="relative bg-white w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -151,6 +253,7 @@ export default function SearchBarLeads({
         </div>
       </div>
 
+      {/* Actions */}
       <div className="flex items-center gap-6 text-sm text-gray-800 font-medium relative">
         <span
           className="cursor-pointer text-black hover:underline"
@@ -164,45 +267,65 @@ export default function SearchBarLeads({
         >
           + Add Group
         </span>
-        {selectedIds.length > 0 &&
-          (user?.name === "admin" ||
-            user?.name === "IT Team" ||
-            user?.name === "Deepak Manodi" ||
-            user?.name === "Prachi Singh"
-          ) && (
-            <div className="flex items-center gap-1">
-              <File size={14} />
-              <span
-                className="cursor-pointer text-black hover:underline"
-                onClick={() => handleExportToCsv(selectedIds)}
-              >
-                Export Leads
-              </span>
-            </div>
-          )}
+
+        {canExport && (
+          <div className="flex items-center gap-1">
+            <File size={14} />
+            <span
+              className={`cursor-pointer text-black hover:underline ${
+                isExporting ? "pointer-events-none opacity-60" : ""
+              }`}
+              onClick={() => !isExporting && handleExportToCsv(selectedIds)}
+            >
+              {isExporting ? "Exporting..." : "Export Leads"}
+            </span>
+          </div>
+        )}
+
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-1">
             <User2 size={14} />
             <span
-              className="cursor-pointer text-black hover:underline"
-              onClick={() => setOpen(true)}
+              className={`cursor-pointer text-black hover:underline ${
+                isTransferring ? "pointer-events-none opacity-60" : ""
+              }`}
+              onClick={() => !isTransferring && setOpen(true)}
             >
               Transfer Leads
             </span>
           </div>
         )}
+
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-1">
             <Group size={14} />
             <span
-              className="cursor-pointer text-black hover:underline"
-              onClick={() => setOpenGroup(true)}
+              className={`cursor-pointer text-black hover:underline ${
+                isAttaching ? "pointer-events-none opacity-60" : ""
+              }`}
+              onClick={() => !isAttaching && setOpenGroup(true)}
             >
               Attach to Group
             </span>
           </div>
         )}
+
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-1">
+            <Info size={14} />
+            <span
+              className={`cursor-pointer text-black hover:underline ${
+                isApplyingStatus ? "pointer-events-none opacity-60" : ""
+              }`}
+              onClick={() => !isApplyingStatus && setOpenStatus(true)}
+            >
+              Change Status
+            </span>
+          </div>
+        )}
       </div>
+
+      {/* Attach to Group */}
       <Dialog open={openGroup} onOpenChange={setOpenGroup}>
         <DialogContent>
           <DialogHeader>
@@ -214,12 +337,11 @@ export default function SearchBarLeads({
                 const userName = user?.name;
                 const isAdmin =
                   userName === "Admin" ||
+                  userName === "admin" ||
                   userName === "IT Team" ||
                   userName === "Deepak Manodi";
-
                 if (isAdmin) return true;
-
-                return group.createdBy.name === userName;
+                return group?.createdBy?.name === userName;
               })
               .map((group) => (
                 <div
@@ -242,8 +364,11 @@ export default function SearchBarLeads({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Do you want to Attach to{" "}
-              <strong>{selectedGroup?.company_name} Group</strong>?
+              Do you want to attach to{" "}
+              <strong>
+                {selectedGroup?.company_name || selectedGroup?.group_name} Group
+              </strong>
+              ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -253,34 +378,43 @@ export default function SearchBarLeads({
             <AlertDialogAction
               onClick={handleAttachToGroup}
               className="cursor-pointer"
+              disabled={isAttaching}
             >
-              Confirm
+              {isAttaching ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Attaching...
+                </span>
+              ) : (
+                "Confirm"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Transfer Leads */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Select BD Member to Transfer</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {users.map((user) => (
+            {users.map((u) => (
               <div
-                key={user._id}
+                key={u._id}
                 className="p-2 border rounded cursor-pointer hover:bg-gray-100"
                 onClick={() => {
-                  setSelectedUser(user);
+                  setSelectedUser(u);
                   setConfirmOpen(true);
                 }}
               >
-                {user?.name}
+                {u?.name}
               </div>
             ))}
           </div>
         </DialogContent>
       </Dialog>
+
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -296,12 +430,73 @@ export default function SearchBarLeads({
             <AlertDialogAction
               onClick={handleTransferLead}
               className="cursor-pointer"
+              disabled={isTransferring}
             >
-              Confirm
+              {isTransferring ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Transferring...
+                </span>
+              ) : (
+                "Confirm"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={openStatus} onOpenChange={setOpenStatus}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Status</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {STATUS_OPTIONS.map(({ key, label, icon: Icon }) => (
+              <label
+                key={key}
+                className={
+                  "flex items-center gap-3 p-2 border rounded cursor-pointer hover:bg-gray-100"
+                }
+                onClick={() => setSelectedStatus(key)}
+              >
+                <input
+                  type="radio"
+                  name="lead-status"
+                  checked={selectedStatus === key}
+                  onChange={() => setSelectedStatus(key)}
+                  className="cursor-pointer"
+                />
+                <Icon size={16} />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button
+              onClick={handleApplyStatusBulk}
+              className="cursor-pointer"
+              disabled={isApplyingStatus}
+            >
+              {isApplyingStatus ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Applying...
+                </span>
+              ) : (
+                "Apply"
+              )}
+            </Button>
+
+            <Button
+              className="cursor-pointer"
+              variant="outline"
+              onClick={() => setOpenStatus(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
