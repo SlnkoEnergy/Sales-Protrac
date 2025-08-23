@@ -130,6 +130,7 @@ const StatusCell: FC<Props> = ({
       setStatusDialogOpen(false);
       setRemarks("");
       onTransferCompleteStatus(leadId);
+      setStatusSelectOpen(false);
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -203,7 +204,7 @@ const StatusCell: FC<Props> = ({
                   <Button
                     key={status}
                     variant="outline"
-                    className="cursor-pointer"
+                    className="cursor-pointer capitalize"
                     onClick={() => handleStatusUpdate(status, "as per choice")}
                   >
                     {status}
