@@ -154,7 +154,9 @@ export function DataTable({
   const [leadOwner, setLeadOwner] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
+  const [rowSelection, setRowSelection] = React.useState<
+    Record<string, boolean>
+  >({});
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
 
   const navigate = useNavigate();
@@ -187,7 +189,7 @@ export function DataTable({
         </div>
       );
     },
-  };  
+  };
 
   const MonthOptions = React.useMemo(
     () => [
@@ -243,7 +245,6 @@ export function DataTable({
   const handleTransferComplete = () => {
     setRefreshKey((prev) => prev + 1);
   };
-
 
   const columns: ColumnDef<Lead>[] = [
     {
@@ -520,22 +521,21 @@ export function DataTable({
                 Copy Lead ID
               </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/leadProfile?id=${lead._id}`);
-                  }}
-                >
-                  View Customer
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/leadProfile?id=${lead._id}`);
+                }}
+              >
+                View Customer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
       },
-  ]
-    
+    },
+  ];
 
   // Debounce search input for API & URL sync
   React.useEffect(() => {
@@ -571,8 +571,8 @@ export function DataTable({
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
-                ? ""
-                : undefined,
+              ? ""
+              : undefined,
           handover_statusFilter: Handoverfilter || "",
           ClosingDateFilter: ClosingMonthFilter || "",
           leadAgingFilter: LeadAgingFilter || "",
@@ -621,8 +621,8 @@ export function DataTable({
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
-                ? ""
-                : undefined,
+              ? ""
+              : undefined,
           handover_statusFilter: Handoverfilter || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
@@ -657,35 +657,68 @@ export function DataTable({
     setSearchParams((prev) => {
       const updated = new URLSearchParams(prev);
 
-      if (leadAging || LeadAgingFilter) updated.set("aging", leadAging || LeadAgingFilter);
+      if (leadAging || LeadAgingFilter)
+        updated.set("aging", leadAging || LeadAgingFilter);
       else updated.delete("aging");
 
-      if (handoverStatus || Handoverfilter) updated.set("handover", handoverStatus || Handoverfilter);
+      if (handoverStatus || Handoverfilter)
+        updated.set("handover", handoverStatus || Handoverfilter);
       else updated.delete("handover");
 
-      if (selectedStates.length > 0 || state) updated.set("stateFilter", (selectedStates.length ? selectedStates : statesFromUrl).join(","));
+      if (selectedStates.length > 0 || state)
+        updated.set(
+          "stateFilter",
+          (selectedStates.length ? selectedStates : statesFromUrl).join(",")
+        );
       else updated.delete("stateFilter");
 
-      if (expectedClosing.length > 0 || monthsFromUrl.length > 0) updated.set("closingdatefilter", (expectedClosing.length ? expectedClosing : monthsFromUrl).join(","));
+      if (expectedClosing.length > 0 || monthsFromUrl.length > 0)
+        updated.set(
+          "closingdatefilter",
+          (expectedClosing.length ? expectedClosing : monthsFromUrl).join(",")
+        );
       else updated.delete("closingdatefilter");
 
-      if (inactiveDays || InActiveDays) updated.set("inActiveDays", inactiveDays || InActiveDays || "");
+      if (inactiveDays || InActiveDays)
+        updated.set("inActiveDays", inactiveDays || InActiveDays || "");
       else updated.delete("inActiveDays");
 
-      if (leadOwner || NameFilter) updated.set("name", leadOwner || NameFilter || "");
+      if (leadOwner || NameFilter)
+        updated.set("name", leadOwner || NameFilter || "");
       else updated.delete("name");
 
       return updated;
     });
-  }, [selectedStates, handoverStatus, leadAging, inactiveDays, leadOwner, expectedClosing, setSearchParams, LeadAgingFilter, Handoverfilter, InActiveDays, NameFilter, monthsFromUrl, statesFromUrl, state]);
+  }, [
+    selectedStates,
+    handoverStatus,
+    leadAging,
+    inactiveDays,
+    leadOwner,
+    expectedClosing,
+    setSearchParams,
+    LeadAgingFilter,
+    Handoverfilter,
+    InActiveDays,
+    NameFilter,
+    monthsFromUrl,
+    statesFromUrl,
+    state,
+  ]);
 
   // Pagination state driven by URL
-  const [pagination, setPagination] = React.useState({ pageIndex: page - 1, pageSize });
+  const [pagination, setPagination] = React.useState({
+    pageIndex: page - 1,
+    pageSize,
+  });
   React.useEffect(() => {
     setPagination({ pageIndex: page - 1, pageSize });
   }, [page, pageSize]);
 
-  const totalPages = React.useMemo(() => Math.ceil((total || 0) / pageSize) || 0, [total, pageSize]);
+  const totalPages = React.useMemo(
+    () => Math.ceil((total || 0) / pageSize) || 0,
+    [total, pageSize]
+  );
 
   // Table instance
   const table = useReactTable({
@@ -715,7 +748,8 @@ export function DataTable({
   }, [rowSelection, data, onSelectionChange, table]);
 
   const isActiveLeadWithoutTask =
-    window.location.pathname === "/leads" && searchParams.get("stage") === "lead_without_task";
+    window.location.pathname === "/leads" &&
+    searchParams.get("stage") === "lead_without_task";
 
   // Toggle helpers
   const toggleState = (st: string) => {
@@ -729,7 +763,9 @@ export function DataTable({
   const toggleMonth = (mLabel: string) => {
     setExpectedClosing((prev) => {
       const exists = prev.includes(mLabel);
-      const next = exists ? prev.filter((s) => s !== mLabel) : [...prev, mLabel];
+      const next = exists
+        ? prev.filter((s) => s !== mLabel)
+        : [...prev, mLabel];
       return next;
     });
   };
@@ -752,7 +788,8 @@ export function DataTable({
     (expectedClosing.length || monthsFromUrl.length) +
     (handoverStatus || Handoverfilter ? 1 : 0) +
     (leadAging || LeadAgingFilter ? 1 : 0) +
-    (inactiveDays || InActiveDays ? 1 : 0);
+    (inactiveDays || InActiveDays ? 1 : 0) +
+    (leadOwner || NameFilter ? 1 : 0);
 
   const handleTabChange = (value: string) => {
     setTab(value);
@@ -808,7 +845,9 @@ export function DataTable({
   if (isLoading) return <Loader />;
 
   return (
-    <div className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}>
+    <div
+      className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
+    >
       <div className="flex justify-between items-center py-4 px-2">
         {!isFromGroup && !isActiveLeadWithoutTask && (
           <div>
@@ -858,8 +897,8 @@ export function DataTable({
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter by State</span>
                   {(selectedStates.length || statesFromUrl.length) > 0 && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {(selectedStates.length || statesFromUrl.length)}
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      {selectedStates.length || statesFromUrl.length}
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -869,7 +908,10 @@ export function DataTable({
                       <DropdownMenuCheckboxItem
                         className="cursor-pointer capitalize"
                         key={opt}
-                        checked={(selectedStates.length ? selectedStates : statesFromUrl).includes(opt)}
+                        checked={(selectedStates.length
+                          ? selectedStates
+                          : statesFromUrl
+                        ).includes(opt)}
                         onCheckedChange={() => toggleState(opt)}
                         onSelect={(e) => e.preventDefault()}
                       >
@@ -899,21 +941,25 @@ export function DataTable({
                   <DropdownMenuSubTrigger className="cursor-pointer">
                     <span>Handover Filter</span>
                     {Handoverfilter && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {Handoverfilter ? 1 : 0}
-                    </span>
-                  )}
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                        {Handoverfilter ? 1 : 0}
+                      </span>
+                    )}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     {["pending", "inprocess", "completed"].map((status) => (
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="cursor-pointer capitalize"
-                        checked={(handoverStatus || Handoverfilter || "") === status}
+                        checked={
+                          (handoverStatus || Handoverfilter || "") === status
+                        }
                         onCheckedChange={(checked) => {
                           const newValue = checked ? status : "";
                           setHandoverStatus(newValue);
-                          const newParams = new URLSearchParams(searchParams.toString());
+                          const newParams = new URLSearchParams(
+                            searchParams.toString()
+                          );
                           if (newValue) newParams.set("handover", newValue);
                           else newParams.delete("handover");
                           newParams.set("page", "1");
@@ -946,7 +992,7 @@ export function DataTable({
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Lead Aging Filter</span>
                   {LeadAgingFilter && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
                       {LeadAgingFilter ? 1 : 0}
                     </span>
                   )}
@@ -956,7 +1002,9 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       key={opt.value}
                       className="cursor-pointer"
-                      checked={(leadAging || LeadAgingFilter || "") === opt.value}
+                      checked={
+                        (leadAging || LeadAgingFilter || "") === opt.value
+                      }
                       onCheckedChange={(checked) => {
                         const newValue = checked ? opt.value : "";
                         const updated = new URLSearchParams(searchParams);
@@ -992,8 +1040,8 @@ export function DataTable({
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Inactive Days Filter</span>
                   {InActiveDays && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {InActiveDays? 1: 0}
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      {InActiveDays ? 1 : 0}
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -1002,7 +1050,9 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       key={opt.value}
                       className="cursor-pointer"
-                      checked={(inactiveDays || InActiveDays || "") === opt.value}
+                      checked={
+                        (inactiveDays || InActiveDays || "") === opt.value
+                      }
                       onCheckedChange={(checked) => {
                         const newValue = checked ? opt.value : "";
                         const updated = new URLSearchParams(searchParams);
@@ -1038,8 +1088,8 @@ export function DataTable({
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter By Closing Date</span>
                   {(expectedClosing.length || monthsFromUrl.length) > 0 && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {(expectedClosing.length || monthsFromUrl.length)}
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      {expectedClosing.length || monthsFromUrl.length}
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -1048,8 +1098,13 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       className="cursor-pointer capitalize"
                       key={opt.value}
-                      checked={(expectedClosing.length ? expectedClosing : monthsFromUrl).includes(opt.label)}
-                      onCheckedChange={() => toggleMonth(opt.label)}
+                      checked={(expectedClosing.length
+                        ? expectedClosing
+                        : monthsFromUrl
+                      ).includes(opt.label)}
+                      onCheckedChange={() => {
+                        toggleMonth(opt.label);
+                      }}
                       onSelect={(e) => e.preventDefault()}
                     >
                       {opt.label}
@@ -1075,76 +1130,78 @@ export function DataTable({
               {(user?.name === "admin" ||
                 user?.name === "IT Team" ||
                 user?.name === "Deepak Manodi") && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="cursor-pointer">
-                      <span>Lead Owner Filter</span>
-                      {
-                        (NameFilter) && (
-                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                            {(NameFilter)}
-                          </span>
-                        )
-                      }
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                      <DropdownMenuRadioGroup
-                        value={leadOwner || NameFilter}
-                        onValueChange={(value) => {
-                          setLeadOwner(value);
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
+                    <span>Lead Owner Filter</span>
+                    {NameFilter && (
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                        {NameFilter ? 1 : 0}
+                      </span>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                    <DropdownMenuRadioGroup
+                      value={leadOwner || NameFilter}
+                      onValueChange={(value) => {
+                        setLeadOwner(value);
 
-                          const newParams = new URLSearchParams(searchParams.toString());
-                          if (value) {
-                            newParams.set("name", value);
-                          } else {
-                            newParams.delete("name");
-                          }
-                          setSearchParams(newParams);
-                        }}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <DropdownMenuRadioItem value="">
+                        const newParams = new URLSearchParams(
+                          searchParams.toString()
+                        );
+                        if (value) {
+                          newParams.set("name", value);
+                        } else {
+                          newParams.delete("name");
+                        }
+                        setSearchParams(newParams);
+                      }}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <DropdownMenuRadioItem value="">
+                        <span className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={!leadOwner && !NameFilter}
+                            readOnly
+                            className="h-4 w-4"
+                          />
+                          All
+                        </span>
+                      </DropdownMenuRadioItem>
+
+                      {users.map((usr) => (
+                        <DropdownMenuRadioItem key={usr?._id} value={usr?._id}>
                           <span className="flex items-center gap-2">
                             <input
                               type="checkbox"
-                              checked={!leadOwner}
+                              checked={
+                                leadOwner === usr?._id ||
+                                NameFilter === usr?._id
+                              }
                               readOnly
                               className="h-4 w-4"
                             />
-                            All
+                            {usr?.name}
                           </span>
                         </DropdownMenuRadioItem>
-
-                        {users.map((usr) => (
-                          <DropdownMenuRadioItem key={usr?._id} value={usr?._id}>
-                            <span className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={leadOwner === usr?._id}
-                                readOnly
-                                className="h-4 w-4"
-                              />
-                              {usr?.name}
-                            </span>
-                          </DropdownMenuRadioItem>
-                        ))}
-                        <DropdownMenuCheckboxItem
-                          checked={false}
-                          className="text-red-500 hover:bg-red-100 cursor-pointer"
-                          onCheckedChange={() => {
-                            const updated = new URLSearchParams(searchParams);
-                            updated.delete("name");
-                            updated.set("page", "1");
-                            setSearchParams(updated);
-                            setLeadOwner("");
-                          }}
-                        >
-                          Clear Filter
-                        </DropdownMenuCheckboxItem>
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                )}
-
+                      ))}
+                      <DropdownMenuCheckboxItem
+                        checked={false}
+                        className="text-red-500 hover:bg-red-100 cursor-pointer"
+                        onCheckedChange={() => {
+                          const updated = new URLSearchParams(searchParams);
+                          updated.delete("name");
+                          updated.set("page", "1");
+                          setSearchParams(updated);
+                          setLeadOwner("");
+                        }}
+                      >
+                        Clear Filter
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1171,7 +1228,9 @@ export function DataTable({
                       key={column.id}
                       className="capitalize cursor-pointer"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
                       {label}
                     </DropdownMenuCheckboxItem>
@@ -1182,13 +1241,20 @@ export function DataTable({
 
           <div className="flex items-center gap-2">
             <label htmlFor="limit">Rows per page:</label>
-            <Select value={pageSize.toString()} onValueChange={(v) => handleLimitChange(Number(v))}>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(v) => handleLimitChange(Number(v))}
+            >
               <SelectTrigger className="w-24 h-9 cursor-pointer">
                 <SelectValue placeholder="Select limit" />
               </SelectTrigger>
               <SelectContent>
                 {[1, 5, 10, 20, 50, 100].map((limit) => (
-                  <SelectItem className="cursor-pointer" key={limit} value={limit.toString()}>
+                  <SelectItem
+                    className="cursor-pointer"
+                    key={limit}
+                    value={limit.toString()}
+                  >
                     {limit}
                   </SelectItem>
                 ))}
@@ -1207,7 +1273,9 @@ export function DataTable({
                   .filter((header) => {
                     // Only show handover column when at least one row is in 'won'
                     if (header.column.id === "status_of_handoversheet") {
-                      return data.some((lead) => lead.current_status?.name === "won");
+                      return data.some(
+                        (lead) => lead.current_status?.name === "won"
+                      );
                     }
                     return true;
                   })
@@ -1215,34 +1283,49 @@ export function DataTable({
                     <TableHead className="text-left" key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   ))}
-              </TableRow>))}
+              </TableRow>
+            ))}
           </TableHeader>
 
           <TableBody>
             {table.getPaginationRowModel().rows?.length ? (
               table.getPaginationRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row
                     .getVisibleCells()
                     .filter((cell) => {
                       if (cell.column.id === "status_of_handoversheet") {
-                        return data.some((lead) => lead.current_status?.name === "won");
+                        return data.some(
+                          (lead) => lead.current_status?.name === "won"
+                        );
                       }
                       return true;
                     })
                     .map((cell) => (
                       <TableCell className="text-left" key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </TableCell>
                     ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
