@@ -146,7 +146,6 @@ export function DataTable({
   const [tab, setTab] = React.useState(stageFromUrl || "");
   const [handoverStatus, setHandoverStatus] = React.useState("");
   const [leadAging, setLeadAging] = React.useState("");
-  const [expectedClosing, setExpectedClosing] = React.useState<string[]>([]);
   const [inactiveDays, setInactiveDays] = React.useState("");
   const department = "BD";
   const [isLoading, setIsLoading] = React.useState(false);
@@ -208,12 +207,50 @@ export function DataTable({
     ],
     []
   );
+  const practice = [
+    { value: "1", label: "january" },
+    { value: "2", label: "february" },
+    { value: "3", label: "march" },
+    { value: "4", label: "april" },
+  ];
 
+  const filters_testing = {
+    testing: searchParams.get("testing")?.split(",") || [],
+    ClosingMonth: searchParams.get("ClosingMonth")?.split(",") || [],
+  };
+
+  const updatefilter = (key: string, value: string | string[]) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        newParams.set(key, value.join(",")); 
+      } else {
+        newParams.delete(key);
+      }
+    } else {
+      value ? newParams.set(key, value) : newParams.delete(key);
+    }
+    setSearchParams(newParams);
+  };
+
+  const testingtoggle = (st: string) => {
+    const newStates = filters_testing.testing.includes(st)
+      ? filters_testing.testing.filter((s) => s !== st)
+      : [...filters_testing.testing, st];
+    updatefilter("testing", newStates); 
+  };
+
+  const Monthtoggle = (st: string) =>{
+    const newmonth = filters_testing.ClosingMonth.includes(st)
+    ? filters_testing.ClosingMonth.filter((s) => s !== st)
+    : [...filters_testing.ClosingMonth, st];
+
+    updatefilter("ClosingMonth", newmonth);
+  }
   // URL params
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
   const state = searchParams.get("stateFilter");
-  const ClosingDateFilter = searchParams.get("closingdatefilter");
   const Handoverfilter = searchParams.get("handover");
   const LeadAgingFilter = searchParams.get("aging") || "";
   const InActiveDays = searchParams.get("inActiveDays");
@@ -224,21 +261,16 @@ export function DataTable({
     () => (state ? state.split(",") : []),
     [state]
   );
-  const monthsFromUrl = React.useMemo(
-    () => (ClosingDateFilter ? ClosingDateFilter.split(",") : []),
-    [ClosingDateFilter]
-  );
 
-  // Convert month labels -> numeric string for API
-  const ClosingMonthFilter = React.useMemo(() => {
-    const labels = expectedClosing.length > 0 ? expectedClosing : monthsFromUrl;
-    if (labels.length === 0) return "";
-    const map = new Map(MonthOptions.map((m) => [m.label, m.value] as const));
+  const ClosingMonthString = React.useMemo(() => {
+    const labels = filters_testing.ClosingMonth;
+    if(labels.length === 0) return "";
+    const map = new Map(MonthOptions.map((m) => [m.label, m.value] as const ));
     return labels
-      .map((lbl) => map.get(lbl))
-      .filter(Boolean)
-      .join(",");
-  }, [expectedClosing, monthsFromUrl, MonthOptions]);
+    .map((lbl) => map.get(lbl))
+    .filter(Boolean)
+    .join(",");
+  }, [filters_testing.ClosingMonth, MonthOptions]);
 
   const { user } = useAuth();
 
@@ -574,7 +606,7 @@ export function DataTable({
               ? ""
               : undefined,
           handover_statusFilter: Handoverfilter || "",
-          ClosingDateFilter: ClosingMonthFilter || "",
+          ClosingDateFilter: ClosingMonthString || "",
           leadAgingFilter: LeadAgingFilter || "",
           inactiveFilter: InActiveDays || "",
           name: NameFilter || "",
@@ -603,7 +635,7 @@ export function DataTable({
     LeadAgingFilter,
     InActiveDays,
     NameFilter,
-    ClosingMonthFilter,
+    ClosingMonthString,
     refreshKey,
     isFromGroup,
     group_id,
@@ -616,7 +648,7 @@ export function DataTable({
           search: debouncedSearch,
           group_id: isFromGroup ? group_id : "",
           stateFilter: state || "",
-          ClosingDateFilter: ClosingMonthFilter || "",
+          ClosingDateFilter: ClosingMonthString || "",
           lead_without_task:
             stageFromUrl === "lead_without_task"
               ? "true"
@@ -647,7 +679,7 @@ export function DataTable({
     LeadAgingFilter,
     InActiveDays,
     NameFilter,
-    ClosingMonthFilter,
+    ClosingMonthString,
     isFromGroup,
     group_id,
   ]);
@@ -672,13 +704,6 @@ export function DataTable({
         );
       else updated.delete("stateFilter");
 
-      if (expectedClosing.length > 0 || monthsFromUrl.length > 0)
-        updated.set(
-          "closingdatefilter",
-          (expectedClosing.length ? expectedClosing : monthsFromUrl).join(",")
-        );
-      else updated.delete("closingdatefilter");
-
       if (inactiveDays || InActiveDays)
         updated.set("inActiveDays", inactiveDays || InActiveDays || "");
       else updated.delete("inActiveDays");
@@ -695,13 +720,11 @@ export function DataTable({
     leadAging,
     inactiveDays,
     leadOwner,
-    expectedClosing,
     setSearchParams,
     LeadAgingFilter,
     Handoverfilter,
     InActiveDays,
     NameFilter,
-    monthsFromUrl,
     statesFromUrl,
     state,
   ]);
@@ -760,16 +783,7 @@ export function DataTable({
     });
   };
 
-  const toggleMonth = (mLabel: string) => {
-    setExpectedClosing((prev) => {
-      const exists = prev.includes(mLabel);
-      const next = exists
-        ? prev.filter((s) => s !== mLabel)
-        : [...prev, mLabel];
-      return next;
-    });
-  };
-
+  
   const daysOptions = [
     { value: "7", label: "1 week" },
     { value: "14", label: "2 weeks" },
@@ -785,7 +799,7 @@ export function DataTable({
 
   const totalFilters =
     (selectedStates.length || statesFromUrl.length) +
-    (expectedClosing.length || monthsFromUrl.length) +
+    (filters_testing.ClosingMonth.length) +
     (handoverStatus || Handoverfilter ? 1 : 0) +
     (leadAging || LeadAgingFilter ? 1 : 0) +
     (inactiveDays || InActiveDays ? 1 : 0) +
@@ -1087,9 +1101,9 @@ export function DataTable({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter By Closing Date</span>
-                  {(expectedClosing.length || monthsFromUrl.length) > 0 && (
+                  {(filters_testing.ClosingMonth.length) > 0 && (
                     <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
-                      {expectedClosing.length || monthsFromUrl.length}
+                      {filters_testing.ClosingMonth.length}
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -1098,13 +1112,10 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       className="cursor-pointer capitalize"
                       key={opt.value}
-                      checked={(expectedClosing.length
-                        ? expectedClosing
-                        : monthsFromUrl
-                      ).includes(opt.label)}
                       onCheckedChange={() => {
-                        toggleMonth(opt.label);
+                        Monthtoggle(opt.label)
                       }}
+                      checked={filters_testing.ClosingMonth.includes(opt.label)}
                       onSelect={(e) => e.preventDefault()}
                     >
                       {opt.label}
@@ -1113,13 +1124,46 @@ export function DataTable({
                   <DropdownMenuRadioItem
                     value=""
                     className="text-red-500 hover:bg-red-100 cursor-pointer"
+                    onSelect={(e) =>{
+                      e.preventDefault();
+                      const updated = new URLSearchParams(searchParams);
+                      updated.delete("ClosingMonth");
+                      updated.set("page", "1");
+                      setSearchParams(updated);
+                    }}
+                  >
+                    Clear Filter
+                  </DropdownMenuRadioItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  <span>Testing</span>
+                </DropdownMenuSubTrigger>
+
+                <DropdownMenuSubContent>
+                  {practice.map((opt) => (
+                    <DropdownMenuCheckboxItem
+                      className="cursor-pointer capitalize"
+                      key={opt.value}
+                      onCheckedChange={() => testingtoggle(opt.label)}
+                      checked={filters_testing.testing.includes(opt.label)} // 👈 use label
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {opt.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+
+                  <DropdownMenuRadioItem
+                    value=""
+                    className="text-red-500 hover:bg-red-100 cursor-pointer"
                     onSelect={(e) => {
                       e.preventDefault();
                       const updated = new URLSearchParams(searchParams);
-                      updated.delete("closingdatefilter");
+                      updated.delete("testing"); // 👈 key should match
                       updated.set("page", "1");
                       setSearchParams(updated);
-                      setExpectedClosing([]);
                     }}
                   >
                     Clear Filter
