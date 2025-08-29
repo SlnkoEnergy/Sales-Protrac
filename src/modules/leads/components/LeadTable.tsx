@@ -60,6 +60,7 @@ import Loader from "@/components/loader/Loader";
 import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
 import { useAuth } from "@/services/context/AuthContext";
+import { Input } from "@/components/ui/input";
 
 export type Lead = {
   _id: string;
@@ -126,9 +127,14 @@ export function DataTable({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const stageFromUrl = searchParams.get("stage") || "";
-  const page = parseInt(searchParams.get("page") || "1");
-  const pageSize = parseInt(searchParams.get("pageSize") || "10");
 
+  // const page = parseInt(searchParams.get("page") || "1");
+  const [page, setPage] = React.useState(
+    parseInt(searchParams.get("page") || "1")
+  ); const pageSize = parseInt(searchParams.get("pageSize") || "10");
+  const [tempPage, setTempPage] = React.useState(page);
+
+  const [open, setOpen] = React.useState(false)
   const [data, setData] = React.useState<Lead[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [total, setTotal] = React.useState(0);
@@ -144,17 +150,13 @@ export function DataTable({
     all?: number;
   }>({});
   const [tab, setTab] = React.useState(stageFromUrl || "");
-  const [handoverStatus, setHandoverStatus] = React.useState("");
-  const [leadAging, setLeadAging] = React.useState("");
-  const [expectedClosing, setExpectedClosing] = React.useState<string[]>([]);
-  const [inactiveDays, setInactiveDays] = React.useState("");
   const department = "BD";
   const [isLoading, setIsLoading] = React.useState(false);
-  const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
-  const [leadOwner, setLeadOwner] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
+  const [rowSelection, setRowSelection] = React.useState<
+    Record<string, boolean>
+  >({});
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
 
   const navigate = useNavigate();
@@ -187,7 +189,7 @@ export function DataTable({
         </div>
       );
     },
-  };  
+  };
 
   const MonthOptions = React.useMemo(
     () => [
@@ -206,44 +208,71 @@ export function DataTable({
     ],
     []
   );
+  console.log(page);
+  const Filters = {
+    ClosingMonth: searchParams.get("ClosingMonth")?.split(",") || [],
+    States: searchParams.get("State")?.split(",") || [],
+    Handover: searchParams.get("handover") || "",
+    inActiveDays: searchParams.get("inActiveDays") || "",
+    LeadAging: searchParams.get("aging") || "",
+    leadOwner: searchParams.get("name") || "",
+  };
 
+  const updatefilter = (key: string, value: string | string[]) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        newParams.set(key, value.join(","));
+      } else {
+        newParams.delete(key);
+      }
+    } else {
+      value ? newParams.set(key, value) : newParams.delete(key);
+    }
+    setSearchParams(newParams);
+  };
+
+  const Monthtoggle = (st: string) => {
+    const newmonth = Filters.ClosingMonth.includes(st)
+      ? Filters.ClosingMonth.filter((s) => s !== st)
+      : [...Filters.ClosingMonth, st];
+
+    updatefilter("ClosingMonth", newmonth);
+  }
+
+  const Statetoggle = (st: string) => {
+    const newState = Filters.States.includes(st)
+      ? Filters.States.filter((s) => s !== st)
+      : [...Filters.States, st];
+
+    updatefilter("State", newState);
+  }
   // URL params
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
-  const state = searchParams.get("stateFilter");
-  const ClosingDateFilter = searchParams.get("closingdatefilter");
-  const Handoverfilter = searchParams.get("handover");
-  const LeadAgingFilter = searchParams.get("aging") || "";
-  const InActiveDays = searchParams.get("inActiveDays");
-  const NameFilter = searchParams.get("name");
 
-  // Derive local arrays from URL once per render
-  const statesFromUrl = React.useMemo(
-    () => (state ? state.split(",") : []),
-    [state]
-  );
-  const monthsFromUrl = React.useMemo(
-    () => (ClosingDateFilter ? ClosingDateFilter.split(",") : []),
-    [ClosingDateFilter]
-  );
 
-  // Convert month labels -> numeric string for API
-  const ClosingMonthFilter = React.useMemo(() => {
-    const labels = expectedClosing.length > 0 ? expectedClosing : monthsFromUrl;
+  const StatesString = React.useMemo(() => {
+    const labels = Filters.States;
+    if (labels.length === 0) return "";
+    return labels.join(",");
+  }, [Filters.States, uniqueState])
+
+  const ClosingMonthString = React.useMemo(() => {
+    const labels = Filters.ClosingMonth;
     if (labels.length === 0) return "";
     const map = new Map(MonthOptions.map((m) => [m.label, m.value] as const));
     return labels
       .map((lbl) => map.get(lbl))
       .filter(Boolean)
       .join(",");
-  }, [expectedClosing, monthsFromUrl, MonthOptions]);
+  }, [Filters.ClosingMonth, MonthOptions]);
 
   const { user } = useAuth();
 
   const handleTransferComplete = () => {
     setRefreshKey((prev) => prev + 1);
   };
-
 
   const columns: ColumnDef<Lead>[] = [
     {
@@ -520,22 +549,21 @@ export function DataTable({
                 Copy Lead ID
               </DropdownMenuItem>
 
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/leadProfile?id=${lead._id}`);
-                  }}
-                >
-                  View Customer
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/leadProfile?id=${lead._id}`);
+                }}
+              >
+                View Customer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
       },
-  ]
-    
+    },
+  ];
 
   // Debounce search input for API & URL sync
   React.useEffect(() => {
@@ -566,18 +594,18 @@ export function DataTable({
           limit: pageSize,
           search: debouncedSearch,
           group_id: isFromGroup ? group_id : "",
-          stateFilter: state || "",
+          stateFilter: StatesString || "",
           lead_without_task:
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
                 ? ""
                 : undefined,
-          handover_statusFilter: Handoverfilter || "",
-          ClosingDateFilter: ClosingMonthFilter || "",
-          leadAgingFilter: LeadAgingFilter || "",
-          inactiveFilter: InActiveDays || "",
-          name: NameFilter || "",
+          handover_statusFilter: Filters.Handover || "",
+          ClosingDateFilter: ClosingMonthString || "",
+          leadAgingFilter: Filters.LeadAging || "",
+          inactiveFilter: Filters.inActiveDays || "",
+          name: Filters.leadOwner || "",
         };
         if (fromDate) params.fromDate = fromDate;
         if (toDate) params.toDate = toDate;
@@ -598,12 +626,12 @@ export function DataTable({
     fromDate,
     toDate,
     stageFromUrl,
-    state,
-    Handoverfilter,
-    LeadAgingFilter,
-    InActiveDays,
-    NameFilter,
-    ClosingMonthFilter,
+    StatesString,
+    Filters.Handover,
+    Filters.LeadAging,
+    Filters.inActiveDays,
+    Filters.leadOwner,
+    ClosingMonthString,
     refreshKey,
     isFromGroup,
     group_id,
@@ -615,18 +643,18 @@ export function DataTable({
         const params: any = {
           search: debouncedSearch,
           group_id: isFromGroup ? group_id : "",
-          stateFilter: state || "",
-          ClosingDateFilter: ClosingMonthFilter || "",
+          stateFilter: StatesString || "",
+          ClosingDateFilter: ClosingMonthString || "",
           lead_without_task:
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
                 ? ""
                 : undefined,
-          handover_statusFilter: Handoverfilter || "",
-          leadAgingFilter: LeadAgingFilter || "",
-          inactiveFilter: InActiveDays || "",
-          name: NameFilter || "",
+          handover_statusFilter: Filters.Handover || "",
+          leadAgingFilter: Filters.LeadAging || "",
+          inactiveFilter: Filters.inActiveDays || "",
+          name: Filters.leadOwner || "",
         };
         if (fromDate) params.fromDate = fromDate;
         if (toDate) params.toDate = toDate;
@@ -641,51 +669,30 @@ export function DataTable({
     debouncedSearch,
     fromDate,
     toDate,
-    state,
+    StatesString,
     stageFromUrl,
-    Handoverfilter,
-    LeadAgingFilter,
-    InActiveDays,
-    NameFilter,
-    ClosingMonthFilter,
+    Filters.Handover,
+    Filters.LeadAging,
+    Filters.inActiveDays,
+    Filters.leadOwner,
+    ClosingMonthString,
     isFromGroup,
     group_id,
   ]);
 
-  // Sync filters into URL when local selections change
-  React.useEffect(() => {
-    setSearchParams((prev) => {
-      const updated = new URLSearchParams(prev);
-
-      if (leadAging || LeadAgingFilter) updated.set("aging", leadAging || LeadAgingFilter);
-      else updated.delete("aging");
-
-      if (handoverStatus || Handoverfilter) updated.set("handover", handoverStatus || Handoverfilter);
-      else updated.delete("handover");
-
-      if (selectedStates.length > 0 || state) updated.set("stateFilter", (selectedStates.length ? selectedStates : statesFromUrl).join(","));
-      else updated.delete("stateFilter");
-
-      if (expectedClosing.length > 0 || monthsFromUrl.length > 0) updated.set("closingdatefilter", (expectedClosing.length ? expectedClosing : monthsFromUrl).join(","));
-      else updated.delete("closingdatefilter");
-
-      if (inactiveDays || InActiveDays) updated.set("inActiveDays", inactiveDays || InActiveDays || "");
-      else updated.delete("inActiveDays");
-
-      if (leadOwner || NameFilter) updated.set("name", leadOwner || NameFilter || "");
-      else updated.delete("name");
-
-      return updated;
-    });
-  }, [selectedStates, handoverStatus, leadAging, inactiveDays, leadOwner, expectedClosing, setSearchParams, LeadAgingFilter, Handoverfilter, InActiveDays, NameFilter, monthsFromUrl, statesFromUrl, state]);
-
   // Pagination state driven by URL
-  const [pagination, setPagination] = React.useState({ pageIndex: page - 1, pageSize });
+  const [pagination, setPagination] = React.useState({
+    pageIndex: page - 1,
+    pageSize,
+  });
   React.useEffect(() => {
     setPagination({ pageIndex: page - 1, pageSize });
   }, [page, pageSize]);
 
-  const totalPages = React.useMemo(() => Math.ceil((total || 0) / pageSize) || 0, [total, pageSize]);
+  const totalPages = React.useMemo(
+    () => Math.ceil((total || 0) / pageSize) || 0,
+    [total, pageSize]
+  );
 
   // Table instance
   const table = useReactTable({
@@ -715,24 +722,8 @@ export function DataTable({
   }, [rowSelection, data, onSelectionChange, table]);
 
   const isActiveLeadWithoutTask =
-    window.location.pathname === "/leads" && searchParams.get("stage") === "lead_without_task";
-
-  // Toggle helpers
-  const toggleState = (st: string) => {
-    setSelectedStates((prev) => {
-      const exists = prev.includes(st);
-      const next = exists ? prev.filter((s) => s !== st) : [...prev, st];
-      return next;
-    });
-  };
-
-  const toggleMonth = (mLabel: string) => {
-    setExpectedClosing((prev) => {
-      const exists = prev.includes(mLabel);
-      const next = exists ? prev.filter((s) => s !== mLabel) : [...prev, mLabel];
-      return next;
-    });
-  };
+    window.location.pathname === "/leads" &&
+    searchParams.get("stage") === "lead_without_task";
 
   const daysOptions = [
     { value: "7", label: "1 week" },
@@ -748,11 +739,12 @@ export function DataTable({
   ];
 
   const totalFilters =
-    (selectedStates.length || statesFromUrl.length) +
-    (expectedClosing.length || monthsFromUrl.length) +
-    (handoverStatus || Handoverfilter ? 1 : 0) +
-    (leadAging || LeadAgingFilter ? 1 : 0) +
-    (inactiveDays || InActiveDays ? 1 : 0);
+    (Filters.States.length) +
+    (Filters.ClosingMonth.length) +
+    (Filters.Handover ? 1 : 0) +
+    (Filters.LeadAging ? 1 : 0) +
+    (Filters.inActiveDays ? 1 : 0) +
+    (Filters.leadOwner ? 1 : 0);
 
   const handleTabChange = (value: string) => {
     setTab(value);
@@ -768,12 +760,30 @@ export function DataTable({
 
   const handlePageChange = (direction: "prev" | "next") => {
     const newPage = direction === "next" ? page + 1 : page - 1;
+    setPage(newPage);
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.set("page", newPage.toString());
       return params;
     });
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      let newPage = Number(tempPage);
+
+      if (newPage < 1) newPage = 1;
+      if (newPage > totalPages) newPage = totalPages
+
+      setPage(newPage);
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("page", newPage.toString());
+        return params;
+      });
+      setOpen(false);
+    }
+  }
 
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
@@ -808,7 +818,9 @@ export function DataTable({
   if (isLoading) return <Loader />;
 
   return (
-    <div className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}>
+    <div
+      className={`${isFromGroup ? "w-[calc(69vw)] overflow-y-auto" : "w-full"}`}
+    >
       <div className="flex justify-between items-center py-4 px-2">
         {!isFromGroup && !isActiveLeadWithoutTask && (
           <div>
@@ -857,9 +869,9 @@ export function DataTable({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter by State</span>
-                  {(selectedStates.length || statesFromUrl.length) > 0 && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {(selectedStates.length || statesFromUrl.length)}
+                  {Filters.States.length > 0 && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      {Filters.States.length}
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -869,8 +881,10 @@ export function DataTable({
                       <DropdownMenuCheckboxItem
                         className="cursor-pointer capitalize"
                         key={opt}
-                        checked={(selectedStates.length ? selectedStates : statesFromUrl).includes(opt)}
-                        onCheckedChange={() => toggleState(opt)}
+                        onCheckedChange={() => {
+                          Statetoggle(opt)
+                        }}
+                        checked={Filters.States.includes(opt)}
                         onSelect={(e) => e.preventDefault()}
                       >
                         {opt}
@@ -882,10 +896,9 @@ export function DataTable({
                     onSelect={(e) => {
                       e.preventDefault();
                       const updated = new URLSearchParams(searchParams);
-                      updated.delete("stateFilter");
+                      updated.delete("State");
                       updated.set("page", "1");
                       setSearchParams(updated);
-                      setSelectedStates([]);
                     }}
                   >
                     Clear Filter
@@ -898,26 +911,25 @@ export function DataTable({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger className="cursor-pointer">
                     <span>Handover Filter</span>
-                    {Handoverfilter && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {Handoverfilter ? 1 : 0}
-                    </span>
-                  )}
+                    {Filters.Handover && (
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                        1
+                      </span>
+                    )}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     {["pending", "inprocess", "completed"].map((status) => (
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="cursor-pointer capitalize"
-                        checked={(handoverStatus || Handoverfilter || "") === status}
+                        checked={
+                          Filters.Handover === status
+                        }
                         onCheckedChange={(checked) => {
-                          const newValue = checked ? status : "";
-                          setHandoverStatus(newValue);
-                          const newParams = new URLSearchParams(searchParams.toString());
-                          if (newValue) newParams.set("handover", newValue);
-                          else newParams.delete("handover");
-                          newParams.set("page", "1");
-                          setSearchParams(newParams);
+                          if (checked)
+                            updatefilter("handover", status)
+                          else
+                            updatefilter("handover", "");
                         }}
                         onSelect={(e) => e.preventDefault()}
                       >
@@ -932,7 +944,6 @@ export function DataTable({
                         updated.delete("handover");
                         updated.set("page", "1");
                         setSearchParams(updated);
-                        setHandoverStatus("");
                       }}
                     >
                       Clear Filter
@@ -945,9 +956,9 @@ export function DataTable({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Lead Aging Filter</span>
-                  {LeadAgingFilter && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {LeadAgingFilter ? 1 : 0}
+                  {Filters.LeadAging && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      1
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -956,15 +967,14 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       key={opt.value}
                       className="cursor-pointer"
-                      checked={(leadAging || LeadAgingFilter || "") === opt.value}
+                      checked={
+                        Filters.LeadAging === opt.value
+                      }
                       onCheckedChange={(checked) => {
-                        const newValue = checked ? opt.value : "";
-                        const updated = new URLSearchParams(searchParams);
-                        if (newValue) updated.set("aging", newValue);
-                        else updated.delete("aging");
-                        updated.set("page", "1");
-                        setSearchParams(updated);
-                        setLeadAging(newValue);
+                        if (checked)
+                          updatefilter("aging", opt.value);
+                        else
+                          updatefilter("aging", "");
                       }}
                       onSelect={(e) => e.preventDefault()}
                     >
@@ -979,7 +989,6 @@ export function DataTable({
                       updated.delete("aging");
                       updated.set("page", "1");
                       setSearchParams(updated);
-                      setLeadAging("");
                     }}
                   >
                     Clear Filter
@@ -991,9 +1000,9 @@ export function DataTable({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Inactive Days Filter</span>
-                  {InActiveDays && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {InActiveDays? 1: 0}
+                  {Filters.inActiveDays && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      1
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -1002,15 +1011,14 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       key={opt.value}
                       className="cursor-pointer"
-                      checked={(inactiveDays || InActiveDays || "") === opt.value}
+                      checked={
+                        Filters.inActiveDays === opt.value
+                      }
                       onCheckedChange={(checked) => {
-                        const newValue = checked ? opt.value : "";
-                        const updated = new URLSearchParams(searchParams);
-                        if (newValue) updated.set("inActiveDays", newValue);
-                        else updated.delete("inActiveDays");
-                        updated.set("page", "1");
-                        setSearchParams(updated);
-                        setInactiveDays(newValue);
+                        if (checked)
+                          updatefilter("inActiveDays", opt.value);
+                        else
+                          updatefilter("inActiveDays", "");
                       }}
                       onSelect={(e) => e.preventDefault()}
                     >
@@ -1025,7 +1033,6 @@ export function DataTable({
                       updated.delete("inActiveDays");
                       updated.set("page", "1");
                       setSearchParams(updated);
-                      setInactiveDays("");
                     }}
                   >
                     Clear Filter
@@ -1037,9 +1044,9 @@ export function DataTable({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter By Closing Date</span>
-                  {(expectedClosing.length || monthsFromUrl.length) > 0 && (
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                      {(expectedClosing.length || monthsFromUrl.length)}
+                  {(Filters.ClosingMonth.length) > 0 && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      {Filters.ClosingMonth.length}
                     </span>
                   )}
                 </DropdownMenuSubTrigger>
@@ -1048,8 +1055,10 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       className="cursor-pointer capitalize"
                       key={opt.value}
-                      checked={(expectedClosing.length ? expectedClosing : monthsFromUrl).includes(opt.label)}
-                      onCheckedChange={() => toggleMonth(opt.label)}
+                      onCheckedChange={() => {
+                        Monthtoggle(opt.label)
+                      }}
+                      checked={Filters.ClosingMonth.includes(opt.label)}
                       onSelect={(e) => e.preventDefault()}
                     >
                       {opt.label}
@@ -1061,10 +1070,9 @@ export function DataTable({
                     onSelect={(e) => {
                       e.preventDefault();
                       const updated = new URLSearchParams(searchParams);
-                      updated.delete("closingdatefilter");
+                      updated.delete("ClosingMonth");
                       updated.set("page", "1");
                       setSearchParams(updated);
-                      setExpectedClosing([]);
                     }}
                   >
                     Clear Filter
@@ -1075,76 +1083,69 @@ export function DataTable({
               {(user?.name === "admin" ||
                 user?.name === "IT Team" ||
                 user?.name === "Deepak Manodi") && (
+
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className="cursor-pointer">
                       <span>Lead Owner Filter</span>
-                      {
-                        (NameFilter) && (
-                          <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#1d3f79] text-white">
-                            {(NameFilter)}
-                          </span>
-                        )
-                      }
+                      {Filters.leadOwner && (
+                        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">1</span>
+                      )}
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                      <DropdownMenuRadioGroup
-                        value={leadOwner || NameFilter}
-                        onValueChange={(value) => {
-                          setLeadOwner(value);
 
-                          const newParams = new URLSearchParams(searchParams.toString());
-                          if (value) {
-                            newParams.set("name", value);
-                          } else {
-                            newParams.delete("name");
-                          }
-                          setSearchParams(newParams);
+                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                      {/* All */}
+                      <DropdownMenuCheckboxItem
+                        checked={!Filters.leadOwner}
+                        onCheckedChange={(checked) => {
+                          if (checked) updatefilter("name", ""); // clear to 'All'
                         }}
                         onSelect={(e) => e.preventDefault()}
                       >
-                        <DropdownMenuRadioItem value="">
-                          <span className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={!leadOwner}
-                              readOnly
-                              className="h-4 w-4"
-                            />
-                            All
-                          </span>
-                        </DropdownMenuRadioItem>
+                        All
+                      </DropdownMenuCheckboxItem>
 
-                        {users.map((usr) => (
-                          <DropdownMenuRadioItem key={usr?._id} value={usr?._id}>
-                            <span className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={leadOwner === usr?._id}
-                                readOnly
-                                className="h-4 w-4"
-                              />
-                              {usr?.name}
-                            </span>
-                          </DropdownMenuRadioItem>
-                        ))}
-                        <DropdownMenuCheckboxItem
-                          checked={false}
-                          className="text-red-500 hover:bg-red-100 cursor-pointer"
-                          onCheckedChange={() => {
-                            const updated = new URLSearchParams(searchParams);
-                            updated.delete("name");
-                            updated.set("page", "1");
-                            setSearchParams(updated);
-                            setLeadOwner("");
-                          }}
-                        >
-                          Clear Filter
-                        </DropdownMenuCheckboxItem>
-                      </DropdownMenuRadioGroup>
+                      {/* Owners */}
+                      {users.map((usr) => {
+                        const id = String(usr?._id);
+                        const isSelected = String(Filters.leadOwner) === id;
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={id}
+                            className="cursor-pointer"
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                // select this owner
+                                updatefilter("name", id);
+                              } else if (isSelected) {
+                                // unselect only if this was selected
+                                updatefilter("name", "");
+                              }
+                            }}
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            {usr.name}
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+
+                      {/* Clear */}
+                      <DropdownMenuCheckboxItem
+                        checked={false}
+                        className="text-red-500 hover:bg-red-100 cursor-pointer"
+                        onCheckedChange={() => {
+                          const updated = new URLSearchParams(searchParams);
+                          updated.delete("name"); // same key!
+                          updated.set("page", "1");
+                          setSearchParams(updated);
+                        }}
+                      >
+                        Clear Filter
+                      </DropdownMenuCheckboxItem>
+
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
                 )}
-
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1171,7 +1172,9 @@ export function DataTable({
                       key={column.id}
                       className="capitalize cursor-pointer"
                       checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
                       {label}
                     </DropdownMenuCheckboxItem>
@@ -1182,13 +1185,20 @@ export function DataTable({
 
           <div className="flex items-center gap-2">
             <label htmlFor="limit">Rows per page:</label>
-            <Select value={pageSize.toString()} onValueChange={(v) => handleLimitChange(Number(v))}>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(v) => handleLimitChange(Number(v))}
+            >
               <SelectTrigger className="w-24 h-9 cursor-pointer">
                 <SelectValue placeholder="Select limit" />
               </SelectTrigger>
               <SelectContent>
                 {[1, 5, 10, 20, 50, 100].map((limit) => (
-                  <SelectItem className="cursor-pointer" key={limit} value={limit.toString()}>
+                  <SelectItem
+                    className="cursor-pointer"
+                    key={limit}
+                    value={limit.toString()}
+                  >
                     {limit}
                   </SelectItem>
                 ))}
@@ -1207,7 +1217,9 @@ export function DataTable({
                   .filter((header) => {
                     // Only show handover column when at least one row is in 'won'
                     if (header.column.id === "status_of_handoversheet") {
-                      return data.some((lead) => lead.current_status?.name === "won");
+                      return data.some(
+                        (lead) => lead.current_status?.name === "won"
+                      );
                     }
                     return true;
                   })
@@ -1215,34 +1227,49 @@ export function DataTable({
                     <TableHead className="text-left" key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
-              </TableRow>))}
+              </TableRow>
+            ))}
           </TableHeader>
 
           <TableBody>
             {table.getPaginationRowModel().rows?.length ? (
               table.getPaginationRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row
                     .getVisibleCells()
                     .filter((cell) => {
                       if (cell.column.id === "status_of_handoversheet") {
-                        return data.some((lead) => lead.current_status?.name === "won");
+                        return data.some(
+                          (lead) => lead.current_status?.name === "won"
+                        );
                       }
                       return true;
                     })
                     .map((cell) => (
                       <TableCell className="text-left" key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </TableCell>
                     ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -1262,8 +1289,33 @@ export function DataTable({
           Previous
         </Button>
         <span>
-          Page {page} of page {totalPages}
+          Page
         </span>
+        <span
+        className="cursor-pointer"
+          onClick={() => {
+            setTempPage(page);
+            setOpen(true);
+          }}
+        >
+          {open ? (
+            <Input
+              type="number"
+              value={tempPage}
+              autoFocus
+              onChange={(e) => setTempPage(Number(e.target.value))}
+              onKeyDown={handleKeyDown}
+              onBlur={() => setOpen(false)}
+              className="w-16 h-6 text-center"
+            />
+          ) : (
+            page
+          )}
+        </span>
+        <span>
+          of page {totalPages}
+        </span>
+
         <Button
           variant="outline"
           size="sm"

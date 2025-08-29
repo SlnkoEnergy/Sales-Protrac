@@ -232,6 +232,7 @@ export default function Header() {
             </PopoverNotificationCenter>
           </div>
         </NovuProvider>
+
       </div>
 
       {/* Mobile Drawer */}
