@@ -42,8 +42,29 @@ export default function Header() {
   );
   const location = useLocation();
   const navigate = useNavigate();
-  const ID = localStorage.getItem("userId")
-
+  
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+    
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+      );
+      
+      const payload = JSON.parse(jsonPayload);
+      return payload.userId || null;
+    } catch (err) {
+      console.error("Token decode error:", err);
+      return null;
+    }
+  };
+  const ID = getUserIdFromToken();
   const isActiveHandover = location.pathname === "/handover";
   const isActiveTask = location.pathname === "/tasks";
   const isActiveLead =
@@ -56,7 +77,6 @@ export default function Header() {
   const isActiveGroup = location.pathname === "/group";
 
   const toggleDrawer = () => setShowDrawer(!showDrawer);
-  const toggleNotifications = () => setShowNotifications(!showNotifications);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,7 +102,7 @@ export default function Header() {
   };
 
   const userData = useAuth();
-
+  console.log({userData})
   useEffect(() => {
     if (userData.user) {
       setUser({
@@ -93,15 +113,6 @@ export default function Header() {
   }, [userData.user]);
 
 
-
-  const handleDelete = async (_id: string) => {
-    try {
-      await toggleViewTask(_id);
-      setNotifications((prev) => prev.filter((note) => note._id !== _id));
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-    }
-  };
 
   const PickerRef = useRef<HTMLDivElement>(null);
 
@@ -191,75 +202,6 @@ export default function Header() {
       </div>
 
       <div className="hidden sm:flex items-center gap-6 text-white relative">
-        {/* <div className="relative" ref={PickerRef}>
-          <div className="relative">
-            <Bell
-              size={18}
-              onClick={() => {
-                toggleNotifications;
-                setShowNotifications((prev) => !prev);
-              }}
-              className="cursor-pointer"
-            />
-            {notifications.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[13px] px-1.5 rounded-full leading-none">
-                {notifications.length}
-              </span>
-            )}
-          </div>
-
-          {showNotifications && (
-            <div className="absolute top-8 right-0 w-80 bg-white text-black rounded-lg shadow-xl z-50">
-              <div className="px-4 py-2 border-b font-semibold text-gray-700 flex justify-between">
-                <span>Notifications</span>
-                <Button
-                  onClick={toggleNotifications}
-                  className="cursor-pointer"
-                  variant="ghost"
-                  size="icon"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.length > 0 ? (
-                  notifications.map((note, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start justify-between px-4 py-3 hover:bg-gray-100 border-b border-gray-200"
-                    >
-                      <div
-                        className="flex-1 cursor-pointer"
-                        onClick={() => navigate(`/viewtask?id=${note._id}`)}
-                      >
-                        <div className="text-sm font-medium">{note.title}</div>
-                        <div className="text-xs text-gray-500">
-                          {note.description}
-                        </div>
-                        <div className="text-[10px] text-gray-400 mt-1">
-                          {note.time}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="ml-2 mt-1 cursor-pointer"
-                        onClick={() => handleDelete(note._id)}
-                      >
-                        <Trash className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-4 py-4 text-sm text-gray-500">
-                    No new notifications
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div> */}
-
         <NovuProvider
           subscriberId={subscribeId}
           applicationIdentifier={import.meta.env.VITE_NOVU_IDENTIFIER}
