@@ -116,7 +116,7 @@ export default function TodoList() {
 
   return (
     <>
-      <Card className="w-full">
+      <Card className="w-full h-127 overflow-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <h3 className="text-lg font-semibold">My To Do Items</h3>
           <div className="flex gap-4">
