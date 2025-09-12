@@ -1082,7 +1082,8 @@ export function DataTable({
 
               {(user?.name === "admin" ||
                 user?.name === "IT Team" ||
-                user?.name === "Deepak Manodi") && (
+                user?.department === "BD"||
+                user?.name === "Deepak Manodi" ) && (
 
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className="cursor-pointer">
