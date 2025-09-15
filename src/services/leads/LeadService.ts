@@ -212,6 +212,24 @@ export const updateLeadStatusBulk = async (
   }
 };
 
+export const updateLeadPriorityBulk = async (
+  leadIds: string[],
+  priority: string,
+) => {
+  try {
+    const response = await Axios.put(`/bddashboard/updatePriority`, {
+      leadIds,
+      priority
+    });
+    return response.data;
+  } catch (error: any) {
+    const msg =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      "Failed to bulk update priority";
+    throw new Error(msg);
+  }
+};
 
 export const updateExpectedClosingDate = async (
   leadId: string,

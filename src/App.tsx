@@ -21,7 +21,6 @@ import GroupDetail from "./modules/group/pages/GroupDetail";
 import NotFound from "./modules/not found/NotFound";
 import SearchParamSyncer from "./SearchParamsSync";
 import ParentSearchSyncer from "./ParentSearchParamsSyncer";
-import AuthSyncListener from "./AuthSyncListener";
 
 function App() {
   return (
