@@ -362,6 +362,10 @@ export default function SearchBarLeads({
                 Change Status
               </span>
             </div>
+          </>
+        )}
+        {canExport && (
+          <>
             <div className="flex items-center gap-1">
               <AlarmClock size={14} />
               <span
