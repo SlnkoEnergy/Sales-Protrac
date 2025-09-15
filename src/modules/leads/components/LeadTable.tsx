@@ -1,4 +1,5 @@
-"use client";
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+("use client");
 
 import * as React from "react";
 import {
@@ -28,7 +29,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -43,7 +43,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getLeads, getLeadsCount, states } from "@/services/leads/LeadService";
+import {
+  getLeads,
+  getLeadsCount,
+  states,
+  updateLeadPriorityBulk,
+} from "@/services/leads/LeadService";
 import { getAllUser } from "@/services/task/Task";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -61,6 +66,52 @@ import { Badge } from "@/components/ui/badge";
 import StatusCell from "./StatusCell";
 import { useAuth } from "@/services/context/AuthContext";
 import { Input } from "@/components/ui/input";
+
+// Date range picker imports
+import { DateRange } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import { addDays } from "date-fns";
+// DateRangePickerComponent for Created Date filter
+function DateRangePickerComponent() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fromDateParam = searchParams.get("fromDate");
+  const toDateParam = searchParams.get("toDate");
+
+  // Parse initial values from URL params
+  const initialRange = {
+    startDate: fromDateParam
+      ? new Date(fromDateParam)
+      : addDays(new Date(), -30),
+    endDate: toDateParam ? new Date(toDateParam) : new Date(),
+    key: "selection",
+  };
+
+  const [state, setState] = React.useState([initialRange]);
+
+  // Update URL params when range changes
+  const handleChange = (ranges) => {
+    const { startDate, endDate } = ranges.selection;
+    setState([ranges.selection]);
+    const updated = new URLSearchParams(searchParams);
+    updated.set("fromDate", format(startDate, "yyyy-MM-dd"));
+    updated.set("toDate", format(endDate, "yyyy-MM-dd"));
+    updated.set("page", "1");
+    setSearchParams(updated);
+  };
+
+  return (
+    <DateRange
+      ranges={state}
+      onChange={handleChange}
+      moveRangeOnFirstSelection={false}
+      maxDate={new Date()}
+      showMonthAndYearPickers={true}
+      rangeColors={["#214b7b"]}
+      direction="vertical"
+    />
+  );
+}
 
 export type Lead = {
   _id: string;
@@ -131,16 +182,18 @@ export function DataTable({
   // const page = parseInt(searchParams.get("page") || "1");
   const [page, setPage] = React.useState(
     parseInt(searchParams.get("page") || "1")
-  ); const pageSize = parseInt(searchParams.get("pageSize") || "10");
+  );
+  const pageSize = parseInt(searchParams.get("pageSize") || "10");
   const [tempPage, setTempPage] = React.useState(page);
 
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
   const [data, setData] = React.useState<Lead[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [total, setTotal] = React.useState(0);
   const [users, setUsers] = React.useState<any[]>([]);
   const [uniqueState, setUniqueState] = React.useState<string[]>([]);
   const [refreshKey, setRefreshKey] = React.useState(0);
+  const [refreshPriority, setRefreshPriority] = React.useState(0);
   const [stageCounts, setStageCounts] = React.useState<{
     initial?: number;
     "follow up"?: number;
@@ -208,7 +261,6 @@ export function DataTable({
     ],
     []
   );
-  console.log(page);
   const Filters = {
     ClosingMonth: searchParams.get("ClosingMonth")?.split(",") || [],
     States: searchParams.get("State")?.split(",") || [],
@@ -216,6 +268,7 @@ export function DataTable({
     inActiveDays: searchParams.get("inActiveDays") || "",
     LeadAging: searchParams.get("aging") || "",
     leadOwner: searchParams.get("name") || "",
+    Priority: searchParams.get("priority") || "",
   };
 
   const updatefilter = (key: string, value: string | string[]) => {
@@ -238,7 +291,7 @@ export function DataTable({
       : [...Filters.ClosingMonth, st];
 
     updatefilter("ClosingMonth", newmonth);
-  }
+  };
 
   const Statetoggle = (st: string) => {
     const newState = Filters.States.includes(st)
@@ -246,17 +299,16 @@ export function DataTable({
       : [...Filters.States, st];
 
     updatefilter("State", newState);
-  }
+  };
   // URL params
   const fromDate = searchParams.get("fromDate");
   const toDate = searchParams.get("toDate");
-
 
   const StatesString = React.useMemo(() => {
     const labels = Filters.States;
     if (labels.length === 0) return "";
     return labels.join(",");
-  }, [Filters.States, uniqueState])
+  }, [Filters.States, uniqueState]);
 
   const ClosingMonthString = React.useMemo(() => {
     const labels = Filters.ClosingMonth;
@@ -272,6 +324,10 @@ export function DataTable({
 
   const handleTransferComplete = () => {
     setRefreshKey((prev) => prev + 1);
+  };
+
+  const handlePriorityChange = () => {
+    setRefreshPriority((prev) => prev + 1);
   };
 
   const columns: ColumnDef<Lead>[] = [
@@ -349,6 +405,90 @@ export function DataTable({
       },
     },
     ...(isFromGroup ? [] : [groupInfoColumn]),
+    // Priority column only for 'follow up' tab
+    ...(stageFromUrl === "follow up"
+      ? [
+          {
+            accessorKey: "priority",
+            header: "Priority",
+            cell: function PriorityCell({ row }) {
+              const PRIORITIES = ["highest", "high", "medium", "low"];
+              const priority = row.original.priority;
+              const leadId = row.original._id;
+              let color = "bg-gray-300 text-gray-800";
+              let label = "N/A";
+              if (priority) {
+                switch (priority) {
+                  case "highest":
+                    color = "bg-red-600 text-white";
+                    label = "Highest";
+                    break;
+                  case "high":
+                    color = "bg-red-300 text-red-900";
+                    label = "High";
+                    break;
+                  case "medium":
+                    color = "bg-orange-400 text-white";
+                    label = "Medium";
+                    break;
+                  case "low":
+                    color = "bg-green-500 text-white";
+                    label = "Low";
+                    break;
+                  default:
+                    color = "bg-gray-300 text-gray-800";
+                    label =
+                      priority.charAt(0).toUpperCase() + priority.slice(1);
+                }
+              }
+              const [open, setOpen] = React.useState(false);
+              const [loading, setLoading] = React.useState(false);
+              const options = PRIORITIES.filter((p) => p !== priority);
+
+              const handleChange = async (newPriority) => {
+                setLoading(true);
+                try {
+                  await updateLeadPriorityBulk([leadId], newPriority);
+                  setOpen(false);
+                  handlePriorityChange();
+                } catch (e) {
+                  toast.error("Failed to update priority");
+                } finally {
+                  setLoading(false);
+                }
+              };
+
+              return (
+                <Dialog open={open} onOpenChange={setOpen}>
+                  <DialogTrigger asChild>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold cursor-pointer ${color}`}
+                      onClick={() => setOpen(true)}
+                    >
+                      {label}
+                    </span>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <div className="font-semibold mb-2">Change Priority</div>
+                    <div className="space-y-2">
+                      {options.map((opt) => (
+                        <Button
+                          key={opt}
+                          disabled={loading}
+                          onClick={() => handleChange(opt)}
+                          className="w-full #214b7b text-white cursor-pointer"
+                        >
+                          {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                        </Button>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              );
+            },
+          },
+        ]
+      : []),
     {
       id: "location_info",
       header: "State",
@@ -599,12 +739,13 @@ export function DataTable({
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
-                ? ""
-                : undefined,
+              ? ""
+              : undefined,
           handover_statusFilter: Filters.Handover || "",
           ClosingDateFilter: ClosingMonthString || "",
           leadAgingFilter: Filters.LeadAging || "",
           inactiveFilter: Filters.inActiveDays || "",
+          priorityFilter: Filters.Priority || "",
           name: Filters.leadOwner || "",
         };
         if (fromDate) params.fromDate = fromDate;
@@ -631,9 +772,11 @@ export function DataTable({
     Filters.LeadAging,
     Filters.inActiveDays,
     Filters.leadOwner,
+    Filters.Priority,
     ClosingMonthString,
     refreshKey,
     isFromGroup,
+    refreshPriority,
     group_id,
   ]);
 
@@ -649,11 +792,12 @@ export function DataTable({
             stageFromUrl === "lead_without_task"
               ? "true"
               : isFromGroup
-                ? ""
-                : undefined,
+              ? ""
+              : undefined,
           handover_statusFilter: Filters.Handover || "",
           leadAgingFilter: Filters.LeadAging || "",
           inactiveFilter: Filters.inActiveDays || "",
+          priorityFilter: Filters.Priority || "",
           name: Filters.leadOwner || "",
         };
         if (fromDate) params.fromDate = fromDate;
@@ -675,6 +819,7 @@ export function DataTable({
     Filters.LeadAging,
     Filters.inActiveDays,
     Filters.leadOwner,
+    Filters.Priority,
     ClosingMonthString,
     isFromGroup,
     group_id,
@@ -739,12 +884,14 @@ export function DataTable({
   ];
 
   const totalFilters =
-    (Filters.States.length) +
-    (Filters.ClosingMonth.length) +
+    Filters.States.length +
+    Filters.ClosingMonth.length +
     (Filters.Handover ? 1 : 0) +
     (Filters.LeadAging ? 1 : 0) +
     (Filters.inActiveDays ? 1 : 0) +
-    (Filters.leadOwner ? 1 : 0);
+    (Filters.leadOwner ? 1 : 0) +
+    (fromDate || toDate ? 1 : 0) +
+    (Filters.Priority ? 1 : 0);
 
   const handleTabChange = (value: string) => {
     setTab(value);
@@ -769,11 +916,11 @@ export function DataTable({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       let newPage = Number(tempPage);
 
       if (newPage < 1) newPage = 1;
-      if (newPage > totalPages) newPage = totalPages
+      if (newPage > totalPages) newPage = totalPages;
 
       setPage(newPage);
       setSearchParams((prev) => {
@@ -783,7 +930,7 @@ export function DataTable({
       });
       setOpen(false);
     }
-  }
+  };
 
   const handleLimitChange = (newLimit: number) => {
     const params = new URLSearchParams(searchParams);
@@ -865,7 +1012,74 @@ export function DataTable({
             </DropdownMenuTrigger>
 
             <DropdownMenuContent className="w-60">
+              {/* Created Date Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  <span>Filter by Created Date</span>
+                  {(fromDate || toDate) && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                      1
+                    </span>
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <div className="flex flex-col gap-2 p-2">
+                    {/* Date Range Picker */}
+                    <DateRangePickerComponent />
+                    <Button
+                      variant="outline"
+                      className="mt-2 cursor-pointer"
+                      onClick={() => {
+                        const updated = new URLSearchParams(searchParams);
+                        updated.delete("fromDate");
+                        updated.delete("toDate");
+                        updated.set("page", "1");
+                        setSearchParams(updated);
+                      }}
+                    >
+                      Clear Filter
+                    </Button>
+                  </div>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               {/* State Filter */}
+              {/* Priority Filter */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  <span>Priority Filter</span>
+                  {Filters.Priority && (
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">1</span>
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {["highest", "high", "medium", "low"].map((priority) => (
+                    <DropdownMenuCheckboxItem
+                      key={priority}
+                      className="cursor-pointer capitalize"
+                      checked={Filters.Priority === priority}
+                      onCheckedChange={(checked) => {
+                        if (checked) updatefilter("priority", priority);
+                        else updatefilter("priority", "");
+                      }}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                  <DropdownMenuCheckboxItem
+                    checked={false}
+                    className="text-red-500 hover:bg-red-100 cursor-pointer"
+                    onCheckedChange={() => {
+                      const updated = new URLSearchParams(searchParams);
+                      updated.delete("priority");
+                      updated.set("page", "1");
+                      setSearchParams(updated);
+                    }}
+                  >
+                    Clear Filter
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter by State</span>
@@ -882,7 +1096,7 @@ export function DataTable({
                         className="cursor-pointer capitalize"
                         key={opt}
                         onCheckedChange={() => {
-                          Statetoggle(opt)
+                          Statetoggle(opt);
                         }}
                         checked={Filters.States.includes(opt)}
                         onSelect={(e) => e.preventDefault()}
@@ -922,14 +1136,10 @@ export function DataTable({
                       <DropdownMenuCheckboxItem
                         key={status}
                         className="cursor-pointer capitalize"
-                        checked={
-                          Filters.Handover === status
-                        }
+                        checked={Filters.Handover === status}
                         onCheckedChange={(checked) => {
-                          if (checked)
-                            updatefilter("handover", status)
-                          else
-                            updatefilter("handover", "");
+                          if (checked) updatefilter("handover", status);
+                          else updatefilter("handover", "");
                         }}
                         onSelect={(e) => e.preventDefault()}
                       >
@@ -967,14 +1177,10 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       key={opt.value}
                       className="cursor-pointer"
-                      checked={
-                        Filters.LeadAging === opt.value
-                      }
+                      checked={Filters.LeadAging === opt.value}
                       onCheckedChange={(checked) => {
-                        if (checked)
-                          updatefilter("aging", opt.value);
-                        else
-                          updatefilter("aging", "");
+                        if (checked) updatefilter("aging", opt.value);
+                        else updatefilter("aging", "");
                       }}
                       onSelect={(e) => e.preventDefault()}
                     >
@@ -1011,14 +1217,10 @@ export function DataTable({
                     <DropdownMenuCheckboxItem
                       key={opt.value}
                       className="cursor-pointer"
-                      checked={
-                        Filters.inActiveDays === opt.value
-                      }
+                      checked={Filters.inActiveDays === opt.value}
                       onCheckedChange={(checked) => {
-                        if (checked)
-                          updatefilter("inActiveDays", opt.value);
-                        else
-                          updatefilter("inActiveDays", "");
+                        if (checked) updatefilter("inActiveDays", opt.value);
+                        else updatefilter("inActiveDays", "");
                       }}
                       onSelect={(e) => e.preventDefault()}
                     >
@@ -1044,7 +1246,7 @@ export function DataTable({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   <span>Filter By Closing Date</span>
-                  {(Filters.ClosingMonth.length) > 0 && (
+                  {Filters.ClosingMonth.length > 0 && (
                     <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
                       {Filters.ClosingMonth.length}
                     </span>
@@ -1056,7 +1258,7 @@ export function DataTable({
                       className="cursor-pointer capitalize"
                       key={opt.value}
                       onCheckedChange={() => {
-                        Monthtoggle(opt.label)
+                        Monthtoggle(opt.label);
                       }}
                       checked={Filters.ClosingMonth.includes(opt.label)}
                       onSelect={(e) => e.preventDefault()}
@@ -1082,71 +1284,71 @@ export function DataTable({
 
               {(user?.name === "admin" ||
                 user?.name === "IT Team" ||
-                user?.department === "BD"||
-                user?.name === "Deepak Manodi" ) && (
+                user?.department === "BD" ||
+                user?.name === "Deepak Manodi") && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer">
+                    <span>Lead Owner Filter</span>
+                    {Filters.leadOwner && (
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+                        1
+                      </span>
+                    )}
+                  </DropdownMenuSubTrigger>
 
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="cursor-pointer">
-                      <span>Lead Owner Filter</span>
-                      {Filters.leadOwner && (
-                        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">1</span>
-                      )}
-                    </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                    {/* All */}
+                    <DropdownMenuCheckboxItem
+                      checked={!Filters.leadOwner}
+                      onCheckedChange={(checked) => {
+                        if (checked) updatefilter("name", ""); // clear to 'All'
+                      }}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      All
+                    </DropdownMenuCheckboxItem>
 
-                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
-                      {/* All */}
-                      <DropdownMenuCheckboxItem
-                        checked={!Filters.leadOwner}
-                        onCheckedChange={(checked) => {
-                          if (checked) updatefilter("name", ""); // clear to 'All'
-                        }}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        All
-                      </DropdownMenuCheckboxItem>
+                    {/* Owners */}
+                    {users.map((usr) => {
+                      const id = String(usr?._id);
+                      const isSelected = String(Filters.leadOwner) === id;
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={id}
+                          className="cursor-pointer"
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              // select this owner
+                              updatefilter("name", id);
+                            } else if (isSelected) {
+                              // unselect only if this was selected
+                              updatefilter("name", "");
+                            }
+                          }}
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          {usr.name}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
 
-                      {/* Owners */}
-                      {users.map((usr) => {
-                        const id = String(usr?._id);
-                        const isSelected = String(Filters.leadOwner) === id;
-                        return (
-                          <DropdownMenuCheckboxItem
-                            key={id}
-                            className="cursor-pointer"
-                            checked={isSelected}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                // select this owner
-                                updatefilter("name", id);
-                              } else if (isSelected) {
-                                // unselect only if this was selected
-                                updatefilter("name", "");
-                              }
-                            }}
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            {usr.name}
-                          </DropdownMenuCheckboxItem>
-                        );
-                      })}
-
-                      {/* Clear */}
-                      <DropdownMenuCheckboxItem
-                        checked={false}
-                        className="text-red-500 hover:bg-red-100 cursor-pointer"
-                        onCheckedChange={() => {
-                          const updated = new URLSearchParams(searchParams);
-                          updated.delete("name"); // same key!
-                          updated.set("page", "1");
-                          setSearchParams(updated);
-                        }}
-                      >
-                        Clear Filter
-                      </DropdownMenuCheckboxItem>
-
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                )}
+                    {/* Clear */}
+                    <DropdownMenuCheckboxItem
+                      checked={false}
+                      className="text-red-500 hover:bg-red-100 cursor-pointer"
+                      onCheckedChange={() => {
+                        const updated = new URLSearchParams(searchParams);
+                        updated.delete("name"); // same key!
+                        updated.set("page", "1");
+                        setSearchParams(updated);
+                      }}
+                    >
+                      Clear Filter
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -1229,9 +1431,9 @@ export function DataTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   ))}
               </TableRow>
@@ -1289,11 +1491,9 @@ export function DataTable({
         >
           Previous
         </Button>
-        <span>
-          Page
-        </span>
+        <span>Page</span>
         <span
-        className="cursor-pointer"
+          className="cursor-pointer"
           onClick={() => {
             setTempPage(page);
             setOpen(true);
@@ -1313,9 +1513,7 @@ export function DataTable({
             page
           )}
         </span>
-        <span>
-          of page {totalPages}
-        </span>
+        <span>of page {totalPages}</span>
 
         <Button
           variant="outline"

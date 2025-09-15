@@ -20,7 +20,15 @@ import {
   exportToCsv,
   transferLead,
   updateLeadStatusBulk,
+  updateLeadPriorityBulk,
 } from "@/services/leads/LeadService";
+const PRIORITY_OPTIONS = [
+  { key: "highest", label: "Highest" },
+  { key: "high", label: "High" },
+  { key: "medium", label: "Medium" },
+  { key: "low", label: "Low" },
+];
+
 import { toast } from "sonner";
 import {
   Dialog,
@@ -99,6 +107,37 @@ export default function SearchBarLeads({
 
   const [users, setUsers] = useState<BDUser[]>([]);
   const [data, setData] = useState<GroupItem[]>([]);
+
+  const [openPriority, setOpenPriority] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState("");
+  const [isApplyingPriority, setIsApplyingPriority] = useState(false);
+  // --------- Change Priority Bulk ----------
+  const handleApplyPriorityBulk = async () => {
+    if (!selectedIds?.length) {
+      toast.error("Select at least one lead");
+      return;
+    }
+    if (!selectedPriority) {
+      toast.error("Please select a priority");
+      return;
+    }
+    if (isApplyingPriority) return;
+
+    setIsApplyingPriority(true);
+    try {
+      await updateLeadPriorityBulk(selectedIds, selectedPriority);
+      toast.success("Priority updated successfully");
+      setOpenPriority(false);
+      setSelectedPriority("");
+      onTransferComplete(selectedPriority);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message || "Failed to update priority";
+      toast.error(message);
+    } finally {
+      setIsApplyingPriority(false);
+    }
+  };
   const department = "BD";
 
   const { user } = useAuth();
@@ -311,18 +350,87 @@ export default function SearchBarLeads({
         )}
 
         {selectedIds.length > 0 && (
-          <div className="flex items-center gap-1">
-            <Info size={14} />
-            <span
-              className={`cursor-pointer text-black hover:underline ${
-                isApplyingStatus ? "pointer-events-none opacity-60" : ""
-              }`}
-              onClick={() => !isApplyingStatus && setOpenStatus(true)}
-            >
-              Change Status
-            </span>
-          </div>
+          <>
+            <div className="flex items-center gap-1">
+              <Info size={14} />
+              <span
+                className={`cursor-pointer text-black hover:underline ${
+                  isApplyingStatus ? "pointer-events-none opacity-60" : ""
+                }`}
+                onClick={() => !isApplyingStatus && setOpenStatus(true)}
+              >
+                Change Status
+              </span>
+            </div>
+          </>
         )}
+        {canExport && (
+          <>
+            <div className="flex items-center gap-1">
+              <AlarmClock size={14} />
+              <span
+                className={`cursor-pointer text-black hover:underline ${
+                  isApplyingPriority ? "pointer-events-none opacity-60" : ""
+                }`}
+                onClick={() => !isApplyingPriority && setOpenPriority(true)}
+              >
+                Change Priority
+              </span>
+            </div>
+          </>
+        )}
+        {/* Change Priority Dialog */}
+        <Dialog open={openPriority} onOpenChange={setOpenPriority}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change Priority</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {PRIORITY_OPTIONS.map(({ key, label }) => (
+                <label
+                  key={key}
+                  className={
+                    "flex items-center gap-3 p-2 border rounded cursor-pointer hover:bg-gray-100"
+                  }
+                  onClick={() => setSelectedPriority(key)}
+                >
+                  <input
+                    type="radio"
+                    name="lead-priority"
+                    checked={selectedPriority === key}
+                    onChange={() => setSelectedPriority(key)}
+                    className="cursor-pointer"
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                onClick={handleApplyPriorityBulk}
+                className="cursor-pointer"
+                disabled={isApplyingPriority}
+              >
+                {isApplyingPriority ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Applying...
+                  </span>
+                ) : (
+                  "Apply"
+                )}
+              </Button>
+
+              <Button
+                className="cursor-pointer"
+                variant="outline"
+                onClick={() => setOpenPriority(false)}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Attach to Group */}
