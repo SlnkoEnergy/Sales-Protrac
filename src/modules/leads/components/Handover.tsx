@@ -58,6 +58,9 @@ const defaultInitialValues = {
     project_kwp: "",
     project_component: "",
     project_component_other: "",
+    project_completion_date: "",
+    bd_commitment_date: "",
+    completion_date:"",
     transmission_scope: "",
     loan_scope: "",
   },
@@ -72,6 +75,7 @@ const defaultInitialValues = {
     submitted_by_BD: "",
   },
   submitted_by: "",
+  assigned_to: "",
 };
 
 export interface FormDataType {
@@ -105,6 +109,9 @@ export interface FormDataType {
     project_kwp: string;
     project_component: string;
     project_component_other: string;
+    project_completion_date: string;
+    completion_date: string;
+    bd_commitment_date: string;
     transmission_scope: string;
     loan_scope: string;
   };
@@ -119,6 +126,7 @@ export interface FormDataType {
     submitted_by_BD: string;
   };
   submitted_by: string;
+  assigned_to: string;
 }
 
 const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
@@ -140,6 +148,16 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     updated: () => formData?.status_of_handoversheet,
     update: () => handleEdit(),
   }));
+
+    const toDateInput = (v: any) => {
+    if (!v) return "";
+    if (typeof v === "string") {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      if (v.includes("T")) return v.split("T")[0];
+    }
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  };
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -207,6 +225,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       project_component: "",
       project_component_other: "",
       transmission_scope: "",
+      project_completion_date: "",
+      bd_commitment_date: "",
+      completion_date:"",
       loan_scope: "",
     },
 
@@ -224,6 +245,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     status_of_handoversheet: "",
     is_locked: "",
     submitted_by: "",
+    assigned_to:""
   });
 
   useEffect(() => {
@@ -239,6 +261,19 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
           ...handover.other_details,
         },
       };
+
+      if (updated?.project_detail) {
+        updated.project_detail.project_completion_date = toDateInput(
+          updated.project_detail.project_completion_date
+        );
+        updated.project_detail.bd_commitment_date = toDateInput(
+          updated.project_detail.bd_commitment_date
+        );
+        // (optional) if you also show completion_date somewhere:
+        updated.project_detail.completion_date = toDateInput(
+          updated.project_detail.completion_date
+        );
+      }
 
       setFormData(updated);
       setInitialFormData(updated);
@@ -382,6 +417,14 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       {
         name: "other_details.service",
         label: "Total Slnko Service Charges (Without GST) *",
+      },
+      {
+        name: "project_detail.completion_date",
+        label: "Completion Date *",
+      },
+      {
+        name: "project_detail.bd_commitment_date",
+        label: "BD Commitment Date *",
       },
     ];
 
@@ -847,6 +890,32 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                     </Select>
                   </div>
                 ))}
+
+                <div>
+                  <label htmlFor="project_detail.completion_date" className="block mb-1 text-sm font-medium">
+                    Project Completion Date
+                  </label>
+                  <Input
+                    type="date"
+                    id="project_detail.ompletion_date"
+                    name="project_detail.completion_date"
+                    value={getValueByPath(formData, "project_detail.completion_date") || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="project_detail.bd_commitment_date" className="block mb-1 text-sm font-medium">
+                    BD Commitment Date
+                  </label>
+                  <Input
+                    type="date"
+                    id="project_detail.bd_commitment_date"
+                    name="project_detail.bd_commitment_date"
+                    value={getValueByPath(formData, "project_detail.bd_commitment_date") || ""}
+                    onChange={handleChange}
+                  />
+                </div>
 
                 <div className="md:col-span-2">
                   <label
