@@ -200,7 +200,7 @@ export const updateLeadStatusBulk = async (
       ids,
       name,
       stage,
-      remarks
+      remarks,
     });
     return response.data;
   } catch (error: any) {
@@ -214,12 +214,12 @@ export const updateLeadStatusBulk = async (
 
 export const updateLeadPriorityBulk = async (
   leadIds: string[],
-  priority: string,
+  priority: string
 ) => {
   try {
     const response = await Axios.put(`/bddashboard/updatePriority`, {
       leadIds,
-      priority
+      priority,
     });
     return response.data;
   } catch (error: any) {
@@ -276,7 +276,10 @@ export const createHandover = async (
       is_locked,
     };
 
-    const response = await Axios.post("/create-hand-over-sheet", payload);
+    const response = await Axios.post(
+      "/handover/create-hand-over-sheet",
+      payload
+    );
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -291,7 +294,7 @@ export const getHandoverByLeadId = async (
     string | number | boolean | Array<string | number | boolean>
   > = {}
 ) => {
-  let url = "/get-handoversheet";
+  let url = "/handover/get-handoversheet";
 
   const query = Object.entries(params)
     .map(([key, val]) => {
@@ -313,7 +316,7 @@ export const getHandoverByLeadId = async (
 export const editHandover = async (_id, updatedData) => {
   try {
     const response = await Axios.put(
-      `/edit-hand-over-sheet/${_id}`,
+      `/handover/edit-hand-over-sheet/${_id}`,
       updatedData
     );
     return response.data;
@@ -330,7 +333,7 @@ export const getAllHandover = async (
     string | number | boolean | Array<string | number | boolean>
   > = {}
 ) => {
-  let url = "/get-all-handover-sheet";
+  let url = "/handover/get-all-handover-sheet";
 
   const query = Object.entries(params)
     .map(([key, val]) => {
@@ -351,7 +354,7 @@ export const getAllHandover = async (
 export const exportToCsvHandover = async (selectedIds: string[]) => {
   try {
     const response = await Axios.post(
-      "/handover-export",
+      "/handover/handover-export",
       { Ids: selectedIds },
       {
         responseType: "blob",
@@ -376,9 +379,7 @@ export const states = async () => {
     const { data } = await Axios.get("/bddashboard/states");
     return data;
   } catch (error) {
-    throw new Error(
-      error.response?.data?.message || "Failed to fetch states"
-    );
+    throw new Error(error.response?.data?.message || "Failed to fetch states");
   }
 };
 
@@ -406,4 +407,3 @@ export const getLeadsCount = async (
   const response = await Axios.get(url);
   return response.data;
 };
-

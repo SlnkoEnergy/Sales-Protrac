@@ -60,7 +60,7 @@ const defaultInitialValues = {
     project_component_other: "",
     project_completion_date: "",
     bd_commitment_date: "",
-    completion_date:"",
+    ppa_expiry_date: "",
     transmission_scope: "",
     loan_scope: "",
   },
@@ -110,7 +110,7 @@ export interface FormDataType {
     project_component: string;
     project_component_other: string;
     project_completion_date: string;
-    completion_date: string;
+    ppa_expiry_date: string;
     bd_commitment_date: string;
     transmission_scope: string;
     loan_scope: string;
@@ -149,7 +149,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     update: () => handleEdit(),
   }));
 
-    const toDateInput = (v: any) => {
+  const toDateInput = (v: any) => {
     if (!v) return "";
     if (typeof v === "string") {
       if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
@@ -227,7 +227,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       transmission_scope: "",
       project_completion_date: "",
       bd_commitment_date: "",
-      completion_date:"",
+      ppa_expiry_date: "",
       loan_scope: "",
     },
 
@@ -245,7 +245,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     status_of_handoversheet: "",
     is_locked: "",
     submitted_by: "",
-    assigned_to:""
+    assigned_to: "",
   });
 
   useEffect(() => {
@@ -270,8 +270,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
           updated.project_detail.bd_commitment_date
         );
         // (optional) if you also show completion_date somewhere:
-        updated.project_detail.completion_date = toDateInput(
-          updated.project_detail.completion_date
+        updated.project_detail.ppa_expiry_date = toDateInput(
+          updated.project_detail.ppa_expiry_date
         );
       }
 
@@ -419,7 +419,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         label: "Total Slnko Service Charges (Without GST) *",
       },
       {
-        name: "project_detail.completion_date",
+        name: "project_detail.ppa_expiry_date",
         label: "Completion Date *",
       },
       {
@@ -892,27 +892,43 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                 ))}
 
                 <div>
-                  <label htmlFor="project_detail.completion_date" className="block mb-1 text-sm font-medium">
-                    Project Completion Date
+                  <label
+                    htmlFor="project_detail.ppa_expiry_date"
+                    className="block mb-1 text-sm font-medium"
+                  >
+                    PPA Expiry Date
                   </label>
                   <Input
                     type="date"
-                    id="project_detail.ompletion_date"
-                    name="project_detail.completion_date"
-                    value={getValueByPath(formData, "project_detail.completion_date") || ""}
+                    id="project_detail.ppa_expiry_date"
+                    name="project_detail.ppa_expiry_date"
+                    value={
+                      getValueByPath(
+                        formData,
+                        "project_detail.ppa_expiry_date"
+                      ) || ""
+                    }
                     onChange={handleChange}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="project_detail.bd_commitment_date" className="block mb-1 text-sm font-medium">
+                  <label
+                    htmlFor="project_detail.bd_commitment_date"
+                    className="block mb-1 text-sm font-medium"
+                  >
                     BD Commitment Date
                   </label>
                   <Input
                     type="date"
                     id="project_detail.bd_commitment_date"
                     name="project_detail.bd_commitment_date"
-                    value={getValueByPath(formData, "project_detail.bd_commitment_date") || ""}
+                    value={
+                      getValueByPath(
+                        formData,
+                        "project_detail.bd_commitment_date"
+                      ) || ""
+                    }
                     onChange={handleChange}
                   />
                 </div>

@@ -4,7 +4,7 @@ import Loader from "./components/loader/Loader";
 
 const AuthSyncListener = ({ children }) => {
   const { setAuthData } = useAuth();
-  const [authSynced, setAuthSynced] = useState(false); 
+  const [authSynced, setAuthSynced] = useState(false);
 
   useEffect(() => {
     // Notify parent that iframe is ready
@@ -16,8 +16,10 @@ const AuthSyncListener = ({ children }) => {
 
       if (type === "AUTH_SYNC" && token && userDetails) {
         const user =
-          typeof userDetails === "string" ? JSON.parse(userDetails) : userDetails;
-        setAuthData({ token, user }); 
+          typeof userDetails === "string"
+            ? JSON.parse(userDetails)
+            : userDetails;
+        setAuthData({ token, user });
         localStorage.setItem("authToken", token);
         setAuthSynced(true);
       }
@@ -27,9 +29,9 @@ const AuthSyncListener = ({ children }) => {
     return () => window.removeEventListener("message", handleMessage);
   }, [setAuthData]);
 
-  if (!authSynced) {
-    return <div><Loader /></div>;
-  }
+  // if (!authSynced) {
+  //   return <div><Loader /></div>;
+  // }
 
   return <>{children}</>;
 };
