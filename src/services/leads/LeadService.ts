@@ -250,36 +250,30 @@ export const updateExpectedClosingDate = async (
   }
 };
 
-export const createHandover = async (
-  id: string,
-  customer_details: any,
-  order_details: any,
-  project_detail: any,
-  commercial_details: any,
-  other_details: any,
-  invoice_detail: any,
-  submitted_by: string,
-  status_of_handoversheet: string = "draft",
-  is_locked: string = "locked"
-) => {
+export const createHandover = async (baseData: any, files: File[]) => {
   try {
-    const payload = {
-      id,
-      customer_details,
-      order_details,
-      project_detail,
-      commercial_details,
-      other_details,
-      invoice_detail,
-      submitted_by,
-      status_of_handoversheet,
-      is_locked,
-    };
+    const formData = new FormData();
+
+    // attach the base JSON data
+    formData.append("data", JSON.stringify(baseData));
+
+    // attach the files
+    for (const file of files) {
+      formData.append("files", file, file.name);
+    }
 
     const response = await Axios.post(
       "/handover/create-hand-over-sheet",
-      payload
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+      }
     );
+
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -390,6 +384,31 @@ export const getLeadsCount = async (
   > = {}
 ) => {
   let url = "/bddashboard/lead-count";
+
+  const query = Object.entries(params)
+    .map(([key, val]) => {
+      if (Array.isArray(val)) {
+        return val.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
+      }
+      return `${key}=${encodeURIComponent(val)}`;
+    })
+    .join("&");
+
+  if (query) {
+    url += `?${query}`;
+  }
+
+  const response = await Axios.get(url);
+  return response.data;
+};
+
+export const getDocuments = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {}
+) => {
+  let url = `/bddashboard/lead-documents`;
 
   const query = Object.entries(params)
     .map(([key, val]) => {

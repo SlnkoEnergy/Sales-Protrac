@@ -29,9 +29,9 @@ const AuthSyncListener = ({ children }) => {
     return () => window.removeEventListener("message", handleMessage);
   }, [setAuthData]);
 
-  if (!authSynced) {
-    return <div><Loader /></div>;
-  }
+  // if (!authSynced) {
+  //   return <div><Loader /></div>;
+  // }
 
   return <>{children}</>;
 };

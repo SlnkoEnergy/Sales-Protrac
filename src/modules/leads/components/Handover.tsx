@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Select,
@@ -15,12 +16,20 @@ import {
 import {
   createHandover,
   editHandover,
+  getDocuments,
   getHandoverByLeadId,
   getLeadbyId,
 } from "@/services/leads/LeadService";
-import { File, User2, Workflow } from "lucide-react";
+import {
+  File as FileIcon,
+  User2,
+  Workflow,
+  Paperclip,
+  Trash2,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/services/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type HandoverFormRef = {
   submit: () => void;
@@ -109,10 +118,10 @@ export interface FormDataType {
     project_kwp: string;
     project_component: string;
     project_component_other: string;
-    project_completion_date: string;
-    ppa_expiry_date: string;
-    bd_commitment_date: string;
     transmission_scope: string;
+    project_completion_date: string;
+    bd_commitment_date: string;
+    ppa_expiry_date: string;
     loan_scope: string;
   };
   commercial_details: {
@@ -130,24 +139,29 @@ export interface FormDataType {
 }
 
 const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
-  const [data, setData] = useState();
+  const [data, setData] = useState<any>();
+  const [documents, setDocuments] = useState<any[]>([]);
   const [searchParams] = useSearchParams();
   const [initialFormData, setInitialFormData] =
     useState<FormDataType>(defaultInitialValues);
-  const [handover, setHandover] = useState();
+  const [handover, setHandover] = useState<any>();
   const id = searchParams.get("id");
 
   const { user } = useAuth();
 
-  useImperativeHandle(ref, () => ({
-    submit: () => handleSubmit(),
-    resetForm: () => {
-      setFormData(initialFormData);
-    },
-    getStatus: () => formData?.is_locked,
-    updated: () => formData?.status_of_handoversheet,
-    update: () => handleEdit(),
-  }));
+useImperativeHandle(ref, () => ({
+  submit: () => handleSubmit(),
+  resetForm: () => {
+    setFormData(initialFormData);
+    setAttachments([]);
+    setSelectedDocs({});
+    setDocFilesMap({});
+    setSelectedDocItems([]); // <-- this exists now
+  },
+  getStatus: () => formData?.is_locked,
+  updated: () => formData?.status_of_handoversheet,
+  update: () => handleEdit(),
+}));
 
   const toDateInput = (v: any) => {
     if (!v) return "";
@@ -162,36 +176,112 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const params = {
-          id: id,
-        };
+        const params = { id };
         const res = await getLeadbyId(params);
         setData(res.data);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
     };
-
-    fetchLeads();
+    if (id) fetchLeads();
   }, [id]);
 
+  const [selectedDocs, setSelectedDocs] = useState<Record<string, boolean>>({});
+  const [docFilesMap, setDocFilesMap] = useState<Record<string, File>>({});
+  // add this
+const [selectedDocItems, setSelectedDocItems] = useState<
+  Array<{ url: string; name?: string; type?: string }>
+>([]);
+
   useEffect(() => {
-    const fetchLeads = async () => {
+    const fetchDocuments = async () => {
       try {
-        const params = {
-          leadId: data?.id,
-        };
-        const res = await getHandoverByLeadId(params);
-        setHandover(res.data);
+        const params = { id };
+        const res = await getDocuments(params);
+        setDocuments(res.data || []);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
     };
+    if (id) fetchDocuments();
+  }, [id]);
 
-    fetchLeads();
+
+  async function fetchAsFile(url: string, filename?: string): Promise<File> {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+    const blob = await res.blob();
+
+    let name = (filename || "").trim();
+    if (!name) {
+      try {
+        const u = new URL(url);
+        const part = u.pathname.split("/").pop() || "document";
+        name = decodeURIComponent(part);
+      } catch {
+        name = "document";
+      }
+    }
+    if (!/\.[A-Za-z0-9]{2,5}$/.test(name)) {
+      const ext = blob.type.split("/")[1] || "bin";
+      name = `${name}.${ext}`;
+    }
+    return new File([blob], name, {
+      type: blob.type || "application/octet-stream",
+    });
+  }
+
+
+  const handleCheckboxChange = async (doc: any, checked: boolean | string) => {
+    const isChecked = checked === true;
+
+    setSelectedDocs((prev) => ({ ...prev, [doc._id]: isChecked }));
+
+    if (isChecked) {
+      try {
+        if (docFilesMap[doc._id]) return;
+        const file = await fetchAsFile(doc.attachment_url, doc.name);
+        setAttachments((prev) => {
+          const exists = prev.some(
+            (f) => f.name === file.name && f.size === file.size
+          );
+          return exists ? prev : [...prev, file];
+        });
+        setDocFilesMap((prev) => ({ ...prev, [doc._id]: file }));
+      } catch (e) {
+        toast.error(`Couldn't attach "${doc.name}".`);
+        setSelectedDocs((prev) => ({ ...prev, [doc._id]: false }));
+      }
+    } else {
+      const file = docFilesMap[doc._id];
+      if (file) {
+        setAttachments((prev) =>
+          prev.filter((f) => !(f.name === file.name && f.size === file.size))
+        );
+        setDocFilesMap((prev) => {
+          const clone = { ...prev };
+          delete clone[doc._id];
+          return clone;
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    const fetchHandover = async () => {
+      try {
+        const params = { leadId: data?.id };
+        if (!params.leadId) return;
+        const res = await getHandoverByLeadId(params);
+        setHandover(res.data);
+      } catch (err) {
+        console.error("Error fetching handover:", err);
+      }
+    };
+    fetchHandover();
   }, [data]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     id: "",
     customer_details: {
       name: "",
@@ -248,6 +338,33 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     assigned_to: "",
   });
 
+  // NEW: attachments (kept local; safe default)
+  const [attachments, setAttachments] = useState<File[]>([]);
+
+  const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (!files.length) return;
+
+    const MAX_MB = 15;
+    const accepted = files.filter((f) => f.size <= MAX_MB * 1024 * 1024);
+    const rejected = files.filter((f) => f.size > MAX_MB * 1024 * 1024);
+
+    if (rejected.length) {
+      toast.warning(
+        `Some files were skipped (>${MAX_MB}MB): ${rejected
+          .map((f) => f.name)
+          .join(", ")}`
+      );
+    }
+
+    setAttachments((prev) => [...prev, ...accepted]);
+    e.currentTarget.value = "";
+  };
+
+  const removeAttachment = (idx: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   useEffect(() => {
     if (!data) return;
 
@@ -269,7 +386,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         updated.project_detail.bd_commitment_date = toDateInput(
           updated.project_detail.bd_commitment_date
         );
-        // (optional) if you also show completion_date somewhere:
         updated.project_detail.ppa_expiry_date = toDateInput(
           updated.project_detail.ppa_expiry_date
         );
@@ -304,17 +420,17 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     const { name, value } = e.target;
     const keys = name.split(".");
 
-    setFormData((prev) => {
+    setFormData((prev: any) => {
       const updated = { ...prev };
 
       if (keys.length === 2) {
         const [parent, child] = keys;
         const prevNested = updated[parent] || {};
-        const newNested = { ...prevNested, [child]: value };
+        const newNested: any = { ...prevNested, [child]: value };
 
         updated[parent] = newNested;
 
-        // ✅ 1. Calculate Proposed DC Capacity
+        // compute DC capacity
         if (
           parent === "project_detail" &&
           (child === "project_kwp" || child === "overloading")
@@ -334,7 +450,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
           }
         }
 
-        // ✅ 2. Calculate Total Slnko Service Charges (Without GST)
+        // compute service charge
         if (
           (parent === "project_detail" && child === "project_kwp") ||
           (parent === "other_details" && child === "slnko_basic")
@@ -357,7 +473,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
           }
         }
       } else {
-        updated[name] = value;
+        (updated as any)[name] = value;
       }
 
       return updated;
@@ -366,7 +482,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
   const handleSelectChange = (path: string, value: string) => {
     const keys = path.split(".");
-    setFormData((prev) => {
+    setFormData((prev: any) => {
       const updated = { ...prev };
       let current: any = updated;
 
@@ -382,6 +498,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const getValueByPath = (obj: any, path: string): any =>
+    path.split(".").reduce((acc, part) => acc?.[part], obj);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -429,14 +548,12 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     ];
 
     const newErrors: Record<string, string> = {};
-
     requiredFields.forEach(({ name, label }) => {
       const value = getValueByPath(formData, name);
       if (!value) {
         newErrors[name] = `${label.replace(" *", "")} is required.`;
       }
     });
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -444,7 +561,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       toast.error(errorMessages, { duration: 5000 });
       return;
     }
-
+     
     try {
       const {
         id,
@@ -462,7 +579,13 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         submitted_by_BD: users?.name || "",
       };
 
-      const payload = {
+      const attachments_meta = attachments.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+      }));
+     
+      const payload: any = {
         id,
         customer_details,
         order_details,
@@ -473,9 +596,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         submitted_by: users?.name || "",
         status_of_handoversheet: "draft",
         is_locked: "locked",
+        attachments_meta,
+        documents: selectedDocItems,
       };
-
-      const response = await createHandover(
+      console.log({payload})
+      await createHandover(
         payload.id,
         payload.customer_details,
         payload.order_details,
@@ -485,7 +610,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         payload.invoice_detail,
         payload.submitted_by,
         payload.status_of_handoversheet,
-        payload.is_locked
+        payload.is_locked,
+        payload.documents 
       );
 
       toast.success("Handover Sheet Submitted Successfully");
@@ -500,12 +626,13 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         is_locked: payload.is_locked,
         submitted_by: payload.submitted_by,
       });
+      setAttachments([]);
+      setSelectedDocs({});
+      setSelectedDocItems([]);
     } catch (error: any) {
       toast.error("Error in Submitting Handover Sheet");
     }
   };
-
-  console.log({ formData });
 
   const handleEdit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -532,6 +659,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         submitted_by: name,
         status_of_handoversheet: "draft",
         is_locked: "locked",
+        attachments_meta: attachments.map((f) => ({
+          name: f.name,
+          size: f.size,
+          type: f.type,
+        })),
       };
 
       const response = await editHandover(handover?._id, payload);
@@ -549,10 +681,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     } catch (error: any) {
       toast.error(error.message || "Error in Updating Handover Sheet");
     }
-  };
-
-  const getValueByPath = (obj: any, path: string): any => {
-    return path.split(".").reduce((acc, part) => acc?.[part], obj);
   };
 
   const indianStates = [
@@ -596,11 +724,10 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
   return (
     <div className="max-h-screen">
-      <Card className="w-full  max-w-5xl mx-auto">
+      <Card className="w-full max-w-5xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl flex gap-2 items-center text-[#214b7b]">
-            {" "}
-            <File size={20} /> Handover Form
+            <FileIcon size={20} /> Handover Form
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -862,10 +989,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                               formData,
                               name
                             );
-                            const matchedOption = options.find((opt) =>
-                              typeof opt === "string"
-                                ? opt === selectedValue
-                                : opt.value === selectedValue
+                            const matchedOption = (options as any[]).find(
+                              (opt: any) =>
+                                typeof opt === "string"
+                                  ? opt === selectedValue
+                                  : opt.value === selectedValue
                             );
                             return typeof matchedOption === "string"
                               ? matchedOption
@@ -875,7 +1003,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                       </SelectTrigger>
 
                       <SelectContent>
-                        {options.map((opt) => {
+                        {(options as any[]).map((opt: any) => {
                           const value =
                             typeof opt === "string" ? opt : opt.value;
                           const labelText =
@@ -969,6 +1097,99 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                 </div>
               </div>
             </div>
+
+            {/* ATTACHMENTS */}
+            <form className="space-y-6">
+              {/* === Attachments Section === */}
+              <div>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold flex gap-2 items-center">
+                      <Paperclip size={18} /> Attachments
+                    </h2>
+                    <span className="text-sm text-gray-500 font-semibold">
+                      Add any related files (Work Orders, LOIs, Layouts, etc.).
+                      Max 15MB per file.
+                    </span>
+                  </div>
+
+                  {/* ✅ Available docs on right side */}
+                  {documents?.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700">
+                        Available:
+                      </span>
+                      <div className="flex flex-wrap items-center gap-4">
+                        {documents.map((doc) => (
+                          <label
+                            key={doc._id}
+                            className="inline-flex items-center gap-2 cursor-pointer select-none"
+                          >
+                            <Checkbox
+                              checked={!!selectedDocs[doc._id]}
+                              onCheckedChange={(val) =>
+                                handleCheckboxChange(doc, val)
+                              }
+                            />
+                            <span className="text-sm uppercase">
+                              {doc.name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Choose Files Input */}
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="attachments"
+                      type="file"
+                      multiple
+                      onChange={onPickFiles}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.csv,.txt"
+                      className="cursor-pointer"
+                    />
+                  </div>
+
+                  {/* ✅ Selected Files */}
+                  {attachments.length > 0 && (
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm font-medium mb-2">
+                        Selected Files ({attachments.length})
+                      </div>
+                      <ul className="space-y-2">
+                        {attachments.map((f, idx) => (
+                          <li
+                            key={`${f.name}-${idx}`}
+                            className="flex items-center justify-between gap-3 text-sm"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Paperclip size={16} className="shrink-0" />
+                              <span className="truncate">{f.name}</span>
+                              <span className="text-gray-500 shrink-0">
+                                ({(f.size / (1024 * 1024)).toFixed(2)} MB)
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeAttachment(idx)}
+                              className="h-8"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </form>
           </form>
         </CardContent>
       </Card>
