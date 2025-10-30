@@ -250,37 +250,68 @@ export const updateExpectedClosingDate = async (
   }
 };
 
-export const createHandover = async (baseData: any, files: File[]) => {
+// services/leads/LeadService.ts
+export const createHandover = async (
+  id: string,
+  customer_details: any,
+  order_details: any,
+  project_detail: any,
+  commercial_details: any,
+  other_details: any,
+  invoice_detail: any,
+  submitted_by: string,
+  status_of_handoversheet: string = "draft",
+  is_locked: string = "locked",
+  documents: File[] = [] 
+) => {
   try {
-    const formData = new FormData();
+    // meta for the server (optional, but you already compute it)
+    const attachments_meta = (documents || []).map((f) => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+    }));
 
-    // attach the base JSON data
-    formData.append("data", JSON.stringify(baseData));
+    // everything non-file goes into "data"
+    const data = {
+      id,
+      customer_details,
+      order_details,
+      project_detail,
+      commercial_details,
+      other_details,
+      invoice_detail,
+      submitted_by,
+      status_of_handoversheet,
+      is_locked,
+      attachments_meta,
+    };
 
-    // attach the files
-    for (const file of files) {
-      formData.append("files", file, file.name);
-    }
+    const fd = new FormData();
+    fd.append("data", JSON.stringify(data));
+
+
+    (documents || []).forEach((file) => {
+      fd.append("file", file);
+    });
 
     const response = await Axios.post(
       "/handover/create-hand-over-sheet",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        maxBodyLength: Infinity,
-        maxContentLength: Infinity,
-      }
+      fd,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
 
     return response.data;
   } catch (error: any) {
-    throw new Error(
-      error?.response?.data?.message || "Failed to create handover sheet"
-    );
+    const msg =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Failed to create handover sheet";
+    throw new Error(msg);
   }
 };
+
 
 export const getHandoverByLeadId = async (
   params: Record<

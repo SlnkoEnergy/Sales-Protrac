@@ -192,7 +192,7 @@ useImperativeHandle(ref, () => ({
 const [selectedDocItems, setSelectedDocItems] = useState<
   Array<{ url: string; name?: string; type?: string }>
 >([]);
-
+  console.log({selectedDocItems})
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
@@ -206,7 +206,7 @@ const [selectedDocItems, setSelectedDocItems] = useState<
     if (id) fetchDocuments();
   }, [id]);
 
-
+  
   async function fetchAsFile(url: string, filename?: string): Promise<File> {
     const res = await fetch(url, { mode: "cors" });
     if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
@@ -597,9 +597,9 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         status_of_handoversheet: "draft",
         is_locked: "locked",
         attachments_meta,
-        documents: selectedDocItems,
+        documents: attachments,
       };
-      console.log({payload})
+      console.log({attachments, payload})
       await createHandover(
         payload.id,
         payload.customer_details,
@@ -630,6 +630,7 @@ const [selectedDocItems, setSelectedDocItems] = useState<
       setSelectedDocs({});
       setSelectedDocItems([]);
     } catch (error: any) {
+      console.log({error})
       toast.error("Error in Submitting Handover Sheet");
     }
   };
