@@ -123,6 +123,7 @@ export default function LeadProfile() {
   const [showNotesModal, setShowNotesModal] = React.useState(false);
   const [selectedDoc, setSelectedDoc] = React.useState<string>("");
   const [refreshKey, setRefreshKey] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
   const [files, setFiles] = React.useState<
     { type: string; file: File | null }[]
   >([]);
@@ -273,6 +274,19 @@ export default function LeadProfile() {
     }
   }, [data]);
 
+  const handleSubmitClick = async () => {
+    try {
+      setLoading(true);
+      if (update) {
+        await formRef.current?.update();
+      } else {
+        await formRef.current?.submit();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
@@ -394,13 +408,16 @@ export default function LeadProfile() {
                 <Button
                   className="bg-[#214b7b] cursor-pointer"
                   size="sm"
-                  onClick={() =>
-                    update
-                      ? formRef.current?.update()
-                      : formRef.current?.submit()
-                  }
+                  onClick={handleSubmitClick}
+                  disabled={loading}
                 >
-                  {update ? "Update Handover" : "Create Handover"}
+                  {loading
+                    ? update
+                      ? "Updating..."
+                      : "Submitting..."
+                    : update
+                    ? "Update Handover"
+                    : "Create Handover"}
                 </Button>
               </>
             )}
@@ -447,7 +464,6 @@ export default function LeadProfile() {
                           data?.expected_closing_date
                             ? new Date(data.expected_closing_date)
                             : undefined
-                        
                         }
                       />
                     </div>

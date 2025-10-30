@@ -1,6 +1,12 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +32,8 @@ import {
   Workflow,
   Paperclip,
   Trash2,
+  Lock,
+  ExternalLink,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/services/context/AuthContext";
@@ -34,7 +42,28 @@ import { Checkbox } from "@/components/ui/checkbox";
 type HandoverFormRef = {
   submit: () => void;
   resetForm: () => void;
+  getStatus: () => string;
+  updated: () => string;
+  update: () => void;
 };
+
+type AttachmentEntry =
+  | {
+      kind: "file";           
+      origin: "local";            
+      file: File;
+      baseName: string;            
+      ext: string;               
+      sizeMB: number;
+    }
+  | {
+      kind: "url";                
+      origin: "bd" | "handover";  
+      url: string;
+      baseName: string;           
+      ext: string;
+      sizeMB: number;         
+    };
 
 const defaultInitialValues = {
   id: "",
@@ -145,23 +174,26 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   const [initialFormData, setInitialFormData] =
     useState<FormDataType>(defaultInitialValues);
   const [handover, setHandover] = useState<any>();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Structured attachments with explicit origin
+  const [attachments, setAttachments] = useState<AttachmentEntry[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<Record<string, boolean>>({});
   const id = searchParams.get("id");
 
   const { user } = useAuth();
 
-useImperativeHandle(ref, () => ({
-  submit: () => handleSubmit(),
-  resetForm: () => {
-    setFormData(initialFormData);
-    setAttachments([]);
-    setSelectedDocs({});
-    setDocFilesMap({});
-    setSelectedDocItems([]); // <-- this exists now
-  },
-  getStatus: () => formData?.is_locked,
-  updated: () => formData?.status_of_handoversheet,
-  update: () => handleEdit(),
-}));
+  useImperativeHandle(ref, () => ({
+    submit: () => handleSubmit(),
+    resetForm: () => {
+      setFormData(initialFormData);
+      setAttachments([]);
+      setSelectedDocs({});
+    },
+    getStatus: () => formData?.is_locked,
+    updated: () => formData?.status_of_handoversheet,
+    update: () => handleEdit(),
+  }));
 
   const toDateInput = (v: any) => {
     if (!v) return "";
@@ -186,13 +218,7 @@ useImperativeHandle(ref, () => ({
     if (id) fetchLeads();
   }, [id]);
 
-  const [selectedDocs, setSelectedDocs] = useState<Record<string, boolean>>({});
-  const [docFilesMap, setDocFilesMap] = useState<Record<string, File>>({});
-  // add this
-const [selectedDocItems, setSelectedDocItems] = useState<
-  Array<{ url: string; name?: string; type?: string }>
->([]);
-  console.log({selectedDocItems})
+  // Load available BD Lead documents for checkbox selection
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
@@ -200,84 +226,49 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         const res = await getDocuments(params);
         setDocuments(res.data || []);
       } catch (err) {
-        console.error("Error fetching leads:", err);
+        console.error("Error fetching documents:", err);
       }
     };
     if (id) fetchDocuments();
   }, [id]);
 
-  
-  async function fetchAsFile(url: string, filename?: string): Promise<File> {
-    const res = await fetch(url, { mode: "cors" });
-    if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-    const blob = await res.blob();
-
-    let name = (filename || "").trim();
-    if (!name) {
-      try {
-        const u = new URL(url);
-        const part = u.pathname.split("/").pop() || "document";
-        name = decodeURIComponent(part);
-      } catch {
-        name = "document";
-      }
-    }
-    if (!/\.[A-Za-z0-9]{2,5}$/.test(name)) {
-      const ext = blob.type.split("/")[1] || "bin";
-      name = `${name}.${ext}`;
-    }
-    return new File([blob], name, {
-      type: blob.type || "application/octet-stream",
-    });
-  }
-
-
-  const handleCheckboxChange = async (doc: any, checked: boolean | string) => {
-    const isChecked = checked === true;
-
-    setSelectedDocs((prev) => ({ ...prev, [doc._id]: isChecked }));
-
-    if (isChecked) {
-      try {
-        if (docFilesMap[doc._id]) return;
-        const file = await fetchAsFile(doc.attachment_url, doc.name);
-        setAttachments((prev) => {
-          const exists = prev.some(
-            (f) => f.name === file.name && f.size === file.size
-          );
-          return exists ? prev : [...prev, file];
-        });
-        setDocFilesMap((prev) => ({ ...prev, [doc._id]: file }));
-      } catch (e) {
-        toast.error(`Couldn't attach "${doc.name}".`);
-        setSelectedDocs((prev) => ({ ...prev, [doc._id]: false }));
-      }
-    } else {
-      const file = docFilesMap[doc._id];
-      if (file) {
-        setAttachments((prev) =>
-          prev.filter((f) => !(f.name === file.name && f.size === file.size))
-        );
-        setDocFilesMap((prev) => {
-          const clone = { ...prev };
-          delete clone[doc._id];
-          return clone;
-        });
-      }
-    }
-  };
+  const loadedOnce = useRef(false);
 
   useEffect(() => {
+    if (!data) return;
+    if (loadedOnce.current) return;
+    loadedOnce.current = true;
+
     const fetchHandover = async () => {
       try {
         const params = { leadId: data?.id };
         if (!params.leadId) return;
+
         const res = await getHandoverByLeadId(params);
         setHandover(res.data);
+
+        // Build IMMUTABLE url entries for existing handover documents (NO upload, NO edit, NO delete)
+        const docs: any[] = res.data?.documents || [];
+        if (docs.length) {
+          const existingEntries: AttachmentEntry[] = docs.map((doc) => {
+            const guess = (doc.name || doc.filename || "document").toString().trim();
+            const { base, ext } = splitName(guess);
+            return {
+              kind: "url",
+              origin: "handover",
+              url: doc.attachment_url || doc.fileurl || "",
+              baseName: base,
+              ext,
+              sizeMB: 0,
+            };
+          });
+          setAttachments((prev) => mergeUniqueAttachments(prev, existingEntries));
+        }
       } catch (err) {
         console.error("Error fetching handover:", err);
       }
     };
+
     fetchHandover();
   }, [data]);
 
@@ -338,32 +329,125 @@ const [selectedDocItems, setSelectedDocItems] = useState<
     assigned_to: "",
   });
 
-  // NEW: attachments (kept local; safe default)
-  const [attachments, setAttachments] = useState<File[]>([]);
+  // ---------- helpers for filenames ----------
+  function splitName(full: string) {
+    const idx = full.lastIndexOf(".");
+    if (idx <= 0 || idx === full.length - 1) {
+      return { base: full, ext: "" };
+    }
+    const base = full.slice(0, idx);
+    const ext = full.slice(idx); // includes '.'
+    return { base, ext };
+  }
 
+  function mergeUniqueAttachments(
+    prev: AttachmentEntry[],
+    next: AttachmentEntry[]
+  ) {
+    const seen = new Set<string>();
+    const out: AttachmentEntry[] = [];
+    const tag = (a: AttachmentEntry) =>
+      a.kind === "file"
+        ? `F|${a.origin}|${a.file.name}|${a.file.size}`
+        : `U|${a.origin}|${a.url}|${a.baseName}`;
+
+    [...prev, ...next].forEach((a) => {
+      const key = tag(a);
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(a);
+    });
+    return out;
+  }
+
+  // pick local files -> NEW "local" entries
   const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (!files.length) return;
 
     const MAX_MB = 15;
-    const accepted = files.filter((f) => f.size <= MAX_MB * 1024 * 1024);
-    const rejected = files.filter((f) => f.size > MAX_MB * 1024 * 1024);
+    const accepted: AttachmentEntry[] = [];
+    const rejected: string[] = [];
+
+    for (const f of files) {
+      const sizeMB = +(f.size / (1024 * 1024)).toFixed(2);
+      if (sizeMB > MAX_MB) {
+        rejected.push(`${f.name} (${sizeMB}MB)`);
+        continue;
+      }
+      const { base, ext } = splitName(f.name);
+      accepted.push({
+        kind: "file",
+        origin: "local",
+        file: f,
+        baseName: base,
+        ext,
+        sizeMB,
+      });
+    }
 
     if (rejected.length) {
       toast.warning(
-        `Some files were skipped (>${MAX_MB}MB): ${rejected
-          .map((f) => f.name)
+        `Skipped (>${MAX_MB}MB): ${rejected
+          .map((s) => s.split(" (")[0])
           .join(", ")}`
       );
     }
 
-    setAttachments((prev) => [...prev, ...accepted]);
+    setAttachments((prev) => mergeUniqueAttachments(prev, accepted));
     e.currentTarget.value = "";
   };
 
+  // toggle BD document checkboxes -> add/remove "bd" url entries (editable/deletable)
+  const handleCheckboxChange = (doc: any, checked: boolean | string) => {
+    const isChecked = checked === true;
+    setSelectedDocs((prev) => ({ ...prev, [doc._id]: isChecked }));
+
+    const baseGuess = (doc.name || doc.filename || "document").toString().trim();
+    const { base, ext } = splitName(baseGuess);
+
+    if (isChecked) {
+      const entry: AttachmentEntry = {
+        kind: "url",
+        origin: "bd",
+        url: doc.attachment_url || doc.fileurl || "",
+        baseName: base,
+        ext,
+        sizeMB: 0,
+      };
+      setAttachments((prev) => mergeUniqueAttachments(prev, [entry]));
+    } else {
+      setAttachments((prev) =>
+        prev.filter(
+          (a) =>
+            !(
+              a.kind === "url" &&
+              a.origin === "bd" &&
+              (a.url === doc.attachment_url || a.url === doc.fileurl)
+            )
+        )
+      );
+    }
+  };
+
+  // delete attachment (blocked for origin: "handover")
   const removeAttachment = (idx: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
+
+  // update baseName inline (blocked for origin: "handover")
+  const updateAttachmentBaseName = (idx: number, newBase: string) => {
+    setAttachments((prev) =>
+      prev.map((a, i) =>
+        i === idx ? { ...a, baseName: safeBase(newBase) } : a
+      )
+    );
+  };
+
+  // keep filename safe (no slashes or funny chars)
+  function safeBase(s: string) {
+    return s.replace(/[\\/:*?"<>|]/g, "_").trim();
+  }
 
   useEffect(() => {
     if (!data) return;
@@ -497,8 +581,6 @@ const [selectedDocItems, setSelectedDocItems] = useState<
     });
   };
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
   const getValueByPath = (obj: any, path: string): any =>
     path.split(".").reduce((acc, part) => acc?.[part], obj);
 
@@ -561,7 +643,7 @@ const [selectedDocItems, setSelectedDocItems] = useState<
       toast.error(errorMessages, { duration: 5000 });
       return;
     }
-     
+
     try {
       const {
         id,
@@ -579,12 +661,6 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         submitted_by_BD: users?.name || "",
       };
 
-      const attachments_meta = attachments.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type,
-      }));
-     
       const payload: any = {
         id,
         customer_details,
@@ -596,10 +672,9 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         submitted_by: users?.name || "",
         status_of_handoversheet: "draft",
         is_locked: "locked",
-        attachments_meta,
-        documents: attachments,
       };
-      console.log({attachments, payload})
+
+      // CREATE: upload only NEW local files
       await createHandover(
         payload.id,
         payload.customer_details,
@@ -611,7 +686,9 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         payload.submitted_by,
         payload.status_of_handoversheet,
         payload.is_locked,
-        payload.documents 
+        attachments
+          .filter((a))
+          .map((a) => a.file)
       );
 
       toast.success("Handover Sheet Submitted Successfully");
@@ -628,9 +705,7 @@ const [selectedDocItems, setSelectedDocItems] = useState<
       });
       setAttachments([]);
       setSelectedDocs({});
-      setSelectedDocItems([]);
-    } catch (error: any) {
-      console.log({error})
+    } catch (error) {
       toast.error("Error in Submitting Handover Sheet");
     }
   };
@@ -647,6 +722,7 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         commercial_details,
         other_details,
         submitted_by: name,
+        is_locked,
       } = formData;
 
       const payload = {
@@ -658,16 +734,27 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         other_details,
         invoice_detail: {},
         submitted_by: name,
-        status_of_handoversheet: "draft",
-        is_locked: "locked",
-        attachments_meta: attachments.map((f) => ({
-          name: f.name,
-          size: f.size,
-          type: f.type,
-        })),
+        status_of_handoversheet:  "draft",
+        is_locked: is_locked || "locked",
       };
 
-      const response = await editHandover(handover?._id, payload);
+      const newLocalFiles = attachments.filter(
+        (a): a is Extract<AttachmentEntry, { kind: "file"; origin: "local" }> =>
+          a.kind === "file" && a.origin === "local"
+      );
+
+      const fd = new FormData();
+      fd.append("data", JSON.stringify(payload));
+
+      const names: string[] = [];
+      for (const a of newLocalFiles) {
+        fd.append("files", a.file); 
+        names.push(a.baseName);     
+      }
+      names.forEach((n) => fd.append("names", n));
+
+      await editHandover(handover?._id, fd, true); 
+
       toast.success("Handover Sheet Updated Successfully");
 
       setFormData({
@@ -679,6 +766,7 @@ const [selectedDocItems, setSelectedDocItems] = useState<
         other_details: payload.other_details,
         submitted_by: payload.submitted_by,
       });
+      setAttachments((prev) => prev.filter((a) => !(a.kind === "file" && a.origin === "local")));
     } catch (error: any) {
       toast.error(error.message || "Error in Updating Handover Sheet");
     }
@@ -1100,22 +1188,19 @@ const [selectedDocItems, setSelectedDocItems] = useState<
             </div>
 
             {/* ATTACHMENTS */}
-            <form className="space-y-6">
-              {/* === Attachments Section === */}
-              <div>
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold flex gap-2 items-center">
-                      <Paperclip size={18} /> Attachments
-                    </h2>
-                    <span className="text-sm text-gray-500 font-semibold">
-                      Add any related files (Work Orders, LOIs, Layouts, etc.).
-                      Max 15MB per file.
-                    </span>
-                  </div>
+            <div>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold flex gap-2 items-center">
+                    <Paperclip size={18} /> Attachments
+                  </h2>
+                  <span className="text-sm text-gray-500 font-semibold">
+                    Add any related files (Work Orders, LOIs, Layouts, etc.). Max 15MB per file.
+                  </span>
+                </div>
 
-                  {/* ✅ Available docs on right side */}
-                  {documents?.length > 0 && (
+                {documents?.length > 0 &&
+                  !(formData?.is_locked === "locked") && (
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-700">
                         Available:
@@ -1133,17 +1218,18 @@ const [selectedDocItems, setSelectedDocItems] = useState<
                               }
                             />
                             <span className="text-sm uppercase">
-                              {doc.name}
+                              {doc.name || doc.filename}
                             </span>
                           </label>
                         ))}
                       </div>
                     </div>
                   )}
-                </div>
+              </div>
 
-                {/* Choose Files Input */}
-                <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-3">
+                {(formData?.is_locked !== "locked" ||
+                  formData?.status_of_handoversheet === "Rejected") && (
                   <div className="flex items-center gap-3">
                     <Input
                       id="attachments"
@@ -1154,43 +1240,104 @@ const [selectedDocItems, setSelectedDocItems] = useState<
                       className="cursor-pointer"
                     />
                   </div>
+                )}
 
-                  {/* ✅ Selected Files */}
-                  {attachments.length > 0 && (
-                    <div className="border rounded-md p-3">
-                      <div className="text-sm font-medium mb-2">
-                        Selected Files ({attachments.length})
-                      </div>
-                      <ul className="space-y-2">
-                        {attachments.map((f, idx) => (
+                {attachments.length > 0 && (
+                  <div className="border rounded-md p-3">
+                    <div className="text-sm font-medium mb-3">
+                      Files ({attachments.length})
+                    </div>
+
+                    <ul className="space-y-3">
+                      {attachments.map((a, idx) => {
+                        const isLockedExisting =
+                          a.kind === "url" && a.origin === "handover";
+
+                        return (
                           <li
-                            key={`${f.name}-${idx}`}
-                            className="flex items-center justify-between gap-3 text-sm"
+                            key={`${a.kind}-${a.origin}-${idx}`}
+                            className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <Paperclip size={16} className="shrink-0" />
-                              <span className="truncate">{f.name}</span>
-                              <span className="text-gray-500 shrink-0">
-                                ({(f.size / (1024 * 1024)).toFixed(2)} MB)
+
+                              {/* Editable base name + extension */}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Input
+                                  value={a.baseName}
+                                  disabled={isLockedExisting}
+                                  onChange={(e) =>
+                                    updateAttachmentBaseName(idx, e.target.value)
+                                  }
+                                  className="h-8 w-56 disabled:bg-gray-100"
+                                />
+                                <span className="text-gray-600 text-sm">
+                                  {a.ext || ""}
+                                </span>
+                              </div>
+
+                              {/* Size */}
+                              <span className="text-gray-500 shrink-0 ml-2 text-sm">
+                                ({a.sizeMB?.toFixed(2) || "0.00"} MB)
                               </span>
+
+                              {/* Quick open for file/url */}
+                              {a.kind === "file" ? (
+                                <a
+                                  href={URL.createObjectURL(a.file)}
+                                  download={`${a.baseName}${a.ext}`}
+                                  className="text-[#214b7b] hover:underline text-sm ml-2 flex items-center gap-1"
+                                >
+                                  open <ExternalLink size={12} />
+                                </a>
+                              ) : (
+                                <a
+                                  href={a.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[#214b7b] hover:underline text-sm ml-2 flex items-center gap-1"
+                                >
+                                  view <ExternalLink size={12} />
+                                </a>
+                              )}
+
+                              {/* Lock badge for existing handover docs */}
+                              {isLockedExisting && (
+                                <span className="ml-2 inline-flex items-center gap-1 text-xs text-gray-600">
+                                  <Lock size={12} /> locked
+                                </span>
+                              )}
                             </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeAttachment(idx)}
-                              className="h-8"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
+
+                            {/* Delete button (hidden for locked existing handover docs) */}
+                            {((formData?.is_locked !== "locked" ||
+                              formData?.status_of_handoversheet === "Rejected") &&
+                              !isLockedExisting) && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeAttachment(idx)}
+                                className="h-8 self-start md:self-auto"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            )}
                           </li>
-                        ))}
-                      </ul>
+                        );
+                      })}
+                    </ul>
+
+                    <div className="text-xs text-gray-500 mt-2">
+                      Note:
+                      <br />• <b>Existing Handover Sheet files</b> are locked — you can’t edit or delete them and they won’t be re-uploaded.
+                      <br />• <b>New local files</b> are the only ones sent in the edit payload.
+                      <br />• <b>BD documents</b> you check are linked (not uploaded).
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-            </form>
+            </div>
           </form>
         </CardContent>
       </Card>

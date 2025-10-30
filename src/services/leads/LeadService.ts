@@ -251,6 +251,7 @@ export const updateExpectedClosingDate = async (
 };
 
 // services/leads/LeadService.ts
+// createHandover.ts
 export const createHandover = async (
   id: string,
   customer_details: any,
@@ -262,56 +263,46 @@ export const createHandover = async (
   submitted_by: string,
   status_of_handoversheet: string = "draft",
   is_locked: string = "locked",
-  documents: File[] = [] 
+  documents: (File | string)[] = []
 ) => {
-  try {
-    // meta for the server (optional, but you already compute it)
-    const attachments_meta = (documents || []).map((f) => ({
-      name: f.name,
-      size: f.size,
-      type: f.type,
-    }));
-
-    // everything non-file goes into "data"
-    const data = {
-      id,
-      customer_details,
-      order_details,
-      project_detail,
-      commercial_details,
-      other_details,
-      invoice_detail,
-      submitted_by,
-      status_of_handoversheet,
-      is_locked,
-      attachments_meta,
-    };
-
-    const fd = new FormData();
-    fd.append("data", JSON.stringify(data));
-
-
-    (documents || []).forEach((file) => {
-      fd.append("file", file);
-    });
-
-    const response = await Axios.post(
-      "/handover/create-hand-over-sheet",
-      fd,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
-
-    return response.data;
-  } catch (error: any) {
-    const msg =
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.message ||
-      "Failed to create handover sheet";
-    throw new Error(msg);
+  // Separate files vs URLs
+  const urlDocs: string[] = [];
+  const fileDocs: File[] = [];
+  for (const item of documents) {
+    if (item instanceof File) fileDocs.push(item);
+    else if (typeof item === "string") urlDocs.push(item);
   }
-};
 
+  const data = {
+    id,
+    customer_details,
+    order_details,
+    project_detail,
+    commercial_details,
+    other_details,
+    invoice_detail,
+    submitted_by,
+    status_of_handoversheet,
+    is_locked,
+    documents: urlDocs,
+  };
+
+  const fd = new FormData();
+  fd.append("data", JSON.stringify(data));
+
+  for (const file of fileDocs) {
+    fd.append("files", file, file.name || "attachment");
+  }
+
+  const response = await Axios.post("/handover/create-hand-over-sheet", fd, {
+    headers: {
+      "Content-Type": undefined as any,
+    },
+    transformRequest: [(d) => d],
+  });
+
+  return response.data;
+};
 
 export const getHandoverByLeadId = async (
   params: Record<
@@ -338,14 +329,20 @@ export const getHandoverByLeadId = async (
   return response.data;
 };
 
-export const editHandover = async (_id, updatedData) => {
+export const editHandover = async (
+  _id: string,
+  updatedData: any,
+  isMultipart = false
+) => {
   try {
-    const response = await Axios.put(
-      `/handover/edit-hand-over-sheet/${_id}`,
-      updatedData
-    );
+    const url = `/handover/edit-hand-over-sheet/${_id}`;
+    const config = isMultipart
+      ? { headers: { "Content-Type": "multipart/form-data" } }
+      : undefined;
+
+    const response = await Axios.put(url, updatedData, config);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(
       error.response?.data?.message || "Failed to update handover"
     );
