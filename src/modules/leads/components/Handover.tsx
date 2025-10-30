@@ -49,20 +49,20 @@ type HandoverFormRef = {
 
 type AttachmentEntry =
   | {
-      kind: "file";           
-      origin: "local";            
+      kind: "file";
+      origin: "local";
       file: File;
-      baseName: string;            
-      ext: string;               
+      baseName: string;
+      ext: string;
       sizeMB: number;
     }
   | {
-      kind: "url";                
-      origin: "bd" | "handover";  
+      kind: "url";
+      origin: "bd" | "handover";
       url: string;
-      baseName: string;           
+      baseName: string;
       ext: string;
-      sizeMB: number;         
+      sizeMB: number;
     };
 
 const defaultInitialValues = {
@@ -251,7 +251,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         const docs: any[] = res.data?.documents || [];
         if (docs.length) {
           const existingEntries: AttachmentEntry[] = docs.map((doc) => {
-            const guess = (doc.name || doc.filename || "document").toString().trim();
+            const guess = (doc.name || doc.filename || "document")
+              .toString()
+              .trim();
             const { base, ext } = splitName(guess);
             return {
               kind: "url",
@@ -262,7 +264,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
               sizeMB: 0,
             };
           });
-          setAttachments((prev) => mergeUniqueAttachments(prev, existingEntries));
+          setAttachments((prev) =>
+            mergeUniqueAttachments(prev, existingEntries)
+          );
         }
       } catch (err) {
         console.error("Error fetching handover:", err);
@@ -403,7 +407,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     const isChecked = checked === true;
     setSelectedDocs((prev) => ({ ...prev, [doc._id]: isChecked }));
 
-    const baseGuess = (doc.name || doc.filename || "document").toString().trim();
+    const baseGuess = (doc.name || doc.filename || "document")
+      .toString()
+      .trim();
     const { base, ext } = splitName(baseGuess);
 
     if (isChecked) {
@@ -686,9 +692,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         payload.submitted_by,
         payload.status_of_handoversheet,
         payload.is_locked,
-        attachments
-          .filter((a))
-          .map((a) => a.file)
+        attachments.filter(a).map((a) => a.file)
       );
 
       toast.success("Handover Sheet Submitted Successfully");
@@ -734,7 +738,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         other_details,
         invoice_detail: {},
         submitted_by: name,
-        status_of_handoversheet:  "draft",
+        status_of_handoversheet: "draft",
         is_locked: is_locked || "locked",
       };
 
@@ -748,12 +752,12 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
       const names: string[] = [];
       for (const a of newLocalFiles) {
-        fd.append("files", a.file); 
-        names.push(a.baseName);     
+        fd.append("files", a.file);
+        names.push(a.baseName);
       }
       names.forEach((n) => fd.append("names", n));
 
-      await editHandover(handover?._id, fd, true); 
+      await editHandover(handover?._id, fd, true);
 
       toast.success("Handover Sheet Updated Successfully");
 
@@ -766,7 +770,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         other_details: payload.other_details,
         submitted_by: payload.submitted_by,
       });
-      setAttachments((prev) => prev.filter((a) => !(a.kind === "file" && a.origin === "local")));
+      setAttachments((prev) =>
+        prev.filter((a) => !(a.kind === "file" && a.origin === "local"))
+      );
     } catch (error: any) {
       toast.error(error.message || "Error in Updating Handover Sheet");
     }
@@ -1195,7 +1201,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                     <Paperclip size={18} /> Attachments
                   </h2>
                   <span className="text-sm text-gray-500 font-semibold">
-                    Add any related files (Work Orders, LOIs, Layouts, etc.). Max 15MB per file.
+                    Add any related files (Work Orders, LOIs, Layouts, etc.).
+                    Max 15MB per file.
                   </span>
                 </div>
 
@@ -1267,7 +1274,10 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                                   value={a.baseName}
                                   disabled={isLockedExisting}
                                   onChange={(e) =>
-                                    updateAttachmentBaseName(idx, e.target.value)
+                                    updateAttachmentBaseName(
+                                      idx,
+                                      e.target.value
+                                    )
                                   }
                                   className="h-8 w-56 disabled:bg-gray-100"
                                 />
@@ -1310,19 +1320,20 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                             </div>
 
                             {/* Delete button (hidden for locked existing handover docs) */}
-                            {((formData?.is_locked !== "locked" ||
-                              formData?.status_of_handoversheet === "Rejected") &&
-                              !isLockedExisting) && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeAttachment(idx)}
-                                className="h-8 self-start md:self-auto"
-                              >
-                                <Trash2 size={16} />
-                              </Button>
-                            )}
+                            {(formData?.is_locked !== "locked" ||
+                              formData?.status_of_handoversheet ===
+                                "Rejected") &&
+                              !isLockedExisting && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeAttachment(idx)}
+                                  className="h-8 self-start md:self-auto"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              )}
                           </li>
                         );
                       })}
@@ -1330,9 +1341,9 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
                     <div className="text-xs text-gray-500 mt-2">
                       Note:
-                      <br />• <b>Existing Handover Sheet files</b> are locked — you can’t edit or delete them and they won’t be re-uploaded.
-                      <br />• <b>New local files</b> are the only ones sent in the edit payload.
-                      <br />• <b>BD documents</b> you check are linked (not uploaded).
+                      <br />• <b>Existing Handover Sheet files</b> are locked —
+                      you can’t edit or delete them and they won’t be
+                      re-uploaded.
                     </div>
                   </div>
                 )}
