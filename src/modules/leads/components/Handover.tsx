@@ -364,6 +364,21 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     return out;
   }
 
+  // keep filename safe (no slashes or funny chars)
+  function safeBase(s: string) {
+    return s.replace(/[\\/:*?"<>|]/g, "_").trim();
+  }
+
+  // -------- Type guards (fix TS error in .filter predicates) --------
+  const isLocalFileEntry = (
+    a: AttachmentEntry
+  ): a is Extract<AttachmentEntry, { kind: "file"; origin: "local" }> =>
+    a.kind === "file" && a.origin === "local";
+
+  const isUrlEntry = (
+    a: AttachmentEntry
+  ): a is Extract<AttachmentEntry, { kind: "url" }> => a.kind === "url";
+
   // pick local files -> NEW "local" entries
   const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -449,11 +464,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       )
     );
   };
-
-  // keep filename safe (no slashes or funny chars)
-  function safeBase(s: string) {
-    return s.replace(/[\\/:*?"<>|]/g, "_").trim();
-  }
 
   useEffect(() => {
     if (!data) return;
@@ -680,7 +690,18 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         is_locked: "locked",
       };
 
-      // CREATE: upload only NEW local files
+      const newLocalFiles = attachments.filter(isLocalFileEntry);
+      const fileDocsParam = newLocalFiles.map((f) => ({
+        file: f.file,
+        name: `${f.baseName}${f.ext || ""}`,
+      }));
+
+      const urlDocsParam = attachments.filter(isUrlEntry).map((a) => ({
+        url: a.url,
+        baseName: a.baseName,
+        ext: a.ext,
+      }));
+
       await createHandover(
         payload.id,
         payload.customer_details,
@@ -692,7 +713,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         payload.submitted_by,
         payload.status_of_handoversheet,
         payload.is_locked,
-        attachments.filter(a).map((a) => a.file)
+        [...fileDocsParam, ...urlDocsParam]
       );
 
       toast.success("Handover Sheet Submitted Successfully");
@@ -710,6 +731,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
       setAttachments([]);
       setSelectedDocs({});
     } catch (error) {
+      console.error(error);
       toast.error("Error in Submitting Handover Sheet");
     }
   };
@@ -742,10 +764,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         is_locked: is_locked || "locked",
       };
 
-      const newLocalFiles = attachments.filter(
-        (a): a is Extract<AttachmentEntry, { kind: "file"; origin: "local" }> =>
-          a.kind === "file" && a.origin === "local"
-      );
+      const newLocalFiles = attachments.filter(isLocalFileEntry);
 
       const fd = new FormData();
       fd.append("data", JSON.stringify(payload));
@@ -876,7 +895,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                           handleSelectChange(name, value)
                         }
                       >
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w/full">
                           <SelectValue placeholder="Select a state" />
                         </SelectTrigger>
                         <SelectContent
@@ -1201,8 +1220,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                     <Paperclip size={18} /> Attachments
                   </h2>
                   <span className="text-sm text-gray-500 font-semibold">
-                    Add any related files (Work Orders, LOIs, Layouts, etc.).
-                    Max 15MB per file.
+                    Add any related files (LOI, PPA, Aadhar, etc.). Max 15MB per
+                    file.
                   </span>
                 </div>
 

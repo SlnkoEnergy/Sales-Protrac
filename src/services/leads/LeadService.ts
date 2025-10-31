@@ -250,8 +250,6 @@ export const updateExpectedClosingDate = async (
   }
 };
 
-// services/leads/LeadService.ts
-// createHandover.ts
 export const createHandover = async (
   id: string,
   customer_details: any,
@@ -263,17 +261,32 @@ export const createHandover = async (
   submitted_by: string,
   status_of_handoversheet: string = "draft",
   is_locked: string = "locked",
-  documents: (File | string)[] = []
+  documents: Array<
+    | File
+    | { file: File; name?: string }
+    | { url: string; baseName?: string; ext?: string }
+  > = []
 ) => {
-  // Separate files vs URLs
-  const urlDocs: string[] = [];
-  const fileDocs: File[] = [];
-  for (const item of documents) {
-    if (item instanceof File) fileDocs.push(item);
-    else if (typeof item === "string") urlDocs.push(item);
+  const fd = new FormData();
+
+  const urlDocs: { url: string; baseName?: string; ext?: string }[] = [];
+
+  for (const doc of documents) {
+    if (doc instanceof File) {
+      fd.append("files", doc, doc.name);
+    } else if ("file" in doc) {
+      fd.append("files", doc.file, doc.name || doc.file.name);
+    } else if ("url" in doc) {
+      urlDocs.push({
+        url: doc.url,
+        baseName: doc.baseName,
+        ext: doc.ext,
+      });
+    }
   }
 
-  const data = {
+  // payload JSON
+  const payload = {
     id,
     customer_details,
     order_details,
@@ -287,18 +300,10 @@ export const createHandover = async (
     documents: urlDocs,
   };
 
-  const fd = new FormData();
-  fd.append("data", JSON.stringify(data));
-
-  for (const file of fileDocs) {
-    fd.append("files", file, file.name || "attachment");
-  }
+  fd.append("data", JSON.stringify(payload));
 
   const response = await Axios.post("/handover/create-hand-over-sheet", fd, {
-    headers: {
-      "Content-Type": undefined as any,
-    },
-    transformRequest: [(d) => d],
+    headers: { "Content-Type": "multipart/form-data" },
   });
 
   return response.data;
