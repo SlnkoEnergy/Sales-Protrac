@@ -1,9 +1,16 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Select,
@@ -15,17 +22,48 @@ import {
 import {
   createHandover,
   editHandover,
+  getDocuments,
   getHandoverByLeadId,
   getLeadbyId,
 } from "@/services/leads/LeadService";
-import { File, User2, Workflow } from "lucide-react";
+import {
+  File as FileIcon,
+  User2,
+  Workflow,
+  Paperclip,
+  Trash2,
+  Lock,
+  ExternalLink,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/services/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type HandoverFormRef = {
   submit: () => void;
   resetForm: () => void;
+  getStatus: () => string;
+  updated: () => string;
+  update: () => void;
 };
+
+type AttachmentEntry =
+  | {
+      kind: "file";
+      origin: "local";
+      file: File;
+      baseName: string;
+      ext: string;
+      sizeMB: number;
+    }
+  | {
+      kind: "url";
+      origin: "bd" | "handover";
+      url: string;
+      baseName: string;
+      ext: string;
+      sizeMB: number;
+    };
 
 const defaultInitialValues = {
   id: "",
@@ -109,10 +147,10 @@ export interface FormDataType {
     project_kwp: string;
     project_component: string;
     project_component_other: string;
-    project_completion_date: string;
-    ppa_expiry_date: string;
-    bd_commitment_date: string;
     transmission_scope: string;
+    project_completion_date: string;
+    bd_commitment_date: string;
+    ppa_expiry_date: string;
     loan_scope: string;
   };
   commercial_details: {
@@ -130,11 +168,17 @@ export interface FormDataType {
 }
 
 const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
-  const [data, setData] = useState();
+  const [data, setData] = useState<any>();
+  const [documents, setDocuments] = useState<any[]>([]);
   const [searchParams] = useSearchParams();
   const [initialFormData, setInitialFormData] =
     useState<FormDataType>(defaultInitialValues);
-  const [handover, setHandover] = useState();
+  const [handover, setHandover] = useState<any>();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Structured attachments with explicit origin
+  const [attachments, setAttachments] = useState<AttachmentEntry[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<Record<string, boolean>>({});
   const id = searchParams.get("id");
 
   const { user } = useAuth();
@@ -143,6 +187,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     submit: () => handleSubmit(),
     resetForm: () => {
       setFormData(initialFormData);
+      setAttachments([]);
+      setSelectedDocs({});
     },
     getStatus: () => formData?.is_locked,
     updated: () => formData?.status_of_handoversheet,
@@ -162,36 +208,75 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
   useEffect(() => {
     const fetchLeads = async () => {
       try {
-        const params = {
-          id: id,
-        };
+        const params = { id };
         const res = await getLeadbyId(params);
         setData(res.data);
       } catch (err) {
         console.error("Error fetching leads:", err);
       }
     };
-
-    fetchLeads();
+    if (id) fetchLeads();
   }, [id]);
 
+  // Load available BD Lead documents for checkbox selection
   useEffect(() => {
-    const fetchLeads = async () => {
+    const fetchDocuments = async () => {
       try {
-        const params = {
-          leadId: data?.id,
-        };
+        const params = { id };
+        const res = await getDocuments(params);
+        setDocuments(res.data || []);
+      } catch (err) {
+        console.error("Error fetching documents:", err);
+      }
+    };
+    if (id) fetchDocuments();
+  }, [id]);
+
+  const loadedOnce = useRef(false);
+
+  useEffect(() => {
+    if (!data) return;
+    if (loadedOnce.current) return;
+    loadedOnce.current = true;
+
+    const fetchHandover = async () => {
+      try {
+        const params = { leadId: data?.id };
+        if (!params.leadId) return;
+
         const res = await getHandoverByLeadId(params);
         setHandover(res.data);
+
+        // Build IMMUTABLE url entries for existing handover documents (NO upload, NO edit, NO delete)
+        const docs: any[] = res.data?.documents || [];
+        if (docs.length) {
+          const existingEntries: AttachmentEntry[] = docs.map((doc) => {
+            const guess = (doc.name || doc.filename || "document")
+              .toString()
+              .trim();
+            const { base, ext } = splitName(guess);
+            return {
+              kind: "url",
+              origin: "handover",
+              url: doc.attachment_url || doc.fileurl || "",
+              baseName: base,
+              ext,
+              sizeMB: 0,
+            };
+          });
+          setAttachments((prev) =>
+            mergeUniqueAttachments(prev, existingEntries)
+          );
+        }
       } catch (err) {
-        console.error("Error fetching leads:", err);
+        console.error("Error fetching handover:", err);
       }
     };
 
-    fetchLeads();
+    fetchHandover();
   }, [data]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     id: "",
     customer_details: {
       name: "",
@@ -248,6 +333,138 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     assigned_to: "",
   });
 
+  // ---------- helpers for filenames ----------
+  function splitName(full: string) {
+    const idx = full.lastIndexOf(".");
+    if (idx <= 0 || idx === full.length - 1) {
+      return { base: full, ext: "" };
+    }
+    const base = full.slice(0, idx);
+    const ext = full.slice(idx); // includes '.'
+    return { base, ext };
+  }
+
+  function mergeUniqueAttachments(
+    prev: AttachmentEntry[],
+    next: AttachmentEntry[]
+  ) {
+    const seen = new Set<string>();
+    const out: AttachmentEntry[] = [];
+    const tag = (a: AttachmentEntry) =>
+      a.kind === "file"
+        ? `F|${a.origin}|${a.file.name}|${a.file.size}`
+        : `U|${a.origin}|${a.url}|${a.baseName}`;
+
+    [...prev, ...next].forEach((a) => {
+      const key = tag(a);
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(a);
+    });
+    return out;
+  }
+
+  // keep filename safe (no slashes or funny chars)
+  function safeBase(s: string) {
+    return s.replace(/[\\/:*?"<>|]/g, "_").trim();
+  }
+
+  // -------- Type guards (fix TS error in .filter predicates) --------
+  const isLocalFileEntry = (
+    a: AttachmentEntry
+  ): a is Extract<AttachmentEntry, { kind: "file"; origin: "local" }> =>
+    a.kind === "file" && a.origin === "local";
+
+  const isUrlEntry = (
+    a: AttachmentEntry
+  ): a is Extract<AttachmentEntry, { kind: "url" }> => a.kind === "url";
+
+  // pick local files -> NEW "local" entries
+  const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (!files.length) return;
+
+    const MAX_MB = 15;
+    const accepted: AttachmentEntry[] = [];
+    const rejected: string[] = [];
+
+    for (const f of files) {
+      const sizeMB = +(f.size / (1024 * 1024)).toFixed(2);
+      if (sizeMB > MAX_MB) {
+        rejected.push(`${f.name} (${sizeMB}MB)`);
+        continue;
+      }
+      const { base, ext } = splitName(f.name);
+      accepted.push({
+        kind: "file",
+        origin: "local",
+        file: f,
+        baseName: base,
+        ext,
+        sizeMB,
+      });
+    }
+
+    if (rejected.length) {
+      toast.warning(
+        `Skipped (>${MAX_MB}MB): ${rejected
+          .map((s) => s.split(" (")[0])
+          .join(", ")}`
+      );
+    }
+
+    setAttachments((prev) => mergeUniqueAttachments(prev, accepted));
+    e.currentTarget.value = "";
+  };
+
+  // toggle BD document checkboxes -> add/remove "bd" url entries (editable/deletable)
+  const handleCheckboxChange = (doc: any, checked: boolean | string) => {
+    const isChecked = checked === true;
+    setSelectedDocs((prev) => ({ ...prev, [doc._id]: isChecked }));
+
+    const baseGuess = (doc.name || doc.filename || "document")
+      .toString()
+      .trim();
+    const { base, ext } = splitName(baseGuess);
+
+    if (isChecked) {
+      const entry: AttachmentEntry = {
+        kind: "url",
+        origin: "bd",
+        url: doc.attachment_url || doc.fileurl || "",
+        baseName: base,
+        ext,
+        sizeMB: 0,
+      };
+      setAttachments((prev) => mergeUniqueAttachments(prev, [entry]));
+    } else {
+      setAttachments((prev) =>
+        prev.filter(
+          (a) =>
+            !(
+              a.kind === "url" &&
+              a.origin === "bd" &&
+              (a.url === doc.attachment_url || a.url === doc.fileurl)
+            )
+        )
+      );
+    }
+  };
+
+  // delete attachment (blocked for origin: "handover")
+  const removeAttachment = (idx: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // update baseName inline (blocked for origin: "handover")
+  const updateAttachmentBaseName = (idx: number, newBase: string) => {
+    setAttachments((prev) =>
+      prev.map((a, i) =>
+        i === idx ? { ...a, baseName: safeBase(newBase) } : a
+      )
+    );
+  };
+
   useEffect(() => {
     if (!data) return;
 
@@ -269,7 +486,6 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         updated.project_detail.bd_commitment_date = toDateInput(
           updated.project_detail.bd_commitment_date
         );
-        // (optional) if you also show completion_date somewhere:
         updated.project_detail.ppa_expiry_date = toDateInput(
           updated.project_detail.ppa_expiry_date
         );
@@ -304,17 +520,17 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     const { name, value } = e.target;
     const keys = name.split(".");
 
-    setFormData((prev) => {
+    setFormData((prev: any) => {
       const updated = { ...prev };
 
       if (keys.length === 2) {
         const [parent, child] = keys;
         const prevNested = updated[parent] || {};
-        const newNested = { ...prevNested, [child]: value };
+        const newNested: any = { ...prevNested, [child]: value };
 
         updated[parent] = newNested;
 
-        // ✅ 1. Calculate Proposed DC Capacity
+        // compute DC capacity
         if (
           parent === "project_detail" &&
           (child === "project_kwp" || child === "overloading")
@@ -334,7 +550,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
           }
         }
 
-        // ✅ 2. Calculate Total Slnko Service Charges (Without GST)
+        // compute service charge
         if (
           (parent === "project_detail" && child === "project_kwp") ||
           (parent === "other_details" && child === "slnko_basic")
@@ -357,7 +573,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
           }
         }
       } else {
-        updated[name] = value;
+        (updated as any)[name] = value;
       }
 
       return updated;
@@ -366,7 +582,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
   const handleSelectChange = (path: string, value: string) => {
     const keys = path.split(".");
-    setFormData((prev) => {
+    setFormData((prev: any) => {
       const updated = { ...prev };
       let current: any = updated;
 
@@ -381,7 +597,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     });
   };
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const getValueByPath = (obj: any, path: string): any =>
+    path.split(".").reduce((acc, part) => acc?.[part], obj);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -429,14 +646,12 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
     ];
 
     const newErrors: Record<string, string> = {};
-
     requiredFields.forEach(({ name, label }) => {
       const value = getValueByPath(formData, name);
       if (!value) {
         newErrors[name] = `${label.replace(" *", "")} is required.`;
       }
     });
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -462,7 +677,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         submitted_by_BD: users?.name || "",
       };
 
-      const payload = {
+      const payload: any = {
         id,
         customer_details,
         order_details,
@@ -475,7 +690,19 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         is_locked: "locked",
       };
 
-      const response = await createHandover(
+      const newLocalFiles = attachments.filter(isLocalFileEntry);
+      const fileDocsParam = newLocalFiles.map((f) => ({
+        file: f.file,
+        name: `${f.baseName}${f.ext || ""}`,
+      }));
+
+      const urlDocsParam = attachments.filter(isUrlEntry).map((a) => ({
+        url: a.url,
+        baseName: a.baseName,
+        ext: a.ext,
+      }));
+
+      await createHandover(
         payload.id,
         payload.customer_details,
         payload.order_details,
@@ -485,7 +712,8 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         payload.invoice_detail,
         payload.submitted_by,
         payload.status_of_handoversheet,
-        payload.is_locked
+        payload.is_locked,
+        [...fileDocsParam, ...urlDocsParam]
       );
 
       toast.success("Handover Sheet Submitted Successfully");
@@ -500,12 +728,13 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         is_locked: payload.is_locked,
         submitted_by: payload.submitted_by,
       });
-    } catch (error: any) {
+      setAttachments([]);
+      setSelectedDocs({});
+    } catch (error) {
+      console.error(error);
       toast.error("Error in Submitting Handover Sheet");
     }
   };
-
-  console.log({ formData });
 
   const handleEdit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -519,6 +748,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         commercial_details,
         other_details,
         submitted_by: name,
+        is_locked,
       } = formData;
 
       const payload = {
@@ -531,10 +761,23 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         invoice_detail: {},
         submitted_by: name,
         status_of_handoversheet: "draft",
-        is_locked: "locked",
+        is_locked: is_locked || "locked",
       };
 
-      const response = await editHandover(handover?._id, payload);
+      const newLocalFiles = attachments.filter(isLocalFileEntry);
+
+      const fd = new FormData();
+      fd.append("data", JSON.stringify(payload));
+
+      const names: string[] = [];
+      for (const a of newLocalFiles) {
+        fd.append("files", a.file);
+        names.push(a.baseName);
+      }
+      names.forEach((n) => fd.append("names", n));
+
+      await editHandover(handover?._id, fd, true);
+
       toast.success("Handover Sheet Updated Successfully");
 
       setFormData({
@@ -546,13 +789,12 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
         other_details: payload.other_details,
         submitted_by: payload.submitted_by,
       });
+      setAttachments((prev) =>
+        prev.filter((a) => !(a.kind === "file" && a.origin === "local"))
+      );
     } catch (error: any) {
       toast.error(error.message || "Error in Updating Handover Sheet");
     }
-  };
-
-  const getValueByPath = (obj: any, path: string): any => {
-    return path.split(".").reduce((acc, part) => acc?.[part], obj);
   };
 
   const indianStates = [
@@ -596,11 +838,10 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
 
   return (
     <div className="max-h-screen">
-      <Card className="w-full  max-w-5xl mx-auto">
+      <Card className="w-full max-w-5xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl flex gap-2 items-center text-[#214b7b]">
-            {" "}
-            <File size={20} /> Handover Form
+            <FileIcon size={20} /> Handover Form
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -654,7 +895,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                           handleSelectChange(name, value)
                         }
                       >
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w/full">
                           <SelectValue placeholder="Select a state" />
                         </SelectTrigger>
                         <SelectContent
@@ -862,10 +1103,11 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                               formData,
                               name
                             );
-                            const matchedOption = options.find((opt) =>
-                              typeof opt === "string"
-                                ? opt === selectedValue
-                                : opt.value === selectedValue
+                            const matchedOption = (options as any[]).find(
+                              (opt: any) =>
+                                typeof opt === "string"
+                                  ? opt === selectedValue
+                                  : opt.value === selectedValue
                             );
                             return typeof matchedOption === "string"
                               ? matchedOption
@@ -875,7 +1117,7 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                       </SelectTrigger>
 
                       <SelectContent>
-                        {options.map((opt) => {
+                        {(options as any[]).map((opt: any) => {
                           const value =
                             typeof opt === "string" ? opt : opt.value;
                           const labelText =
@@ -967,6 +1209,163 @@ const HandoverForm = forwardRef<HandoverFormRef>((props, ref) => {
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* ATTACHMENTS */}
+            <div>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold flex gap-2 items-center">
+                    <Paperclip size={18} /> Attachments
+                  </h2>
+                  <span className="text-sm text-gray-500 font-semibold">
+                    Add any related files (LOI, PPA, Aadhar, etc.). Max 15MB per
+                    file.
+                  </span>
+                </div>
+
+                {documents?.length > 0 &&
+                  !(formData?.is_locked === "locked") && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700">
+                        Available:
+                      </span>
+                      <div className="flex flex-wrap items-center gap-4">
+                        {documents.map((doc) => (
+                          <label
+                            key={doc._id}
+                            className="inline-flex items-center gap-2 cursor-pointer select-none"
+                          >
+                            <Checkbox
+                              checked={!!selectedDocs[doc._id]}
+                              onCheckedChange={(val) =>
+                                handleCheckboxChange(doc, val)
+                              }
+                            />
+                            <span className="text-sm uppercase">
+                              {doc.name || doc.filename}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {(formData?.is_locked !== "locked" ||
+                  formData?.status_of_handoversheet === "Rejected") && (
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="attachments"
+                      type="file"
+                      multiple
+                      onChange={onPickFiles}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.csv,.txt"
+                      className="cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {attachments.length > 0 && (
+                  <div className="border rounded-md p-3">
+                    <div className="text-sm font-medium mb-3">
+                      Files ({attachments.length})
+                    </div>
+
+                    <ul className="space-y-3">
+                      {attachments.map((a, idx) => {
+                        const isLockedExisting =
+                          a.kind === "url" && a.origin === "handover";
+
+                        return (
+                          <li
+                            key={`${a.kind}-${a.origin}-${idx}`}
+                            className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Paperclip size={16} className="shrink-0" />
+
+                              {/* Editable base name + extension */}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Input
+                                  value={a.baseName}
+                                  disabled={isLockedExisting}
+                                  onChange={(e) =>
+                                    updateAttachmentBaseName(
+                                      idx,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="h-8 w-56 disabled:bg-gray-100"
+                                />
+                                <span className="text-gray-600 text-sm">
+                                  {a.ext || ""}
+                                </span>
+                              </div>
+
+                              {/* Size */}
+                              <span className="text-gray-500 shrink-0 ml-2 text-sm">
+                                ({a.sizeMB?.toFixed(2) || "0.00"} MB)
+                              </span>
+
+                              {/* Quick open for file/url */}
+                              {a.kind === "file" ? (
+                                <a
+                                  href={URL.createObjectURL(a.file)}
+                                  download={`${a.baseName}${a.ext}`}
+                                  className="text-[#214b7b] hover:underline text-sm ml-2 flex items-center gap-1"
+                                >
+                                  open <ExternalLink size={12} />
+                                </a>
+                              ) : (
+                                <a
+                                  href={a.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[#214b7b] hover:underline text-sm ml-2 flex items-center gap-1"
+                                >
+                                  view <ExternalLink size={12} />
+                                </a>
+                              )}
+
+                              {/* Lock badge for existing handover docs */}
+                              {isLockedExisting && (
+                                <span className="ml-2 inline-flex items-center gap-1 text-xs text-gray-600">
+                                  <Lock size={12} /> locked
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Delete button (hidden for locked existing handover docs) */}
+                            {(formData?.is_locked !== "locked" ||
+                              formData?.status_of_handoversheet ===
+                                "Rejected") &&
+                              !isLockedExisting && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeAttachment(idx)}
+                                  className="h-8 self-start md:self-auto"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    <div className="text-xs text-gray-500 mt-2">
+                      Note:
+                      <br />• <b>Existing Handover Sheet files</b> are locked —
+                      you can’t edit or delete them and they won’t be
+                      re-uploaded.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </form>

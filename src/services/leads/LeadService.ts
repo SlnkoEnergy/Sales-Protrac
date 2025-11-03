@@ -260,32 +260,53 @@ export const createHandover = async (
   invoice_detail: any,
   submitted_by: string,
   status_of_handoversheet: string = "draft",
-  is_locked: string = "locked"
+  is_locked: string = "locked",
+  documents: Array<
+    | File
+    | { file: File; name?: string }
+    | { url: string; baseName?: string; ext?: string }
+  > = []
 ) => {
-  try {
-    const payload = {
-      id,
-      customer_details,
-      order_details,
-      project_detail,
-      commercial_details,
-      other_details,
-      invoice_detail,
-      submitted_by,
-      status_of_handoversheet,
-      is_locked,
-    };
+  const fd = new FormData();
 
-    const response = await Axios.post(
-      "/handover/create-hand-over-sheet",
-      payload
-    );
-    return response.data;
-  } catch (error: any) {
-    throw new Error(
-      error?.response?.data?.message || "Failed to create handover sheet"
-    );
+  const urlDocs: { url: string; baseName?: string; ext?: string }[] = [];
+
+  for (const doc of documents) {
+    if (doc instanceof File) {
+      fd.append("files", doc, doc.name);
+    } else if ("file" in doc) {
+      fd.append("files", doc.file, doc.name || doc.file.name);
+    } else if ("url" in doc) {
+      urlDocs.push({
+        url: doc.url,
+        baseName: doc.baseName,
+        ext: doc.ext,
+      });
+    }
   }
+
+  // payload JSON
+  const payload = {
+    id,
+    customer_details,
+    order_details,
+    project_detail,
+    commercial_details,
+    other_details,
+    invoice_detail,
+    submitted_by,
+    status_of_handoversheet,
+    is_locked,
+    documents: urlDocs,
+  };
+
+  fd.append("data", JSON.stringify(payload));
+
+  const response = await Axios.post("/handover/create-hand-over-sheet", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return response.data;
 };
 
 export const getHandoverByLeadId = async (
@@ -313,14 +334,20 @@ export const getHandoverByLeadId = async (
   return response.data;
 };
 
-export const editHandover = async (_id, updatedData) => {
+export const editHandover = async (
+  _id: string,
+  updatedData: any,
+  isMultipart = false
+) => {
   try {
-    const response = await Axios.put(
-      `/handover/edit-hand-over-sheet/${_id}`,
-      updatedData
-    );
+    const url = `/handover/edit-hand-over-sheet/${_id}`;
+    const config = isMultipart
+      ? { headers: { "Content-Type": "multipart/form-data" } }
+      : undefined;
+
+    const response = await Axios.put(url, updatedData, config);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(
       error.response?.data?.message || "Failed to update handover"
     );
@@ -390,6 +417,31 @@ export const getLeadsCount = async (
   > = {}
 ) => {
   let url = "/bddashboard/lead-count";
+
+  const query = Object.entries(params)
+    .map(([key, val]) => {
+      if (Array.isArray(val)) {
+        return val.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
+      }
+      return `${key}=${encodeURIComponent(val)}`;
+    })
+    .join("&");
+
+  if (query) {
+    url += `?${query}`;
+  }
+
+  const response = await Axios.get(url);
+  return response.data;
+};
+
+export const getDocuments = async (
+  params: Record<
+    string,
+    string | number | boolean | Array<string | number | boolean>
+  > = {}
+) => {
+  let url = `/bddashboard/lead-documents`;
 
   const query = Object.entries(params)
     .map(([key, val]) => {
